@@ -3,6 +3,8 @@ use std::ops::*;
 use std::fmt::Debug;
 use std::default::Default;
 
+// should split this up...
+
 pub const EPSILON: f32 = 1e-6f32;
 
 #[inline]
@@ -146,27 +148,40 @@ pub trait VecType
     fn zero() -> Self;
     fn splat(v: f32) -> Self;
 
+    #[inline] fn max_elem(self) -> f32 { self.fold(|a, b| a.max(b)) }
+    #[inline] fn min_elem(self) -> f32 { self.fold(|a, b| a.min(b)) }
 
-    fn max_elem(self) -> f32;
-    fn min_elem(self) -> f32;
+    #[inline] fn abs(self) -> Self { self.map(|x| x.abs()) }
 
-    fn abs(self) -> Self;
+    #[inline] fn floor(self) -> Self { self.map(|x| x.floor()) }
+    #[inline] fn ceil(self) -> Self { self.map(|x| x.ceil()) }
+    #[inline] fn round(self) -> Self { self.map(|x| x.round()) }
 
-    fn floor(self) -> Self;
-    fn ceil(self) -> Self;
-    fn round(self) -> Self;
+    #[inline] fn min(self, o: Self) -> Self { self.zip(o, |a, b| a.min(b)) }
+    #[inline] fn max(self, o: Self) -> Self { self.zip(o, |a, b| a.max(b)) }
+    #[inline] fn dot(self, o: Self) -> f32 { (self * o).fold(|a, b| a+b) }
+    #[inline] fn length_sq(self) -> f32 { self.dot(self) }
+    #[inline] fn length(self) -> f32 { self.length_sq().sqrt() }
 
-    fn min(self, o: Self) -> Self;
-    fn max(self, o: Self) -> Self;
+    #[inline]
+    fn normalize_len(self) -> (Option<Self>, f32) {
+        let l = self.length();
+        if near_zero(l) {
+            (None, l)
+        } else {
+            (Some(self / l), l)
+        }
+    }
 
-    fn dot(self, o: Self) -> f32;
+    #[inline]
+    fn normalize(self) -> Option<Self> {
+        self.normalize_len().0
+    }
 
-    fn length_sq(self) -> f32;
-    fn length(self) -> f32;
-
-    fn normalize_len(self) -> (Option<Self>, f32);
-    fn normalize(self) -> Option<Self>;
-    fn normalize_or_zero(self) -> Self;
+    #[inline]
+    fn normalize_or_zero(self) -> Self {
+        self.normalize().unwrap_or(Self::zero())
+    }
 }
 
 impl Foldable<f32> for V2 {
@@ -322,40 +337,6 @@ macro_rules! do_vec_boilerplate {
             #[inline] fn zero() -> $Vn { $Vn{ $($field: 0.0),+ } }
             #[inline] fn splat(v: f32) -> $Vn { $Vn{ $($field: v),+ } }
 
-            #[inline] fn max_elem(self) -> f32 { self.fold(|a, b| a.max(b)) }
-            #[inline] fn min_elem(self) -> f32 { self.fold(|a, b| a.min(b)) }
-
-            #[inline] fn abs(self) -> $Vn { self.map(|x| x.abs()) }
-
-            #[inline] fn floor(self) -> $Vn { self.map(|x| x.floor()) }
-            #[inline] fn ceil(self) -> $Vn { self.map(|x| x.ceil()) }
-            #[inline] fn round(self) -> $Vn { self.map(|x| x.round()) }
-
-            #[inline] fn min(self, o: $Vn) -> $Vn { self.zip(o, |a, b| a.min(b)) }
-            #[inline] fn max(self, o: $Vn) -> $Vn { self.zip(o, |a, b| a.max(b)) }
-            #[inline] fn dot(self, o: $Vn) -> f32 { (self * o).fold(|a, b| a+b) }
-            #[inline] fn length_sq(self) -> f32 { self.dot(self) }
-            #[inline] fn length(self) -> f32 { self.length_sq().sqrt() }
-
-            #[inline]
-            fn normalize_len(self) -> (Option<$Vn>, f32) {
-                let l = self.length();
-                if near_zero(l) {
-                    (None, l)
-                } else {
-                    (Some(self / l), l)
-                }
-            }
-
-            #[inline]
-            fn normalize(self) -> Option<$Vn> {
-                self.normalize_len().0
-            }
-
-            #[inline]
-            fn normalize_or_zero(self) -> $Vn {
-                self.normalize().unwrap_or(Self::zero())
-            }
         }
 
         impl Add for $Vn {
@@ -1172,7 +1153,58 @@ pub fn cross(a: V3, b: V3) -> V3 {
     a.cross(b)
 }
 
+pub fn max_dir(arr: &[V3], dir: V3) -> Option<usize> {
+     if arr.len() == 0 {
+        return None;
+    }
+    let mut best_idx = 0;
+    for (idx, item) in arr.iter().enumerate() {
+        if dir.dot(*item) > dir.dot(arr[best_idx]) {
+            best_idx = idx;
+        }
+    }
+    Some(best_idx)
+}
+
+pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
+    if arr.len() == 0 {
+        return None;
+    }
+
+    let mut min_bound = arr[0];
+    let mut max_bound = arr[0];
+
+    for item in arr.iter() {
+        min_bound = min_bound.min(*item);
+        max_bound = max_bound.max(*item);
+    }
+
+    Some((min_bound, max_bound))
+}
+
 #[inline]
 pub fn normalize<Vt: VecType>(a: Vt) -> Option<Vt> {
     a.normalize()
 }
+
+#[inline(always)]
+pub fn vec2(x: f32, y: f32) -> V2 {
+    V2::new(x, y)
+}
+
+#[inline(always)]
+pub fn vec3(x: f32, y: f32, z: f32) -> V3 {
+    V3::new(x, y, z)
+}
+
+#[inline(always)]
+pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
+    V4::new(x, y, z, w)
+}
+
+#[inline(always)]
+pub fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
+    Quat::new(x, y, z, w)
+}
+
+
