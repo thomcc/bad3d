@@ -1,8 +1,11 @@
 #![allow(dead_code)]
+
+#[macro_use] mod util;
 mod math;
 mod geom;
 mod pose;
 mod hull;
+
 use math::{V3, M3x3};
 use std::mem;
 

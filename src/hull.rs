@@ -250,11 +250,6 @@ fn find_extrudable(tris: &[Tri], epsilon: f32) -> Option<usize> {
     if tris[best.unwrap()].rise > epsilon { best } else { None }
 }
 
-macro_rules! try_opt {
-    ($e: expr) => (match $e { Some(e) => e, None => return None })
-}
-
-
 fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b0 = vec3(0.01, 0.02, 1.0);
 
@@ -281,8 +276,6 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     if p2 == p0 || p2 == p1 {
         return None;
     }
-
-
 
     let b1 = verts[p2] - verts[p0];
     let b2 = cross(b1, b2);
@@ -403,12 +396,8 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[
         }
 
         for j in (0..tris.len()).rev() {
-            if tris[j].dead() {
-                continue;
-            }
-            if tris[j].max_v >= 0 {
-                break;
-            }
+            if tris[j].dead() { continue; }
+            if tris[j].max_v >= 0 { break; }
             let (v0, v1, v2) = tri(&verts[..], tris[j].vi);
             let n = geom::tri_normal(v0, v1, v2);
             let vmax = max_dir(&verts[..], n).unwrap();

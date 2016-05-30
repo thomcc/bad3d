@@ -2,6 +2,7 @@ use std::mem;
 use std::ops::*;
 use std::fmt::Debug;
 use std::default::Default;
+use util::{max_index, min_index};
 
 // should split this up...
 
@@ -409,26 +410,6 @@ macro_rules! do_vec_boilerplate {
 do_vec_boilerplate!(V2 {x: 0, y: 1            }, 2, (f32, f32));
 do_vec_boilerplate!(V3 {x: 0, y: 1, z: 2      }, 3, (f32, f32, f32));
 do_vec_boilerplate!(V4 {x: 0, y: 1, z: 2, w: 3}, 4, (f32, f32, f32, f32));
-
-pub fn min_index<T: PartialOrd>(arr: &[T]) -> usize {
-    let mut min_idx = 0;
-    for i in 1..4 {
-        if arr[i] < arr[min_idx] {
-            min_idx = i;
-        }
-    }
-    min_idx
-}
-
-pub fn max_index<T: PartialOrd>(arr: &[T]) -> usize {
-    let mut max_idx = 0;
-    for i in 1..arr.len() {
-        if arr[i] > arr[max_idx] {
-            max_idx = i;
-        }
-    }
-    max_idx
-}
 
 impl V2 {
     #[inline] pub fn unit() -> V2 { V2::new(1.0, 0.0) }
