@@ -6,6 +6,9 @@ mod vec;
 mod quat;
 mod mat;
 
+pub mod pose;
+pub mod geom;
+
 pub use math::traits::*;
 pub use math::scalar::*;
 pub use math::vec::*;

@@ -1,7 +1,7 @@
 use math::*;
-use geom;
+use math::geom::{Plane, tri_normal};
 use std::ops::*;
-use std::{isize, i32, usize};
+use std::{isize, i32, f32, usize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct I3 {
@@ -80,7 +80,7 @@ fn tri_ref(verts: &[V3], t: I3) -> (&V3, &V3, &V3) {
 
 fn above(verts: &[V3], t: I3, p: V3, epsilon: f32) -> bool {
     let (v0, v1, v2) = tri(verts, t);
-    dot(geom::tri_normal(v0, v1, v2), p - v0) > epsilon
+    dot(tri_normal(v0, v1, v2), p - v0) > epsilon
 }
 
 struct Tri {
@@ -300,6 +300,104 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     }
 }
 
+
+pub fn get_sep_plane_epa<F: Fn(V3) -> V3>(init_verts: [V3; 4], max_dir: F) -> Plane {
+    let mut plane = Plane::new(V3::zero(), -f32::MAX);
+    let epsilon = 0.001f32; // ...
+
+    let mut verts = Vec::from(&init_verts[..]);
+    let mut tris = Vec::new();
+
+    let iv0 = init_verts[0];
+    let iv1 = init_verts[1];
+    let iv2 = init_verts[2];
+    let iv3 = init_verts[3];
+    if dot(cross(iv2 - iv0, iv1 - iv0), iv3 - iv0) > 0.0 {
+        verts.swap(2, 3);
+    }
+
+    let center = (iv0 + iv1 + iv2 + iv3) * 0.25;
+    tris.push(Tri::new(2_i32, 3_i32, 1_i32, 0, int3(2, 3, 1)));
+    tris.push(Tri::new(3_i32, 2_i32, 0_i32, 1, int3(3, 2, 0)));
+    tris.push(Tri::new(0_i32, 1_i32, 3_i32, 2, int3(0, 1, 3)));
+    tris.push(Tri::new(1_i32, 0_i32, 2_i32, 3, int3(1, 0, 2)));
+
+    loop {
+        let mut face = Plane::new(V3::zero(), -f32::MAX);
+        for t in tris.iter() {
+            debug_assert!(t.id >= 0);
+            debug_assert!(t.max_v < 0);
+            let (v0, v1, v2) = tri(&verts[..], t.vi);
+            let tri_plane = Plane::from_tri(v0, v1, v2);
+            if tri_plane.offset > face.offset {
+                face = tri_plane;
+            }
+        }
+        let v = max_dir(face.normal);
+        let p = Plane::from_norm_and_point(face.normal, v);
+
+        if p.offset > plane.offset {
+            plane = p;
+        }
+
+        if let Some(_) = verts.iter().find(|e| **e == v) {
+            return plane;
+        }
+
+        if plane.offset >= face.offset - epsilon {
+            return plane;
+        }
+
+        let vid = verts.len();
+        verts.push(v);
+        for j in (0..tris.len()).rev() {
+            if tris[j].dead() { continue; }
+            let t = tris[j].vi;
+            if above(&verts[..], t, verts[vid], 0.01*epsilon) {
+                extrude(&mut tris, j, vid)
+            }
+        }
+
+        {
+            let mut ii: isize = tris.len() as isize;
+            loop {
+                ii -= 1;
+                if ii < 0 { break; }
+                let iu = ii as usize;
+                if tris[iu].dead() { continue; }
+                if !tris[iu].vi.has_vert(vid as i32) { break; }
+
+                let nt = tris[iu].vi;
+                let (nv0, nv1, nv2) = tri(&verts[..], nt);
+                if above(&verts[..], nt, center, 0.01*epsilon) ||
+                        cross(nv1-nv0, nv2-nv0).length() < epsilon*epsilon*0.1 {
+                    debug_assert!(tris[iu].ni[0] >= 0);
+                    let nb = tris[iu].ni[0] as usize;
+                    debug_assert!(!tris[nb].dead());
+                    debug_assert!(!tris[nb].vi.has_vert(vid as i32));
+                    debug_assert!(tris[nb].id < (ii as i32));
+                    extrude(&mut tris, nb, vid);
+                    ii = tris.len() as isize;
+                }
+            }
+        }
+
+        for j in (0..tris.len()).rev() {
+            if !tris[j].dead() { continue; }
+
+            // remove dead
+            for j in (0..tris.len()).rev() {
+                if !tris[j].dead() {
+                    continue;
+                }
+                let last = tris.len()-1;
+                swap_neib(&mut tris[..], j, last);
+                tris.pop();
+            }
+        }
+    }
+}
+
 // pub fn compute_hull(verts: &mut [V3]) -> Vec<[i32; 3]> {
 //     compute_hull_bounded(verts, 0)
 // }
@@ -459,3 +557,5 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[
     }
     Some(res)
 }
+
+

@@ -1,4 +1,8 @@
-use math::*;
+use math::vec::*;
+use math::mat::*;
+use math::scalar::*;
+use math::traits::*;
+use math::quat::*;
 
 #[inline]
 pub fn tri_normal(v0: V3, v1: V3, v2: V3) -> V3 {
@@ -64,8 +68,12 @@ impl Plane {
 
     #[inline]
     pub fn from_tri(v0: V3, v1: V3, v2: V3) -> Plane {
-        let n = tri_normal(v0, v1, v2);
-        Plane::new(n, -dot(n, v0))
+        Plane::from_norm_and_point(tri_normal(v0, v1, v2), v0)
+    }
+
+    #[inline]
+    pub fn from_norm_and_point(n: V3, pt: V3) -> Plane {
+        Plane::new(n, -dot(n, pt))
     }
 
     #[inline]
