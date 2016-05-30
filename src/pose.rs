@@ -28,7 +28,7 @@ impl Pose {
     }
 
     #[inline]
-    pub fn get_matrix(&self) -> M4x4 {
+    pub fn to_mat4(&self) -> M4x4 {
         M4x4::from_pose(self.position, self.orientation)
     }
 }

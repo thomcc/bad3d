@@ -23,5 +23,3 @@ pub fn max_index<T: PartialOrd>(arr: &[T]) -> usize {
     }
     max_idx
 }
-
-

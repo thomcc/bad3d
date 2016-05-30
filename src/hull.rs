@@ -118,7 +118,7 @@ impl Tri {
     fn neib_idx(&self, va: i32, vb: i32) -> i32 {
         for i in 0..3 {
             let (i1, i2) = next_mod3(i);
-            if (self.vi[i] == va && self.vi[i1] == vb) || 
+            if (self.vi[i] == va && self.vi[i1] == vb) ||
                (self.vi[i] == vb && self.vi[i1] == va) {
                 return i2 as i32
             }
@@ -258,7 +258,7 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
 
     let b0 = verts[p0] - verts[p1];
 
-    if p0 == p1 || near_zero(dot(b0, b0)) {
+    if p0 == p1 || approx_zero(dot(b0, b0)) {
         return None;
     }
 
