@@ -95,6 +95,14 @@ pub trait VecType
     #[inline] fn length_sq(self) -> f32 { self.dot(self) }
     #[inline] fn length(self) -> f32 { self.length_sq().sqrt() }
 
+    #[inline] fn towards(self, o: Self) -> Self { o - self }
+    #[inline] fn dir_towards(self, o: Self) -> Self { self.towards(o).norm_or_zero() }
+
+    #[inline] fn dist_sq(self, o: Self) -> f32 { (o - self).length_sq() }
+    #[inline] fn dist(self, o: Self) -> f32 { (o - self).length() }
+
+    #[inline] fn same_dir(self, o: Self) -> bool { self.dot(o) > 0.0 }
+
     #[inline]
     fn norm_len_e(self, e: f32) -> (Option<Self>, f32) {
         let l = self.length();
@@ -304,6 +312,7 @@ macro_rules! do_vec_boilerplate {
             type Output = $Vn;
             #[inline]
             fn div(self, o: $Vn) -> $Vn {
+                debug_assert!($(o.$field != 0.0) && +);
                 $Vn{ $($field: (self.$field / o.$field)),+ }
             }
         }
@@ -328,6 +337,7 @@ macro_rules! do_vec_boilerplate {
             type Output = $Vn;
             #[inline]
             fn div(self, o: f32) -> $Vn {
+                debug_assert!(o != 0.0);
                 let inv = 1.0 / o;
                 $Vn{ $($field: (self.$field * inv)),+ }
             }
@@ -400,9 +410,6 @@ macro_rules! do_vec_boilerplate {
             }
 
             #[inline] pub fn nlerp(self, o: $Vn, t: f32) -> $Vn { self.lerp(o, t).norm_or_v(o) }
-            #[inline] pub fn distance_sq(self, o: $Vn) -> f32 { (o - self).length_sq() }
-            #[inline] pub fn distance(self, o: $Vn) -> f32 { (o - self).length() }
-            #[inline] pub fn toward(self, o: $Vn) -> $Vn { o - self }
 
             #[inline]
             pub fn norm_or(self, $($field: f32),+) -> $Vn {
@@ -562,4 +569,14 @@ pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
     }
 
     Some((min_bound, max_bound))
+}
+
+#[inline]
+pub fn same_dir<T: VecType>(a: T, b: T) -> bool {
+    a.same_dir(b)
+}
+
+#[inline]
+pub fn same_dir_e<T: VecType>(a: T, b: T, epsilon: f32) -> bool {
+    a.dot(b) > epsilon
 }

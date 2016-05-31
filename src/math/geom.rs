@@ -5,8 +5,18 @@ use math::traits::*;
 use math::quat::*;
 
 #[inline]
+pub fn tri_face_dir(v0: V3, v1: V3, v2: V3) -> V3 {
+    cross(v1 - v0, v2 - v1)
+}
+
+#[inline]
 pub fn tri_normal(v0: V3, v1: V3, v2: V3) -> V3 {
-    cross(v1 - v0, v2 - v1).norm_or(0.0, 0.0, 1.0)
+    tri_face_dir(v0, v1, v2).norm_or(0.0, 0.0, 1.0)
+}
+
+#[inline]
+pub fn tri_area(v0: V3, v1: V3, v2: V3) -> f32 {
+    tri_face_dir(v0, v1, v2).length()
 }
 
 #[inline]
@@ -25,7 +35,7 @@ pub fn barycentric(v0: V3, v1: V3, v2: V3, s: V3) -> V3 {
     if let Some(inv) = m.inverse() {
         inv * s
     } else {
-        let k: usize = if v2.distance_sq(v1) > v2.distance_sq(v0) { 1 } else { 0 };
+        let k: usize = if v2.dist_sq(v1) > v2.dist_sq(v0) { 1 } else { 0 };
         let t = line_project_time(v2, m.col(k), s);
         let kf = k as f32;
         vec3((1.0 - kf) * t, kf * t, 1.0 - t)
@@ -37,7 +47,7 @@ pub fn tri_project(v0: V3, v1: V3, v2: V3, pt: V3) -> V3 {
     let cp_pd = -dot(cp, v0);
     let cp_l2 = cp.length_sq();
     if cp_l2.approx_zero() {
-        let line_end = if v0.distance_sq(v1) > v0.distance_sq(v2) { v1 } else { v2 };
+        let line_end = if v0.dist_sq(v1) > v0.dist_sq(v2) { v1 } else { v2 };
         line_project(v0, line_end, pt )
     } else {
         pt - cp * ((dot(cp, pt) + cp_pd) / cp_l2)
