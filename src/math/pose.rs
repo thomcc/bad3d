@@ -17,8 +17,13 @@ impl Pose {
     }
 
     #[inline]
-    pub fn identity() -> Pose {
-        Pose::new(V3::zero(), Quat::identity())
+    pub fn from_translation(xyz: V3) -> Pose {
+        Pose::new(xyz, Quat::identity())
+    }
+
+    #[inline]
+    pub fn from_rotation(q: Quat) -> Pose {
+        Pose::new(V3::zero(), q)
     }
 
     #[inline]
@@ -31,6 +36,10 @@ impl Pose {
     pub fn to_mat4(&self) -> M4x4 {
         M4x4::from_pose(self.position, self.orientation)
     }
+}
+
+impl Identity for Pose {
+    #[inline] fn identity() -> Pose { Pose::new(V3::zero(), Quat::identity()) }
 }
 
 impl Mul<V3> for Pose {

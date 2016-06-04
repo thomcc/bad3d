@@ -12,7 +12,7 @@ pub struct V2 {
     pub y: f32,
 }
 
-#[inline(always)]
+#[inline]
 pub fn vec2(x: f32, y: f32) -> V2 {
     V2 { x: x, y: y }
 }
@@ -24,7 +24,7 @@ pub struct V3 {
     pub z: f32,
 }
 
-#[inline(always)]
+#[inline]
 pub fn vec3(x: f32, y: f32, z: f32) -> V3 {
     V3 { x: x, y: y, z: z }
 }
@@ -37,7 +37,7 @@ pub struct V4 {
     pub w: f32,
 }
 
-#[inline(always)]
+#[inline]
 pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
     V4 { x: x, y: y, z: z, w: w }
 }
@@ -76,7 +76,7 @@ pub trait VecType
     fn count() -> usize;
     fn splat(v: f32) -> Self;
 
-    #[inline(always)] fn zero() -> Self { Self::splat(0.0) }
+    #[inline] fn zero() -> Self { Self::splat(0.0) }
 
     #[inline] fn max_elem(self) -> f32 { self.fold(|a, b| a.max(b)) }
     #[inline] fn min_elem(self) -> f32 { self.fold(|a, b| a.min(b)) }
@@ -119,7 +119,7 @@ pub trait VecType
     #[inline] fn normalize(self) -> Option<Self> { self.norm_len().0 }
     #[inline] fn norm_or_zero(self) -> Self { self.normalize().unwrap_or(Self::zero()) }
     #[inline] fn norm_or_v(self, v: Self) -> Self { self.normalize().unwrap_or(v) }
-    #[inline] fn norm_or_panic(self) -> Self { self.normalize().unwrap() }
+    #[inline] fn must_norm(self) -> Self { self.normalize().unwrap() }
 
     #[inline] fn is_zero(self) -> bool { self.dot(self) == 0.0_f32 }
     #[inline] fn hadamard(self, o: Self) -> Self { self.map2(o, |a, b| a * b) }
@@ -154,12 +154,12 @@ impl<T: Map> Lerp for T {
 }
 
 impl Fold for V2 {
-    #[inline(always)]
+    #[inline]
     fn fold<F: Fn(f32, f32) -> f32>(self, f: F) -> f32 {
         f(self.x, self.y)
     }
 
-    #[inline(always)]
+    #[inline]
     fn fold2_init<T, F>(self, o: Self, init: T, f: F) -> T
             where F: Fn(T, f32, f32) -> T {
         f(f(init, o.x, self.x), o.y, self.y)
@@ -167,12 +167,12 @@ impl Fold for V2 {
 }
 
 impl Fold for V3 {
-    #[inline(always)]
+    #[inline]
     fn fold<F: Fn(f32, f32) -> f32>(self, f: F) -> f32 {
         f(f(self.x, self.y), self.z)
     }
 
-    #[inline(always)]
+    #[inline]
     fn fold2_init<T, F>(self, o: Self, init: T, f: F) -> T
             where F: Fn(T, f32, f32) -> T {
         f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z)
@@ -180,12 +180,12 @@ impl Fold for V3 {
 }
 
 impl Fold for V4 {
-    #[inline(always)]
+    #[inline]
     fn fold<F: Fn(f32, f32) -> f32>(self, f: F) -> f32 {
         f(f(f(self.x, self.y), self.z), self.w)
     }
 
-    #[inline(always)]
+    #[inline]
     fn fold2_init<T, F>(self, o: Self, init: T, f: F) -> T
             where F: Fn(T, f32, f32) -> T {
         f(f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z), o.w, self.w)
@@ -418,19 +418,19 @@ macro_rules! do_vec_boilerplate {
         }
 
         impl Identity for $Vn {
-            #[inline(always)]
+            #[inline]
             fn identity() -> Self { $Vn::zero() }
         }
 
         impl Map for $Vn {
-            #[inline(always)]
+            #[inline]
             fn map3<F: Fn(f32, f32, f32) -> f32>(self, a: Self, b: Self, f: F) -> Self {
                 $Vn{ $($field: f(self.$field, a.$field, b.$field)),+ }
             }
         }
 
         impl VecType for $Vn {
-            #[inline(always)] fn count() -> usize { $length }
+            #[inline] fn count() -> usize { $length }
             #[inline] fn splat(v: f32) -> $Vn { $Vn{ $($field: v),+ } }
         }
     }
@@ -542,7 +542,14 @@ pub fn clamp_s<T: VecType>(a: T, min: f32, max: f32) -> T {
     a.clamp(T::splat(min), T::splat(max))
 }
 
-pub fn max_dir(arr: &[V3], dir: V3) -> Option<usize> {
+pub fn max_dir(arr: &[V3], dir: V3) -> Option<V3> {
+    match max_dir_index(arr, dir) {
+        Some(index) => Some(arr[index]),
+        None => None
+    }
+}
+
+pub fn max_dir_index(arr: &[V3], dir: V3) -> Option<usize> {
      if arr.len() == 0 {
         return None;
     }

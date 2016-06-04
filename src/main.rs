@@ -3,6 +3,8 @@
 #[macro_use] mod util;
 mod math;
 mod hull;
+mod support;
+mod gjk;
 
 use math::{V3, M3x3};
 use std::mem;

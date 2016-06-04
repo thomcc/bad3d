@@ -8,7 +8,7 @@ use std::mem;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Quat(pub V4);
 
-#[inline(always)]
+#[inline]
 pub fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
     Quat(vec4(x, y, z, w))
 }
@@ -19,11 +19,11 @@ impl AsRef<V4> for Quat { #[inline] fn as_ref(&    self) -> &    V4 { unsafe { m
 impl AsMut<V4> for Quat { #[inline] fn as_mut(&mut self) -> &mut V4 { unsafe { mem::transmute(self) } } }
 
 impl Identity for Quat {
-    #[inline(always)] fn identity() -> Quat { quat(0.0, 0.0, 0.0, 1.0) }
+    #[inline] fn identity() -> Quat { quat(0.0, 0.0, 0.0, 1.0) }
 }
 
 impl Default for Quat {
-    #[inline(always)] fn default() -> Quat { quat(0.0, 0.0, 0.0, 1.0) }
+    #[inline] fn default() -> Quat { quat(0.0, 0.0, 0.0, 1.0) }
 }
 
 impl Mul<f32> for Quat {

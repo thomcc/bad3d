@@ -334,6 +334,24 @@ impl M4x4 {
     }
 }
 
+impl Identity for M2x2 {
+    #[inline] fn identity() -> M2x2 { mat2(1.0, 0.0, 0.0, 1.0) }
+}
+
+impl Identity for M3x3 {
+    #[inline] fn identity() -> M3x3 { mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0) }
+}
+
+impl Identity for M4x4 {
+    #[inline]
+    fn identity() -> M4x4 {
+        mat4(1.0, 0.0, 0.0, 0.0,
+             0.0, 1.0, 0.0, 0.0,
+             0.0, 0.0, 1.0, 0.0,
+             0.0, 0.0, 0.0, 1.0)
+    }
+}
+
 pub trait MatType
     : Copy
     + Clone
@@ -342,6 +360,7 @@ pub trait MatType
     + Mul<Self, Output = Self>
     + Mul<f32, Output = Self>
     + Div<f32, Output = Self>
+    + Identity
     // + Mul<Self::Vec, Output = Self::Vec>
     // + Index<usize, Output = Self::Vec>
     // + IndexMut<usize>
@@ -362,6 +381,11 @@ pub trait MatType
         } else {
             Some(self.adjugate() * (1.0 / d))
         }
+    }
+
+    #[inline]
+    fn inverse_or_id(&self) -> Self {
+        self.inverse().unwrap_or(Identity::identity())
     }
 }
 

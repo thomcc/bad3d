@@ -4,7 +4,7 @@ pub trait ApproxEq {
     fn approx_eq_e(&self, o: &Self, e: f32) -> bool;
     // fn approx_eq_ra(&self, o: &Self, rel_tol: f32, abs_tol: f32) -> bool;
 
-    #[inline(always)]
+    #[inline]
     fn default_epsilon() -> f32 {
         1.0e-6_f32
     }
@@ -55,13 +55,13 @@ pub trait Map: Copy + Clone {
     fn map3<F>(self, a: Self, b: Self, f: F) -> Self
             where F: Fn(f32, f32, f32) -> f32;
 
-    #[inline(always)]
+    #[inline]
     fn map2<F>(self, o: Self, f: F) -> Self
             where F: Fn(f32, f32) -> f32 {
         self.map3(o, self, |a, b, _| f(a, b))
     }
 
-    #[inline(always)]
+    #[inline]
     fn map<F>(self, f: F) -> Self
             where F: Fn(f32) -> f32 {
         self.map3(self, self, |a, _, _| f(a))

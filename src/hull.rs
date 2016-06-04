@@ -145,7 +145,7 @@ impl Tri {
         let (v0, v1, v2) = tri(verts, self.vi);
         let n = tri_normal(v0, v1, v2);
 
-        let vmax = max_dir(verts, n).unwrap();
+        let vmax = max_dir_index(verts, n).unwrap();
         self.max_v = vmax as i32;
 
         if extreme_map.is_some() && extreme_map.unwrap()[vmax] {
@@ -264,8 +264,8 @@ fn find_extrudable(tris: &[Tri], epsilon: f32) -> Option<usize> {
 fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b0 = vec3(0.01, 0.02, 1.0);
 
-    let p0 = try_opt!(max_dir(verts,  b0));
-    let p1 = try_opt!(max_dir(verts, -b0));
+    let p0 = try_opt!(max_dir_index(verts,  b0));
+    let p1 = try_opt!(max_dir_index(verts, -b0));
 
     let b0 = verts[p0] - verts[p1];
 
@@ -279,9 +279,9 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b1 = try_opt!(if b1.length_sq() > b2.length_sq() { b1 }
                       else { b2 }.normalize());
 
-    let p2 = try_opt!(max_dir(verts, b1));
+    let p2 = try_opt!(max_dir_index(verts, b1));
 
-    let p2 = if p2 == p0 || p2 == p1 { try_opt!(max_dir(verts, -b1)) }
+    let p2 = if p2 == p0 || p2 == p1 { try_opt!(max_dir_index(verts, -b1)) }
              else { p2 };
 
     if p2 == p0 || p2 == p1 {
@@ -291,9 +291,9 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b1 = verts[p2] - verts[p0];
     let b2 = cross(b1, b2);
 
-    let p3 = try_opt!(max_dir(verts, b2));
+    let p3 = try_opt!(max_dir_index(verts, b2));
 
-    let p3 = if p3 == p0 || p3 == p1 || p3 == p2 { try_opt!(max_dir(verts, -b2)) }
+    let p3 = if p3 == p0 || p3 == p1 || p3 == p2 { try_opt!(max_dir_index(verts, -b2)) }
              else { p3 };
 
     if p3 == p0 || p3 == p1 || p3 == p2 {
