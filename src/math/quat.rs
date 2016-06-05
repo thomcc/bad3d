@@ -1,6 +1,7 @@
 use math::vec::*;
 use math::traits::*;
 use math::mat::*;
+use math::geom;
 
 use std::ops::*;
 use std::mem;
@@ -204,6 +205,21 @@ impl Quat {
             let s = ((1.0 + d) * 2.0).sqrt();
             Quat(V4::expand(c / s, s / 2.0))
         }
+    }
+
+    pub fn virtual_track_ball(cop: V3, cor: V3, dir1: V3, dir2: V3) -> Quat {
+        let normal = cor - cop;
+        let fudge = 1.0 - normal.length()*0.25;
+        let normal = normal.norm_or(0.0, 0.0, 1.0);
+        let plane = geom::Plane::from_norm_and_point(normal, cor);
+
+        let u = (plane.intersect_with_line(cop, cop+dir1) - cor) * fudge;
+        let v = (plane.intersect_with_line(cop, cop+dir2) - cor) * fudge;
+
+        let mu = u.length();
+        let mv = v.length();
+        Quat::shortest_arc(if mu > 1.0 { u / mu } else { u - normal * (1.0 - mu*mu).sqrt() },
+                           if mv > 1.0 { v / mv } else { v - normal * (1.0 - mv*mv).sqrt() })
     }
 }
 

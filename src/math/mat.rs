@@ -6,12 +6,14 @@ use std::ops::*;
 use std::mem;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct M2x2 {
     pub x: V2,
     pub y: V2,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct M3x3 {
     pub x: V3,
     pub y: V3,
@@ -19,6 +21,7 @@ pub struct M3x3 {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+#[repr(C)]
 pub struct M4x4 {
     pub x: V4,
     pub y: V4,
@@ -147,6 +150,7 @@ macro_rules! do_mat_boilerplate {
 
         // would be nice if we did this for tuples too...
         define_conversions!($Mn, [f32; $elems]);
+        define_conversions!($Mn, [[f32; $size]; $size]);
         define_conversions!($Mn, [$Vn; $size]);
 
 
@@ -533,7 +537,7 @@ impl M4x4 {
     }
 
     #[inline]
-    pub fn from_perspective(fovy: f32, aspect: f32, n: f32, f: f32) -> M4x4 {
+    pub fn perspective(fovy: f32, aspect: f32, n: f32, f: f32) -> M4x4 {
         let y = n * (fovy*0.5).tan();
         let x = y * aspect;
         M4x4::new_frustum(-x, x, -y, y, n, f)

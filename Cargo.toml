@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Thom Chiovoloni <tchiovoloni@mozilla.com>"]
 
 [dependencies]
+glium = "*"
+rand = "0.3"

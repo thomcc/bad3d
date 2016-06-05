@@ -234,12 +234,7 @@ impl Simplex {
         }
         let (pa, pb) = self.points[0..(self.size as usize)].iter().fold((V3::zero(), V3::zero()),
             |(pa, pb), p| (pa + p.t*p.a, pb + p.t*p.b));
-        /*let pa = V3::zero();
-        let pb = V3::zero();
-        for i in 0..self.size {
-            pa += pts[i].t * pts[i].a;
-            pb += pts[i].t * pts[i].b;
-        }*/
+
 
         let norm = self.v.norm_or(0.0, 0.0, 1.0);
         let impact = (pa + pb) * 0.5;

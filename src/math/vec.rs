@@ -7,6 +7,7 @@ use math::quat::*;
 use math::traits::*;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct V2 {
     pub x: f32,
     pub y: f32,
@@ -18,6 +19,7 @@ pub fn vec2(x: f32, y: f32) -> V2 {
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct V3 {
     pub x: f32,
     pub y: f32,
@@ -30,6 +32,7 @@ pub fn vec3(x: f32, y: f32, z: f32) -> V3 {
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
+#[repr(C)]
 pub struct V4 {
     pub x: f32,
     pub y: f32,

@@ -440,16 +440,12 @@ pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -
 }
 
 
-fn finish_hull(tris: &[Tri], verts: &mut [V3]) -> Vec<[i32; 3]> {
-    let mut res: Vec<[i32; 3]> = tris.iter()
-        .map(|t| t.vi.at)
-        .collect::<Vec<[i32; 3]>>();
-
+fn finish_hull(tris: &mut [Tri], verts: &mut [V3]) -> Vec<[u16; 3]> {
     let mut used = vec![0usize; verts.len()];
     let mut map = vec![0isize; verts.len()];
 
-    for t in &res {
-        for ti in t.iter() {
+    for t in tris.iter() {
+        for ti in &t.vi.at {
             used[*ti as usize] += 1;
         }
     }
@@ -465,20 +461,25 @@ fn finish_hull(tris: &[Tri], verts: &mut [V3]) -> Vec<[i32; 3]> {
         }
     }
 
-    for i in 0..res.len() {
+    for i in 0..tris.len() {
         for j in 0..3 {
-            let old_pos = res[i][j];
-            res[i][j] = map[old_pos as usize] as i32;
+            let old_pos = tris[i].vi[j];
+            tris[i].vi[j] = map[old_pos as usize] as i32;
         }
     }
-    res
+
+    tris.iter()
+        .map(|t| [t.vi[0] as u16, t.vi[1] as u16, t.vi[2] as u16])
+        .collect::<Vec<[u16; 3]>>()
 }
 
-pub fn compute_hull(verts: &mut [V3]) -> Option<Vec<[i32; 3]>> {
+
+
+pub fn compute_hull(verts: &mut [V3]) -> Option<Vec<[u16; 3]>> {
     compute_hull_bounded(verts, 0)
 }
 
-pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[i32; 3]>> {
+pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[u16; 3]>> {
     assert!(verts.len() > 4);
     assert!(verts.len() < (i32::MAX as usize));
 
@@ -543,7 +544,7 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[
         vert_limit -= 1;
     }
 
-    Some(finish_hull(&tris[..], verts))
+    Some(finish_hull(&mut tris[..], verts))
 }
 
 
