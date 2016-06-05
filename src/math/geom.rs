@@ -124,5 +124,53 @@ impl Plane {
 }
 
 
+pub fn volume<Tri: TriIndices>(verts: &[V3], tris: &[Tri]) -> f32 {
+    (1.0 / 6.0) * tris.iter().fold(0.0, |acc, tri| {
+        let (a, b, c) = tri.tri_indices();
+        acc + M3x3::from_cols(verts[a], verts[b], verts[c]).determinant()
+    })
+}
+
+pub fn center_of_mass<Tri: TriIndices>(verts: &[V3], tris: &[Tri]) -> V3 {
+    let (com, vol) = tris.iter().fold((V3::zero(), 0.0), |(acom, avol), tri| {
+        let (a, b, c) = tri.tri_indices();
+        let m = M3x3::from_cols(verts[a], verts[b], verts[c]);
+        let vol = m.determinant();
+        (acom + vol * (m.x + m.y + m.z),
+         avol + vol)
+    });
+    com / (vol * 4.0)
+}
+
+pub fn inertia<Tri: TriIndices>(verts: &[V3], tris: &[Tri], com: V3) -> M3x3 {
+    let mut volume = 0.0f32;
+    let mut diag = V3::zero();
+    let mut offd = V3::zero();
+
+    for tri in tris.iter() {
+        let (a, b, c) = tri.tri_indices();
+        let m = M3x3::from_cols(verts[a]-com, verts[b]-com, verts[c]-com);
+        let d = m.determinant();
+        volume += d;
+        for j in 0..3 {
+            let j1 = (j + 1) % 3;
+            let j2 = (j + 2) % 3;
+            diag[j] += (m.x[j]*m.y[j] + m.y[j]*m.z[j] + m.z[j]*m.x[j] +
+                        m.x[j]*m.x[j] + m.y[j]*m.y[j] + m.z[j]*m.z[j]) * d;
+            offd[j] += ((m.x[j1]*m.y[j2] + m.y[j1]*m.z[j2] + m.z[j1]*m.x[j2]) +
+                        (m.x[j1]*m.z[j2] + m.y[j1]*m.x[j2] + m.z[j1]*m.y[j2]) +
+                        (m.x[j1]*m.x[j2] + m.y[j1]*m.y[j2] + m.z[j1]*m.z[j2]) * 2.0) * d;
+        }
+    }
+
+    diag /= volume * 10.0;
+    offd /= volume * 20.0;
+
+    mat3(diag.y + diag.z, -offd.z,         -offd.y,
+         -offd.z,         diag.x + diag.z, -offd.x,
+         -offd.y,         -offd.x,          diag.x + diag.y)
+}
+
+
 
 

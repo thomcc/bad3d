@@ -13,6 +13,7 @@ mod hull;
 
 mod support;
 mod gjk;
+mod phys;
 
 use math::*;
 use std::mem;

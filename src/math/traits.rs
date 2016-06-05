@@ -50,6 +50,10 @@ pub trait Fold: Copy + Clone {
     }
 }
 
+pub trait TriIndices {
+    fn tri_indices(&self) -> (usize, usize, usize);
+}
+
 pub trait Map: Copy + Clone {
 
     fn map3<F>(self, a: Self, b: Self, f: F) -> Self
@@ -65,6 +69,34 @@ pub trait Map: Copy + Clone {
     fn map<F>(self, f: F) -> Self
             where F: Fn(f32) -> f32 {
         self.map3(self, self, |a, _, _| f(a))
+    }
+}
+
+impl TriIndices for [u16; 3] {
+    #[inline]
+    fn tri_indices(&self) -> (usize, usize, usize) {
+        (self[0] as usize, self[1] as usize, self[2] as usize)
+    }
+}
+
+impl TriIndices for (u16, u16, u16) {
+    #[inline]
+    fn tri_indices(&self) -> (usize, usize, usize) {
+        (self.0 as usize, self.1 as usize, self.2 as usize)
+    }
+}
+
+impl TriIndices for [u32; 3] {
+    #[inline]
+    fn tri_indices(&self) -> (usize, usize, usize) {
+        (self[0] as usize, self[1] as usize, self[2] as usize)
+    }
+}
+
+impl TriIndices for (u32, u32, u32) {
+    #[inline]
+    fn tri_indices(&self) -> (usize, usize, usize) {
+        (self.0 as usize, self.1 as usize, self.2 as usize)
     }
 }
 

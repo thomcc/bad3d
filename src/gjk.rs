@@ -325,8 +325,8 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct ContactPatch {
-    hit_info: [ContactInfo; 5],
-    count: usize,
+    pub hit_info: [ContactInfo; 5],
+    pub count: usize,
 }
 
 impl ContactPatch {

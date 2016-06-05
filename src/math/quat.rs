@@ -123,6 +123,44 @@ impl Quat {
         quat(-self.0.x, -self.0.y, -self.0.z, self.0.w)
     }
 
+    #[inline]
+    pub fn normalize(self) -> Option<Quat> {
+        match self.0.normalize() {
+            Some(n) => Some(Quat(n)),
+            None => None
+        }
+    }
+
+    #[inline]
+    pub fn must_norm(self) -> Quat {
+        Quat(self.0.normalize().unwrap())
+    }
+
+    #[inline]
+    pub fn norm_or_zero(self) -> Quat {
+        Quat(self.0.norm_or_zero())
+    }
+
+    #[inline]
+    pub fn norm_or_identity(self) -> Quat {
+        Quat(self.0.norm_or(0.0, 0.0, 0.0, 1.0))
+    }
+
+    #[inline]
+    pub fn norm_or_q(self, q: Quat) -> Quat {
+        Quat(self.0.norm_or_v(q.0))
+    }
+
+    #[inline]
+    pub fn norm_or_v(self, v: V4) -> Quat {
+        Quat(self.0.norm_or_v(v))
+    }
+
+    #[inline]
+    pub fn norm_or(self, x: f32, y: f32, z: f32, w: f32) -> Quat {
+        Quat(self.0.norm_or(x, y, z, w))
+    }
+
     #[inline] pub fn length_sq(self) -> f32 { self.0.length_sq() }
     #[inline] pub fn length(self) -> f32 { self.0.length() }
     #[inline] pub fn dot(self, o: Quat) -> f32 { self.0.dot(o.0) }

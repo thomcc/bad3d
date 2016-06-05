@@ -107,6 +107,13 @@ pub trait VecType
     #[inline] fn same_dir(self, o: Self) -> bool { self.dot(o) > 0.0 }
 
     #[inline]
+    fn clamp_length(self, max_len: f32) -> Self {
+        let len = self.length();
+        if len < max_len { self }
+        else { self * (max_len / len) }
+    }
+
+    #[inline]
     fn norm_len_e(self, e: f32) -> (Option<Self>, f32) {
         let l = self.length();
         if l.approx_zero_e(e) {
@@ -123,6 +130,9 @@ pub trait VecType
     #[inline] fn norm_or_zero(self) -> Self { self.normalize().unwrap_or(Self::zero()) }
     #[inline] fn norm_or_v(self, v: Self) -> Self { self.normalize().unwrap_or(v) }
     #[inline] fn must_norm(self) -> Self { self.normalize().unwrap() }
+
+    #[inline] fn is_normalized(self) -> bool { self.length().approx_eq(&1.0) }
+    #[inline] fn is_normalized_e(self, epsilon: f32) -> bool { self.length().approx_eq_e(&1.0, epsilon) }
 
     #[inline] fn is_zero(self) -> bool { self.dot(self) == 0.0_f32 }
     #[inline] fn hadamard(self, o: Self) -> Self { self.map2(o, |a, b| a * b) }
@@ -565,20 +575,34 @@ pub fn max_dir_index(arr: &[V3], dir: V3) -> Option<usize> {
     Some(best_idx)
 }
 
-pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
-    if arr.len() == 0 {
-        return None;
+pub fn max_dir_i<I: Iterator<Item = V3>>(dir: V3, iter: &mut I) -> Option<V3> {
+    let initial = try_opt!(iter.next());
+
+    let mut best = initial;
+    for item in iter {
+        if dir.dot(item) > dir.dot(best) {
+            best = item;
+        }
     }
+    Some(best)
+}
 
-    let mut min_bound = arr[0];
-    let mut max_bound = arr[0];
 
-    for item in arr.iter() {
-        min_bound = min_bound.min(*item);
-        max_bound = max_bound.max(*item);
+pub fn compute_bounds_i<I, Vt>(iter: &mut I) -> Option<(Vt, Vt)>
+        where I: Iterator<Item = Vt>, Vt: VecType {
+    let initial = try_opt!(iter.next());
+
+    let mut min_bound = initial;
+    let mut max_bound = initial;
+    for item in iter {
+        min_bound = min_bound.min(item);
+        max_bound = max_bound.max(item);
     }
-
     Some((min_bound, max_bound))
+}
+
+pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
+    compute_bounds_i(&mut arr.iter().map(|v| *v))
 }
 
 #[inline]

@@ -23,3 +23,33 @@ pub fn max_index<T: PartialOrd>(arr: &[T]) -> usize {
     }
     max_idx
 }
+
+#[macro_export]
+macro_rules! impl_ref_operators {
+    ($OperTrait:ident :: $func:ident, $lhs:ty, $rhs:ty) => {
+        impl<'a> $OperTrait<$rhs> for &'a $lhs {
+            type Output = <$lhs as $OperTrait<$rhs>>::Output;
+            #[inline]
+            fn $func(self, other: $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
+                $OperTrait::$func(*self, other)
+            }
+        }
+
+        impl<'a> $OperTrait<&'a $rhs> for $lhs {
+            type Output = <$lhs as $OperTrait<$rhs>>::Output;
+
+            #[inline] fn $func(self, other: &'a $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
+                $OperTrait::$func(self, *other)
+            }
+        }
+
+        impl<'a, 'b> $OperTrait<&'a $rhs> for &'b $lhs {
+            type Output = <$lhs as $OperTrait<$rhs>>::Output;
+
+            #[inline]
+            fn $func(self, other: &'a $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
+                $OperTrait::$func(*self, *other)
+            }
+        }
+    }
+}

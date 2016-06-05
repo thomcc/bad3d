@@ -130,6 +130,7 @@ macro_rules! define_conversions {
     }
 }
 
+
 macro_rules! do_mat_boilerplate {
     ($Mn: ident { $($field: ident : $index: expr),+ },
      $Vn: ident, $size: expr,
@@ -195,6 +196,12 @@ macro_rules! do_mat_boilerplate {
             type Output = $Mn;
             #[inline] fn div(self, rhs: f32) -> $Mn { self.map(|a| a / rhs) }
         }
+
+        impl_ref_operators!(Mul::mul, $Mn, $Mn);
+        impl_ref_operators!(Add::add, $Mn, $Mn);
+        impl_ref_operators!(Sub::sub, $Mn, $Mn);
+        impl_ref_operators!(Mul::mul, $Mn, f32);
+        impl_ref_operators!(Div::div, $Mn, f32);
 
         impl AddAssign<$Mn> for $Mn {
             #[inline] fn add_assign(&mut self, rhs: $Mn) { let res = self.add(rhs); *self = res; }
