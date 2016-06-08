@@ -27,7 +27,7 @@ pub fn line_project_time(p0: V3, p1: V3, a: V3) -> f32 {
 
 #[inline]
 pub fn line_project(p0: V3, p1: V3, a: V3) -> V3 {
-    p0.lerp(p1, line_project_time(p0, p1, a))
+    p0 + (p1 - p0) * line_project_time(p0, p1, a)//p0.lerp(p1, line_project_time(p0, p1, a))
 }
 
 pub fn barycentric(v0: V3, v1: V3, v2: V3, s: V3) -> V3 {
@@ -45,12 +45,12 @@ pub fn barycentric(v0: V3, v1: V3, v2: V3, s: V3) -> V3 {
 pub fn tri_project(v0: V3, v1: V3, v2: V3, pt: V3) -> V3 {
     let cp = cross(v2 - v0, v2 - v1);
     let cp_pd = -dot(cp, v0);
-    let cp_l2 = cp.length_sq();
+    let cp_l2 = dot(cp, cp);
     if cp_l2.approx_zero() {
-        let line_end = if v0.dist_sq(v1) > v0.dist_sq(v2) { v1 } else { v2 };
-        line_project(v0, line_end, pt )
+        let line_end = if (v1-v0).length() > (v2-v0).length() { v1 } else { v2 };// v0.dist_sq(v1) > v0.dist_sq(v2) { v1 } else { v2 };
+        line_project(v0, line_end, pt)
     } else {
-        pt - cp * ((dot(cp, pt) + cp_pd) / cp_l2)
+        pt - cp * (dot(cp, pt) + cp_pd) / cp_l2
     }
 }
 

@@ -116,7 +116,7 @@ pub trait VecType
     #[inline]
     fn norm_len_e(self, e: f32) -> (Option<Self>, f32) {
         let l = self.length();
-        if l.approx_zero_e(e) {
+        if l == 0.0 {
             (None, l)
         } else {
             let il = 1.0 / l;

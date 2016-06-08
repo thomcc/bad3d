@@ -1,7 +1,21 @@
 
 #[macro_export]
 macro_rules! try_opt {
-    ($e: expr) => (match $e { Some(e) => e, None => return None })
+    ($e: expr) => (
+        match $e {
+            Some(e) => e,
+            None => return None
+        }
+    );
+    ($e: expr, $($msg: expr),+) => (
+        match $e {
+            Some(e) => e,
+            None => {
+                println!($($msg),+);
+                return None
+            }
+        }
+    )
 }
 
 pub fn min_index<T: PartialOrd>(arr: &[T]) -> usize {

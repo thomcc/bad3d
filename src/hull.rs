@@ -264,37 +264,35 @@ fn find_extrudable(tris: &[Tri], epsilon: f32) -> Option<usize> {
 fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b0 = vec3(0.01, 0.02, 1.0);
 
-    let p0 = try_opt!(max_dir_index(verts,  b0));
-    let p1 = try_opt!(max_dir_index(verts, -b0));
+    let p0 = max_dir_index(verts,  b0).unwrap();
+    let p1 = max_dir_index(verts, -b0).unwrap();
 
     let b0 = verts[p0] - verts[p1];
 
-    if p0 == p1 || approx_zero(dot(b0, b0)) {
+    if p0 == p1 || b0 == V3::zero() {
         return None;
     }
 
     let b1 = cross(vec3(1.0, 0.0, 0.0), b0);
     let b2 = cross(vec3(0.0, 1.0, 0.0), b0);
 
-    let b1 = try_opt!(if b1.length_sq() > b2.length_sq() { b1 }
-                      else { b2 }.normalize());
+    let b1 = (if b1.length_sq() > b2.length_sq() { b1 } else { b2 }).must_norm();
 
-    let p2 = try_opt!(max_dir_index(verts, b1));
+    let p2 = max_dir_index(verts, b1).unwrap();
 
-    let p2 = if p2 == p0 || p2 == p1 { try_opt!(max_dir_index(verts, -b1)) }
-             else { p2 };
+    let p2 = if p2 == p0 || p2 == p1 { max_dir_index(verts, -b1).unwrap() } else { p2 };
 
     if p2 == p0 || p2 == p1 {
         return None;
     }
 
     let b1 = verts[p2] - verts[p0];
-    let b2 = cross(b1, b2);
 
-    let p3 = try_opt!(max_dir_index(verts, b2));
+    let b2 = cross(b1, b0);
 
-    let p3 = if p3 == p0 || p3 == p1 || p3 == p2 { try_opt!(max_dir_index(verts, -b2)) }
-             else { p3 };
+    let p3 = max_dir_index(verts, b2).unwrap();
+
+    let p3 = if p3 == p0 || p3 == p1 || p3 == p2 { max_dir_index(verts, -b2).unwrap() } else { p3 };
 
     if p3 == p0 || p3 == p1 || p3 == p2 {
         return None;
@@ -401,11 +399,8 @@ pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -
     let center = 0.25 * (simp.0 + simp.1 + simp.2 + simp.3);
 
     // possibly fix simplex winding
-    {
-        let (iv0, iv1, iv2, iv3) = simp;
-        if same_dir(cross(iv2-iv0, iv1-iv0), iv0.towards(iv3)) {
-            verts.swap(2, 3);
-        }
+    if dot(cross(verts[2]-verts[0], verts[1]-verts[0]), verts[3] - verts[0]) > 0.0 {
+        verts.swap(2, 3);
     }
 
     loop {

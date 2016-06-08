@@ -119,6 +119,11 @@ impl Quat {
     #[inline] pub fn angle(self) -> f32 { self.0.w.acos() * 2.0 }
 
     #[inline]
+    pub fn from_axis_angle(axis: V3, angle: f32) -> Quat {
+        Quat(V4::expand(axis*(angle*0.5).sin(), (angle*0.5).cos()))
+    }
+
+    #[inline]
     pub fn conj(self) -> Quat {
         quat(-self.0.x, -self.0.y, -self.0.z, self.0.w)
     }

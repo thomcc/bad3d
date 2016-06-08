@@ -387,7 +387,7 @@ pub trait MatType
     #[inline]
     fn inverse(&self) -> Option<Self> {
         let d = self.determinant();
-        if d.approx_zero() {
+        if d == 0.0 {
             None
         } else {
             Some(self.adjugate() * (1.0 / d))
