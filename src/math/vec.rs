@@ -114,7 +114,7 @@ pub trait VecType
     }
 
     #[inline]
-    fn norm_len_e(self, e: f32) -> (Option<Self>, f32) {
+    fn norm_len(self) -> (Option<Self>, f32) {
         let l = self.length();
         if l == 0.0 {
             (None, l)
@@ -123,8 +123,6 @@ pub trait VecType
             (Some(self * il), l)
         }
     }
-
-    #[inline] fn norm_len(self) -> (Option<Self>, f32) { self.norm_len_e(1.0e-6_f32) }
 
     #[inline] fn normalize(self) -> Option<Self> { self.norm_len().0 }
     #[inline] fn norm_or_zero(self) -> Self { self.normalize().unwrap_or(Self::zero()) }

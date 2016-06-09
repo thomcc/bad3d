@@ -74,38 +74,6 @@ impl ContactInfo {
                 self.simplex.swap(2, 3);
             }
         }
-        /*
-        if src.size != 3 {
-            return;
-        }
-        let face_norm = geom::tri_normal(src.points[0].p, src.points[1].p, src.points[2].p);
-        let face_proj = dot(self.plane.normal, face_norm);
-        let (p0a, p1a, p2a) = (src.points[0].a, src.points[1].a, src.points[2].a);
-        let (p0b, p1b, p2b) = (src.points[0].b, src.points[1].b, src.points[2].b);
-
-        if p0a == p1a && p0a == p2a {
-            self.ty = ContactType::PtPlane;
-            self.simplex = [p0a, p0b, p1b, p2b];
-            if face_proj < 0.0 {
-                self.simplex.swap(1, 2);
-            }
-        }
-        else if p0b == p1b && p0b == p2b {
-            self.ty = ContactType::PlanePt;
-            self.simplex = [p0a, p1a, p2a, p2b];
-            if face_proj < 0.0 {
-                self.simplex.swap(1, 2);
-            }
-        }
-        else if (p0a == p1a || p0a == p2a || p1a == p2a) &&
-                (p0b == p1b || p0b == p2b || p1b == p2b) {
-            self.ty = ContactType::EdgeEdge;
-            self.simplex = [p0a, if p1a != p0a { p1a } else { p2a },
-                            p0b, if p1b != p0b { p1b } else { p2b }];
-            if (face_proj < 0.0 && p1a != p0a) || (face_proj > 0.0 && p1a == p0a) {
-                self.simplex.swap(2, 3);
-            }
-        }*/
     }
 }
 
@@ -164,34 +132,13 @@ impl Simplex {
         res
     }
 
-    // fn make2(v: V3, p0: Point, p1: Point) -> Simplex {
-    //     Simplex { v: v, size: 2, points: [p0, p1, Default::default(), Default::default()] }
-    // }
-
-    // fn make3(v: V3, p0: Point, p1: Point, p2: Point) -> Simplex {
-    //     Simplex { v: v, size: 3, points: [p0, p1, p2, Default::default()] }
-    // }
-
-    // fn from_point(w: &Point) -> Simplex {
-    //     Simplex {
-    //         v: w.p,
-    //         size: 1,
-    //         points: [
-    //             w.with_t(1.0),
-    //             Default::default(),
-    //             Default::default(),
-    //             Default::default()
-    //         ]
-    //     }
-    // }
-
     fn initial(v: V3) -> Simplex {
         Simplex { v: v, size: 0, .. Default::default() }
     }
 
     fn finish(&self, w: &Point) -> Simplex {
         debug_assert!(self.size == 3);
-        let mut result = *self; //Simplex{ v: V3::zero(), size: 4, .. *self };
+        let mut result = *self;
         result.points[3] = *w;
         result.size = 4;
         result.v = V3::zero();

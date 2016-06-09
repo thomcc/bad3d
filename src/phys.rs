@@ -30,7 +30,6 @@ pub struct Shape {
     pub planes: Option<Vec<V4>>
 }
 
-
 impl Shape {
     pub fn new(vertices: Vec<V3>, tris: Vec<[u16; 3]>) -> Shape {
         Shape { vertices: vertices, tris: tris, planes: None }
@@ -298,18 +297,6 @@ pub struct AngularConstraint {
 }
 
 impl AngularConstraint {
-    // #[inline]
-    // pub fn new(bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>), axis: V3)
-    //             -> AngularConstraint {
-    //     AngularConstraint {
-    //         bodies: bodies,
-    //         axis: axis,
-    //         target_spin: 0.0,
-    //         torque: 0.0,
-    //         torque_bounds: (-f32::MAX, f32::MAX)
-    //     }
-    // }
-
     #[inline]
     pub fn new(bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>), axis: V3, target_spin: f32, torque_bounds: (f32, f32))
                 -> AngularConstraint {
@@ -321,18 +308,6 @@ impl AngularConstraint {
             torque: 0.0,
         }
     }
-
-    // #[inline]
-    // pub fn with_spin(&mut self, target_spin: f32) -> &mut AngularConstraint {
-    //     self.target_spin = target_spin;
-    //     self
-    // }
-
-    // #[inline]
-    // pub fn limit_torque(&mut self, torque_min: f32, torque_max: f32) -> &mut AngularConstraint {
-    //     self.torque_bounds = (torque_min, torque_max);
-    //     self
-    // }
 
     #[inline]
     fn remove_bias(&mut self) {
@@ -394,7 +369,6 @@ pub struct LinearConstraint {
     pub friction_controller: isize,
 }
 
-
 impl LinearConstraint {
     #[inline]
     pub fn new(bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>),
@@ -441,16 +415,6 @@ impl LinearConstraint {
 
     #[inline]
     fn solve(&mut self, dt: f32, controller_impulse: Option<f32>) {
-        // let (f0, r0, v0) = rb_map_or(&self.bodies.0, (0.0, self.positions.0, V3::zero()), |rb| {
-        //     let r = rb.pose.orientation * self.positions.0;
-        //     (rb.friction, r, cross(rb.spin(), r) + rb.linear_momentum * rb.inv_mass)
-        // });
-
-        // let (f1, r1, v1) = rb_map_or(&self.bodies.1, (0.0, self.positions.1, V3::zero()), |rb| {
-        //     let r = rb.pose.orientation * self.positions.1;
-        //     (rb.friction, r, cross(rb.spin(), r) + rb.linear_momentum * rb.inv_mass)
-        // });
-
         if let Some(friction_impulse) = controller_impulse {
             let f0 = rb_map_or(&self.bodies.0, 0.0, |rb| rb.friction);
             let f1 = rb_map_or(&self.bodies.1, 0.0, |rb| rb.friction);
@@ -675,11 +639,6 @@ impl ConstraintSet {
 
             let min_sep = MAX_DRIFT * 0.25;
             let sep = cc.separation;
-            // if cc.plane.normal == V3::zero() {
-                // cc.separation
-            // } else {
-                // dot(cc.plane.normal, cc.points.0 - cc.points.1)
-            // };
 
             let bounce_vel = 0.0f32.max(
                 (-dot(cc.plane.normal, v) - GRAVITY.length() * BALLISTIC_FALLTIME) * RESTITUTION);

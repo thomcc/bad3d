@@ -4,7 +4,6 @@
 extern crate glium;
 
 extern crate rand;
-extern crate time;
 
 #[macro_use]
 mod util;
@@ -392,6 +391,7 @@ fn create_octa(display: &GlutinFacade, r: V3, com: V3) -> DemoObject {
     }
 }
 
+
 fn run_joint_test() {
 
     let body_sizes = [
@@ -457,14 +457,12 @@ fn run_joint_test() {
     demo_objects[0].body.borrow_mut().scale_mass(5.0);
 
 
-    use glium::index::PrimitiveType::*;
     for joint in joints.iter() {
         let mut body0 = demo_objects[joint.0].body.borrow_mut();
         let mut body1 = demo_objects[joint.1].body.borrow_mut();
 
         body0.ignored.insert(body1.id);
         body1.ignored.insert(body0.id);
-        let b1p = body1.pose;
         let pos = body0.pose*joint.3 - body1.pose.orientation*joint.4;
         body1.pose.position = pos;
         body1.start_pose.position = pos;
@@ -476,16 +474,13 @@ fn run_joint_test() {
     let program = glium::Program::from_source(&display,
         VERT_SRC, FRAG_SRC, None).unwrap();
 
-    let solid_program = glium::Program::from_source(&display,
-        SOLID_VERT_SRC, SOLID_FRAG_SRC, None).unwrap();
-
     let torque_limit = 38.0;
     let mut time = 0.0;
 
     // let camera = pose::Pose::new(vec3(0.0, -8.0, 0.0), quat(0.9, 0.0, 0.0, 1.0).must_norm());
     let world_geom = [ground_verts];
     while input_state.update(&display) {
-        let mut target = RefCell::new(display.draw());
+        let target = RefCell::new(display.draw());
 
 
         target.borrow_mut().clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
@@ -569,19 +564,11 @@ fn run_joint_test() {
         if need_reset {
             for body in bodies[0..body_sizes.len()].iter_mut() {
                 let momentum = body.borrow().linear_momentum;
-                let ang_momentum = body.borrow().angular_momentum;
                 let start_pose = body.borrow_mut().start_pose;
                 body.borrow_mut().linear_momentum = -momentum;
                 body.borrow_mut().pose = start_pose;
             }
             time = 0.0;
-            // for joint in joints.iter() {
-            //     let mut body0 = demo_objects[joint.0].body.borrow_mut();
-            //     let mut body1 = demo_objects[joint.1].body.borrow_mut();
-            //     let b1p = body1.pose;
-            //     body1.pose.position = body0.pose*joint.3 - b1p.orientation*joint.4;
-            // }
-
         }
     }
 }
@@ -639,10 +626,7 @@ impl GjkTestState {
             self.a_tris.clear();
             self.b_verts.clear();
             self.b_tris.clear();
-            // for v in self.all_verts[..].chunks(2) {
-            //     self.a_verts.push(v[0]);
-            //     self.b_verts.push(v[1]);
-            // }
+
             for v in &self.all_verts[0..self.all_verts.len()/2] {
                 self.a_verts.push(*v);
             }
@@ -664,7 +648,6 @@ impl GjkTestState {
     }
 }
 
-
 fn run_gjk_test() {
     let display = glium::glutin::WindowBuilder::new()
                         .with_depth_buffer(24)
@@ -685,13 +668,6 @@ fn run_gjk_test() {
 
     let solid_program = glium::Program::from_source(&display,
         SOLID_VERT_SRC, SOLID_FRAG_SRC, None).unwrap();
-
-    // let mut camera = Pose::identity();
-    // let mut proj_matrix = M4x4::identity();
-
-    // let default_color = [0.6, 0.6, 0.6f32, 1.0f32];
-
-    // let mut scene_matrix = M4x4::identity();
 
     let params = glium::DrawParameters {
         blend: glium::Blend::alpha_blending(),
@@ -897,15 +873,6 @@ fn create_demo_blob(display: &GlutinFacade, com: V3) -> DemoObject {
     DemoObject { body: body, meshes: meshes }
 }
 
-
-// fn delta_time(start: &PreciseTime, end: &PreciseTime) -> f64 {
-//     let d = end - start;
-//     let ms = d.num_milliseconds() as f32;
-//     let rd = d - time::Duration::milliseconds(ms);
-//     let ns = r.num_nanoseconds().unwrap_or(0) as f32;
-//     ms*1.0e-3 + ns*1.0e-9
-// }
-
 fn run_phys_test() {
     let display = glium::glutin::WindowBuilder::new()
                         .with_depth_buffer(24)
@@ -1009,12 +976,6 @@ fn run_phys_test() {
     let program = glium::Program::from_source(&display,
         VERT_SRC, FRAG_SRC, None).unwrap();
 
-    let solid_program = glium::Program::from_source(&display,
-        SOLID_VERT_SRC, SOLID_FRAG_SRC, None).unwrap();
-
-    let torque_limit = 38.0;
-
-    // let camera = pose::Pose::new(vec3(0.0, -8.0, 0.0), quat(0.9, 0.0, 0.0, 1.0).must_norm());
     let world_geom = [ground_verts];
     let mut running = false;
     while input_state.update(&display) {
@@ -1041,7 +1002,7 @@ fn run_phys_test() {
             }
         }
 
-        let mut target = RefCell::new(display.draw());
+        let target = RefCell::new(display.draw());
 
 
         target.borrow_mut().clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
@@ -1115,20 +1076,11 @@ fn run_phys_test() {
 
         target.into_inner().finish().unwrap();
 
-        // let need_reset = bodies[0..body_sizes.len()].iter().find(|b| b.borrow().pose.position.length() > 25.0).is_some();
-        // if need_reset {
-        //     for body in bodies[0..body_sizes.len()].iter_mut() {
-        //         let momentum = body.borrow().linear_momentum;
-        //         let ang_momentum = body.borrow().angular_momentum;
-        //         let start_pose = body.borrow_mut().start_pose;
-        //         body.borrow_mut().linear_momentum = -momentum;
-        //         body.borrow_mut().pose = start_pose;
-        //     }
-        //     time = 0.0;
-        // }
     }
 }
 
+
+// https://gfycat.com/ElaborateHarshHyrax
 fn main() {
     // run_hull_test();
     // run_joint_test();

@@ -22,13 +22,12 @@ pub fn tri_area(v0: V3, v1: V3, v2: V3) -> f32 {
 #[inline]
 pub fn line_project_time(p0: V3, p1: V3, a: V3) -> f32 {
     let d = p1 - p0;
-    // debug_assert!(dot(d, d) != 0.0);
     safe_div0(dot(d, a - p0), dot(d, d))
 }
 
 #[inline]
 pub fn line_project(p0: V3, p1: V3, a: V3) -> V3 {
-    p0 + (p1 - p0) * line_project_time(p0, p1, a)//p0.lerp(p1, line_project_time(p0, p1, a))
+    p0 + (p1 - p0) * line_project_time(p0, p1, a)
 }
 
 pub fn barycentric(a: V3, b: V3, c: V3, p: V3) -> V3 {
@@ -46,16 +45,6 @@ pub fn barycentric(a: V3, b: V3, c: V3, p: V3) -> V3 {
     let v = (d11*d20 - d01*d21) * d;
     let w = (d00*d21 - d01*d20) * d;
     vec3(1.0-v-w, v, w)
-    /*
-    let m = M3x3::from_cols(v0, v1, v2);
-    if let Some(inv) = m.inverse() {
-        inv * s
-    } else {
-        let k: usize = if v2.dist_sq(v1) > v2.dist_sq(v0) { 1 } else { 0 };
-        let t = line_project_time(v2, m.col(k), s);
-        let kf = k as f32;
-        vec3((1.0 - kf) * t, kf * t, 1.0 - t)
-    }*/
 }
 
 pub fn tri_project(v0: V3, v1: V3, v2: V3, p: V3) -> V3 {
