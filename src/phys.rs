@@ -11,7 +11,7 @@ use std::f32;
 
 // pub const DELTA_T: f32 = 1.0 / 60.0;
 pub const RESTITUTION: f32 = 0.4;
-pub const GRAVITY: V3 = V3 { x: 0.0, y: 0.0, z: -9.8 };
+pub const GRAVITY: V3 = V3 { x: 0.0, y: 0.0, z: -10.0 };
 pub const COLOUMB: f32 = 0.6;
 
 pub const BIAS_FACTOR_JOINT: f32 = 0.3;
@@ -22,7 +22,7 @@ pub const BALLISTIC_FALLTIME: f32 = 0.2;
 
 pub const MAX_DRIFT: f32 = 0.03;
 pub const DAMPING: f32 = 0.15;
-pub const EULER_PHYSICS: bool = true;
+pub const EULER_PHYSICS: bool = false;
 
 pub struct Shape {
     pub vertices: Vec<V3>,
@@ -210,7 +210,7 @@ impl RigidBody {
     }
 
     #[inline]
-    fn apply_impulse(&mut self, r: V3, impulse: V3) {
+    pub fn apply_impulse(&mut self, r: V3, impulse: V3) {
         self.linear_momentum += impulse;
         self.angular_momentum += r.cross(impulse);
     }
@@ -228,7 +228,7 @@ impl RigidBody {
         self.angular_momentum += torque*dt;
 
         let om3 = self.pose.orientation.to_mat3();
-        self.inv_tensor = om3 * ((self.inv_tensor_massless * self.inv_mass) * om3.transpose());
+        self.inv_tensor = (om3 * (self.inv_tensor_massless * self.inv_mass)) * om3.transpose();
     }
 
     #[inline]
@@ -255,7 +255,7 @@ impl RigidBody {
         self.old_pose = self.pose;
         self.pose = self.next_pose;
         let om3 = self.pose.orientation.to_mat3();
-        self.inv_tensor = om3 * ((self.inv_tensor_massless * self.inv_mass) * om3.transpose());
+        self.inv_tensor = (om3 * (self.inv_tensor_massless * self.inv_mass)) * om3.transpose();
     }
 }
 
@@ -403,13 +403,14 @@ impl LinearConstraint {
                dist: f32,
                targ_speed_nobias: Option<f32>,
                force_lim: Option<(f32, f32)>) -> LinearConstraint {
+        let lim = force_lim.unwrap_or((-f32::MAX, f32::MAX));
         LinearConstraint {
             bodies: bodies,
             positions: positions,
             normal: normal,
             target_dist: dist,
             unbiased_target_speed: targ_speed_nobias.unwrap_or(0.0),
-            force_limit: force_lim.unwrap_or((-f32::MAX, f32::MAX)),
+            force_limit: (lim.0.min(lim.1), lim.0.max(lim.1)),
             target_speed: 0.0,
             friction_controller: 0,
             impulse_sum: 0.0,
@@ -440,22 +441,33 @@ impl LinearConstraint {
 
     #[inline]
     fn solve(&mut self, dt: f32, controller_impulse: Option<f32>) {
-        let (f0, r0, v0) = rb_map_or(&self.bodies.0, (0.0, self.positions.0, V3::zero()), |rb| {
-            let r = rb.pose.orientation * self.positions.0;
-            (rb.friction, r, cross(rb.spin(), r) + rb.linear_momentum * rb.inv_mass)
-        });
+        // let (f0, r0, v0) = rb_map_or(&self.bodies.0, (0.0, self.positions.0, V3::zero()), |rb| {
+        //     let r = rb.pose.orientation * self.positions.0;
+        //     (rb.friction, r, cross(rb.spin(), r) + rb.linear_momentum * rb.inv_mass)
+        // });
 
-        let (f1, r1, v1) = rb_map_or(&self.bodies.1, (0.0, self.positions.1, V3::zero()), |rb| {
-            let r = rb.pose.orientation * self.positions.1;
-            (rb.friction, r, cross(rb.spin(), r) + rb.linear_momentum * rb.inv_mass)
-        });
+        // let (f1, r1, v1) = rb_map_or(&self.bodies.1, (0.0, self.positions.1, V3::zero()), |rb| {
+        //     let r = rb.pose.orientation * self.positions.1;
+        //     (rb.friction, r, cross(rb.spin(), r) + rb.linear_momentum * rb.inv_mass)
+        // });
 
         if let Some(friction_impulse) = controller_impulse {
-            let f = f0.max(f1);
-            let limit = f * friction_impulse / dt;
+            let f0 = rb_map_or(&self.bodies.0, 0.0, |rb| rb.friction);
+            let f1 = rb_map_or(&self.bodies.1, 0.0, |rb| rb.friction);
+            let limit = f0.max(f1) * friction_impulse / dt;
             self.force_limit.1 =  limit;
             self.force_limit.0 = -limit;
         }
+
+        let r0 = rb_map_or(&self.bodies.0, self.positions.0, |rb| rb.pose.orientation * self.positions.0);
+        let r1 = rb_map_or(&self.bodies.1, self.positions.1, |rb| rb.pose.orientation * self.positions.1);
+
+        let v0 = rb_map_or(&self.bodies.0, V3::zero(), |rb|
+            cross(rb.spin(), r0) + rb.linear_momentum*rb.inv_mass);
+
+        let v1 = rb_map_or(&self.bodies.1, V3::zero(), |rb|
+            cross(rb.spin(), r1) + rb.linear_momentum*rb.inv_mass);
+
 
         let vn = dot(v1-v0, self.normal);
 
@@ -581,11 +593,10 @@ impl ConstraintSet {
 
         if joint_max.x == joint_min.x {
             let spin = 2.0 * (-s.0.x + (joint_min.x*0.5).sin()) * inv_dt;
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()), xd1, spin, (-f32::MAX, f32::MAX)));
+            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  xd1,  spin, (-f32::MAX, f32::MAX)));
         } else if joint_max.x - joint_min.x < 360.0_f32.to_radians() {
-            let spin = 2.0 * (-s.0.x + (joint_min.x*0.5).sin()) * inv_dt;
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  xd1,  spin, (0.0, f32::MAX)));
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()), -xd1, -spin, (0.0, f32::MAX)));
+            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  xd1, 2.0 * (-s.0.x + (joint_min.x*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
+            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()), -xd1, 2.0 * ( s.0.x - (joint_max.x*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
         }
 
         if joint_max.y == joint_min.y {
@@ -594,9 +605,8 @@ impl ConstraintSet {
                 BIAS_FACTOR_JOINT * 2.0 * (-s.0.y + joint_min.y) * inv_dt,
                 (-f32::MAX, f32::MAX)));
         } else {
-            let spin = 2.0 * (-s.0.y + (joint_min.y*0.5).sin()) * inv_dt;
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  yd1,  spin, (0.0, f32::MAX)));
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()), -yd1, -spin, (0.0, f32::MAX)));
+            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  yd1, 2.0 * (-s.0.y + (joint_min.y*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
+            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()), -yd1, 2.0 * ( s.0.y - (joint_max.y*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
         }
         self.angular(AngularConstraint::new((rb0, rb1), zd1,
             BIAS_FACTOR_JOINT * 2.0 * -t.0.z * inv_dt, (-f32::MAX, f32::MAX)))
@@ -665,9 +675,21 @@ impl ConstraintSet {
 
             let min_sep = MAX_DRIFT * 0.25;
             let sep = cc.separation;
+            // if cc.plane.normal == V3::zero() {
+                // cc.separation
+            // } else {
+                // dot(cc.plane.normal, cc.points.0 - cc.points.1)
+            // };
 
             let bounce_vel = 0.0f32.max(
                 (-dot(cc.plane.normal, v) - GRAVITY.length() * BALLISTIC_FALLTIME) * RESTITUTION);
+
+            let q = Quat::shortest_arc(vec3(0.0, 0.0, 1.0), -cc.plane.normal);
+
+
+            // let normal = q.z_dir();
+            let tangent = q.x_dir();
+            let binormal = q.y_dir();
 
             self.linears.push(LinearConstraint::new(
                 c.bodies.clone(),
@@ -678,11 +700,6 @@ impl ConstraintSet {
                 Some((0.0, f32::MAX))
             ));
 
-            let q = Quat::shortest_arc(vec3(0.0, 0.0, 1.0), -cc.plane.normal);
-
-            // let normal = q.z_dir();
-            let tangent = q.x_dir();
-            let binormal = q.y_dir();
 
             self.linears.push(LinearConstraint::new(c.bodies.clone(), c.positions, binormal, 0.0, Some(0.0), Some((0.0, 0.0))));
             self.linears.last_mut().unwrap().friction_control(-1);
@@ -693,6 +710,7 @@ impl ConstraintSet {
     }
 }
 
+#[derive(Clone)]
 pub struct PhysicsContact {
     pub contact: gjk::ContactInfo,
     pub bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>),
@@ -781,7 +799,7 @@ fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32) -> Vec<PhysicsContact> {
 
 
 const PHYS_ITER: usize = 16;
-const PHYS_POST_ITER: usize = 4;
+const PHYS_POST_ITER: usize = 8;
 
 pub fn update_physics(rbs: &mut [RigidBodyRef],
                       constraints: &mut ConstraintSet,

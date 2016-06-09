@@ -4,6 +4,7 @@
 extern crate glium;
 
 extern crate rand;
+extern crate time;
 
 #[macro_use]
 mod util;
@@ -338,12 +339,38 @@ fn create_box(display: &GlutinFacade, r: V3, com: V3) -> DemoObject {
     }
 
     let tris = hull::compute_hull(&mut v[..]).unwrap();
-    v.truncate((tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);;
-    DemoObject {
-        body: Rc::new(RefCell::new(phys::RigidBody::new(
-            vec![phys::Shape::new(v.clone(), tris.clone())], com, 1.0))),
-        meshes: vec![ Box::new(DemoMesh::new(&display, &v[..], &tris[..], rand_color())) ]
+    v.truncate((tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);
+
+    println!(r#"
+        made box with dim: {:?},
+        volume: {},
+        com: {:?}
+    "#, r, geom::volume(&v[..], &tris[..]), geom::center_of_mass(&v[..], &tris[..]));
+    let body = Rc::new(RefCell::new(phys::RigidBody::new(vec![phys::Shape::new(v, tris)], com, 1.0)));
+    let meshes = body.borrow().shapes.iter().map(|s|
+        Box::new(DemoMesh::new(&display, &s.vertices[..], &s.tris[..], rand_color())))
+        .collect::<Vec<_>>();
+    let o = DemoObject {
+        body: body,
+        meshes: meshes,
+    };
+    println!("  inertia {:?}, {:?}", o.body.borrow().inv_tensor, o.body.borrow().inv_tensor_massless);
+    o
+}
+
+fn create_cube_shape(r: V3) -> phys::Shape {
+    let mut v = Vec::new();
+    for x in &[-1.0f32, 1.0] {
+        for y in &[-1.0f32, 1.0] {
+            for z in &[-1.0f32, 1.0] {
+                v.push(vec3(*x, *y, *z) * r)
+            }
+        }
     }
+
+    let tris = hull::compute_hull(&mut v[..]).unwrap();
+    v.truncate((tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);
+    phys::Shape::new(v, tris)
 }
 
 fn create_octa(display: &GlutinFacade, r: V3, com: V3) -> DemoObject {
@@ -355,6 +382,7 @@ fn create_octa(display: &GlutinFacade, r: V3, com: V3) -> DemoObject {
     let tris = hull::compute_hull(&mut v[..]).unwrap();
     v.truncate((tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);;
     let body = Rc::new(RefCell::new(phys::RigidBody::new(vec![phys::Shape::new(v, tris)], com, 1.0)));
+    body.borrow_mut().pose.orientation = quat(0.1, 0.2, 0.2, 0.8).must_norm();
     let meshes = body.borrow().shapes.iter().map(|s|
         Box::new(DemoMesh::new(&display, &s.vertices[..], &s.tris[..], rand_color())))
         .collect::<Vec<_>>();
@@ -383,12 +411,12 @@ fn run_joint_test() {
     ];
 
     let joints = [
-        (0,  1,  0.2_f32, vec3( 0.25, -0.5, 0.0), vec3(-0.25, 0.0, 0.0)), // upper limbs to torso
-        (0,  2, -0.2_f32, vec3( 0.25,  0.0, 0.0), vec3(-0.25, 0.0, 0.0)),
-        (0,  3,  0.2_f32, vec3( 0.25,  0.5, 0.0), vec3(-0.25, 0.0, 0.0)),
-        (0,  4,  0.2_f32, vec3(-0.25, -0.5, 0.0), vec3( 0.25, 0.0, 0.0)),
-        (0,  5, -0.2_f32, vec3(-0.25,  0.0, 0.0), vec3( 0.25, 0.0, 0.0)),
-        (0,  6,  0.2_f32, vec3(-0.25,  0.5, 0.0), vec3( 0.25, 0.0, 0.0)),
+        (0,  1,  0.25_f32, vec3( 0.25, -0.5, 0.0), vec3(-0.25, 0.0, 0.0)), // upper limbs to torso
+        (0,  2, -0.25_f32, vec3( 0.25,  0.0, 0.0), vec3(-0.25, 0.0, 0.0)),
+        (0,  3,  0.25_f32, vec3( 0.25,  0.5, 0.0), vec3(-0.25, 0.0, 0.0)),
+        (0,  4,  0.25_f32, vec3(-0.25, -0.5, 0.0), vec3( 0.25, 0.0, 0.0)),
+        (0,  5, -0.25_f32, vec3(-0.25,  0.0, 0.0), vec3( 0.25, 0.0, 0.0)),
+        (0,  6,  0.25_f32, vec3(-0.25,  0.5, 0.0), vec3( 0.25, 0.0, 0.0)),
         (1,  7,  0.0_f32, vec3( 0.25,  0.0, 0.0), vec3( 0.0,  0.0, 0.25)), // lower limb to upper limb
         (2,  8,  0.0_f32, vec3( 0.25,  0.0, 0.0), vec3( 0.0,  0.0, 0.25)),
         (3,  9,  0.0_f32, vec3( 0.25,  0.0, 0.0), vec3( 0.0,  0.0, 0.25)),
@@ -407,7 +435,7 @@ fn run_joint_test() {
         InputState::new(win_w, win_h, 90.0)
     };
 
-    let mut ground_verts = create_box_verts(vec3(-5.0, -5.0, -2.0), vec3(5.0, 5.0, -1.0));
+    let mut ground_verts = create_box_verts(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
     let ground_tris = hull::compute_hull(&mut ground_verts[..]).unwrap();
     ground_verts.truncate((ground_tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);
 
@@ -428,6 +456,8 @@ fn run_joint_test() {
 
     demo_objects[0].body.borrow_mut().scale_mass(5.0);
 
+
+    use glium::index::PrimitiveType::*;
     for joint in joints.iter() {
         let mut body0 = demo_objects[joint.0].body.borrow_mut();
         let mut body1 = demo_objects[joint.1].body.borrow_mut();
@@ -435,23 +465,34 @@ fn run_joint_test() {
         body0.ignored.insert(body1.id);
         body1.ignored.insert(body0.id);
         let b1p = body1.pose;
-        body1.pose.position = body0.pose*joint.3 - b1p.orientation*joint.4;
+        let pos = body0.pose*joint.3 - body1.pose.orientation*joint.4;
+        body1.pose.position = pos;
+        body1.start_pose.position = pos;
     }
+
+    demo_objects.push(create_box(&display, vec3(2.0, 0.1, 0.1), vec3(0.0, 0.0, -0.5)));
+    demo_objects.push(create_box(&display, vec3(2.0, 0.4, 0.1), vec3(0.0, 1.0, -0.5)));
 
     let program = glium::Program::from_source(&display,
         VERT_SRC, FRAG_SRC, None).unwrap();
+
+    let solid_program = glium::Program::from_source(&display,
+        SOLID_VERT_SRC, SOLID_FRAG_SRC, None).unwrap();
+
     let torque_limit = 38.0;
     let mut time = 0.0;
 
     // let camera = pose::Pose::new(vec3(0.0, -8.0, 0.0), quat(0.9, 0.0, 0.0, 1.0).must_norm());
     let world_geom = [ground_verts];
     while input_state.update(&display) {
-        let mut target = display.draw();
-        target.clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
+        let mut target = RefCell::new(display.draw());
+
+
+        target.borrow_mut().clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
 
         let proj_matrix = input_state.get_projection_matrix(0.01, 50.0);
         let dt = 1.0 / 60.0f32;
-        time += dt;
+        time += 0.06f32;
 
         let mut cs = phys::ConstraintSet::new(dt);
 
@@ -461,7 +502,7 @@ fn run_joint_test() {
             cs.powered_angle(Some(demo_objects[joint.0].body.clone()),
                              Some(demo_objects[joint.1].body.clone()),
                              quat(0.0, joint.2*time.cos(), joint.2*time.sin(),
-                                  (1.0 - joint.2*joint.2).sqrt()).must_norm(),
+                                  (1.0 - joint.2*joint.2).sqrt()),
                              torque_limit);
         }
 
@@ -469,9 +510,15 @@ fn run_joint_test() {
             .map(|item| item.body.clone())
             .collect::<Vec<phys::RigidBodyRef>>();
 
+        for body in bodies[body_sizes.len()..].iter_mut() {
+            cs.under_plane(body.clone(), geom::Plane::from_norm_and_point(phys::GRAVITY.must_norm(), vec3(5.0, 5.0, -10.0)), None);
+        }
+
         phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt);
 
+
         let params = glium::DrawParameters {
+            blend: glium::Blend::alpha_blending(),
             depth: glium::Depth {
                 test: glium::draw_parameters::DepthTest::IfLess,
                 write: true,
@@ -479,42 +526,63 @@ fn run_joint_test() {
             },
             .. Default::default()
         };
+        {
 
-        let light = [1.4, 0.4, 0.7f32];
+            let light = [5.0, 1.2, 1.0f32];
 
-        let camera = M4x4::look_at(vec3(0.0, -8.0, 0.0),
-                                        vec3(0.0, 0.0, 0.0),
-                                        vec3(0.0, 0.0, 1.0));
-        let cam_info = <[[f32; 4]; 4]>::from(camera);
-        let proj = <[[f32; 4]; 4]>::from(proj_matrix);
+            let camera = M4x4::look_at(vec3(0.0, -8.0, 0.0),
+                                       vec3(0.0, 0.0, 0.0),
+                                       vec3(0.0, 0.0, 1.0));
+            let cam_info = <[[f32; 4]; 4]>::from(camera);
+            let proj = <[[f32; 4]; 4]>::from(proj_matrix);
 
-        target.draw((&ground_mesh.vbo,), &ground_mesh.ibo, &program,
-            &uniform! {
-                model: <[[f32; 4]; 4]>::from(M4x4::identity()),
-                u_color: <[f32; 4]>::from(ground_mesh.color),
-                view: cam_info,
-                perspective: proj,
-                u_light: light,
-            },
-            &params).unwrap();
+            target.borrow_mut().draw((&ground_mesh.vbo,), &ground_mesh.ibo, &program,
+                &uniform! {
+                    model: <[[f32; 4]; 4]>::from(M4x4::identity()),
+                    u_color: <[f32; 4]>::from(ground_mesh.color),
+                    view: cam_info,
+                    perspective: proj,
+                    u_light: light,
+                },
+                &params).unwrap();
 
-        for obj in demo_objects.iter() {
-            let pose = obj.body.borrow().pose;
-            let model_mat = <[[f32; 4]; 4]>::from(pose.to_mat4());
-            for mesh in obj.meshes.iter() {
-                target.draw((&mesh.vbo,), &mesh.ibo, &program,
-                    &uniform! {
-                        model: model_mat,
-                        u_color: <[f32; 4]>::from(mesh.color),
-                        view: cam_info,
-                        perspective: proj,
-                        u_light: light,
-                    },
-                    &params).unwrap();
+            for obj in demo_objects.iter() {
+                let pose = obj.body.borrow().pose;
+                let model_mat = <[[f32; 4]; 4]>::from(pose.to_mat4());
+                for mesh in obj.meshes.iter() {
+                    target.borrow_mut().draw((&mesh.vbo,), &mesh.ibo, &program,
+                        &uniform! {
+                            model: model_mat,
+                            u_color: <[f32; 4]>::from(mesh.color),
+                            view: cam_info,
+                            perspective: proj,
+                            u_light: light,
+                        },
+                        &params).unwrap();
+                }
             }
         }
 
-        target.finish().unwrap();
+        target.into_inner().finish().unwrap();
+
+        let need_reset = bodies[0..body_sizes.len()].iter().find(|b| b.borrow().pose.position.length() > 25.0).is_some();
+        if need_reset {
+            for body in bodies[0..body_sizes.len()].iter_mut() {
+                let momentum = body.borrow().linear_momentum;
+                let ang_momentum = body.borrow().angular_momentum;
+                let start_pose = body.borrow_mut().start_pose;
+                body.borrow_mut().linear_momentum = -momentum;
+                body.borrow_mut().pose = start_pose;
+            }
+            time = 0.0;
+            // for joint in joints.iter() {
+            //     let mut body0 = demo_objects[joint.0].body.borrow_mut();
+            //     let mut body1 = demo_objects[joint.1].body.borrow_mut();
+            //     let b1p = body1.pose;
+            //     body1.pose.position = body0.pose*joint.3 - b1p.orientation*joint.4;
+            // }
+
+        }
     }
 }
 
@@ -582,9 +650,7 @@ impl GjkTestState {
                 self.b_verts.push(*v);
             }
             let a_tris = hull::compute_hull(&mut self.a_verts[..]);
-//            v.truncate((tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);;
             let b_tris = hull::compute_hull(&mut self.b_verts[..]);
-//            v.truncate((tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);;
             if let (Some(a), Some(b)) = (a_tris, b_tris) {
                 self.a_tris = a;
                 self.a_verts.truncate((self.a_tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);;
@@ -822,9 +888,250 @@ fn run_gjk_test() {
 }
 
 
+fn create_demo_blob(display: &GlutinFacade, com: V3) -> DemoObject {
+    let (verts, tris) = random_point_cloud(15);
+    let body = Rc::new(RefCell::new(phys::RigidBody::new(vec![phys::Shape::new(verts, tris)], com, 1.0)));
+    let c = rand_color();
+    let meshes = body.borrow().shapes.iter().map(|s|
+        Box::new(DemoMesh::new(display, &s.vertices[..], &s.tris[..], c))).collect::<Vec<_>>();
+    DemoObject { body: body, meshes: meshes }
+}
+
+
+// fn delta_time(start: &PreciseTime, end: &PreciseTime) -> f64 {
+//     let d = end - start;
+//     let ms = d.num_milliseconds() as f32;
+//     let rd = d - time::Duration::milliseconds(ms);
+//     let ns = r.num_nanoseconds().unwrap_or(0) as f32;
+//     ms*1.0e-3 + ns*1.0e-9
+// }
+
+fn run_phys_test() {
+    let display = glium::glutin::WindowBuilder::new()
+                        .with_depth_buffer(24)
+                        .with_vsync()
+                        .build_glium()
+                        .unwrap();
+    let mut input_state = {
+        let (win_w, win_h) = display.get_window().unwrap()
+            .get_inner_size_pixels().unwrap();
+        InputState::new(win_w, win_h, 90.0)
+    };
+
+    let mut ground_verts = create_box_verts(vec3(-10.0, -10.0, -5.0), vec3(10.0, 10.0, -2.0));
+    let ground_tris = hull::compute_hull(&mut ground_verts[..]).unwrap();
+    ground_verts.truncate((ground_tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);
+
+    let ground_mesh = Box::new(DemoMesh::new(&display,
+        &ground_verts[..],
+        &ground_tris[..],
+        vec4(0.25, 0.75, 0.25, 1.0)));
+
+    let mut demo_objects: Vec<DemoObject> = Vec::new();
+
+
+    let jack_push_pos   = vec3(0.0, 0.0, 0.0);
+    let jack_momentum   = vec3(4.0, -0.8, 5.0);
+    let jack_push_pos_2 = vec3(0.0, 0.5, 0.0);
+    let jack_momentum_2 = vec3(0.3, 0.4, 1.0);
+
+    let seesaw_start    = vec3(0.0, -4.0, 0.25);
+
+    demo_objects.push(create_box(&display, V3::splat(1.0), vec3(1.5, 0.0, 1.5)));
+    {
+        let o = create_box(&display, V3::splat(1.0), vec3(-1.5, 0.0, 1.5));
+        let r = quat(0.1, 0.01, 0.3, 1.0).must_norm();
+        o.body.borrow_mut().pose.orientation = r;
+        o.body.borrow_mut().start_pose.orientation = r;
+        demo_objects.push(o);
+    }
+
+    let seesaw;
+    {
+        let o = create_box(&display, vec3(3.0, 0.5, 0.1), seesaw_start);
+        seesaw = o.body.clone();
+        demo_objects.push(o);
+    }
+
+    {
+        let l = create_box(&display, V3::splat(0.75), seesaw_start + vec3(2.5, 0.0, 32.0));
+        l.body.borrow_mut().scale_mass(6.0);
+
+        let l2 = create_box(&display, V3::splat(0.25), seesaw_start + vec3(2.5, 0.0, 0.4));
+        l2.body.borrow_mut().scale_mass(0.75);
+
+        let r = create_box(&display, V3::splat(0.5), seesaw_start + vec3(-1.5, 0.0, 5.0));
+        r.body.borrow_mut().scale_mass(3.0);
+
+        demo_objects.push(l);
+        demo_objects.push(l2);
+        demo_objects.push(r);
+    }
+    let jack = Rc::new(RefCell::new(phys::RigidBody::new(vec![
+        create_cube_shape(vec3(1.0, 0.2, 0.2)),
+        create_cube_shape(vec3(0.2, 1.0, 0.2)),
+        create_cube_shape(vec3(0.2, 0.2, 1.0)),
+    ], vec3(-5.5, 0.5, 7.5), 1.0)));
+
+    {
+        jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
+        jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
+        let c = rand_color();
+        let meshes = jack.borrow().shapes.iter().map(|s|
+            Box::new(DemoMesh::new(&display, &s.vertices[..], &s.tris[..], c))).collect::<Vec<_>>();
+        demo_objects.push(DemoObject { body: jack.clone(), meshes: meshes });
+    }
+
+    {
+        let mut z = 5.5;
+        while z < 14.0 {
+            demo_objects.push(create_box(&display, V3::splat(0.5), vec3(0.0, 0.0, z)));
+            z += 3.0;
+        }
+    }
+
+    {
+        let mut z = 15.0;
+        while z < 20.0 {
+            demo_objects.push(create_octa(&display, V3::splat(0.5), vec3(0.0, 0.0, z)));
+            z += 3.0;
+        }
+    }
+
+    for i in 0..4 {
+        let fi = i as f32;
+        demo_objects.push(create_demo_blob(&display, vec3(3.0+fi*2.0, -3.0, 4.0+fi*3.0)));
+    }
+
+    demo_objects.push(create_box(&display, vec3(2.0, 0.1, 0.1), vec3(0.0, 0.0, -0.5)));
+    demo_objects.push(create_box(&display, vec3(2.0, 0.4, 0.1), vec3(0.0, 1.0, -0.5)));
+
+    let program = glium::Program::from_source(&display,
+        VERT_SRC, FRAG_SRC, None).unwrap();
+
+    let solid_program = glium::Program::from_source(&display,
+        SOLID_VERT_SRC, SOLID_FRAG_SRC, None).unwrap();
+
+    let torque_limit = 38.0;
+
+    // let camera = pose::Pose::new(vec3(0.0, -8.0, 0.0), quat(0.9, 0.0, 0.0, 1.0).must_norm());
+    let world_geom = [ground_verts];
+    let mut running = false;
+    while input_state.update(&display) {
+        for &(key, down) in input_state.key_changes.iter() {
+            if !down { continue; }
+            match key {
+                glium::glutin::VirtualKeyCode::Space => {
+                    let r = running;
+                    running = !r;
+                },
+                glium::glutin::VirtualKeyCode::R => {
+                    for &mut DemoObject{ body: ref b, .. } in demo_objects.iter_mut() {
+                        let mut body = b.borrow_mut();
+                        body.pose = body.start_pose;
+                        body.linear_momentum = V3::zero();
+                        body.angular_momentum = V3::zero();
+                    }
+                    seesaw.borrow_mut().pose.orientation = Quat::identity();
+
+                    jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
+                    jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
+                },
+                _ => {},
+            }
+        }
+
+        let mut target = RefCell::new(display.draw());
+
+
+        target.borrow_mut().clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
+
+        let proj_matrix = input_state.get_projection_matrix(0.01, 50.0);
+        let dt = 1.0 / 60.0f32;
+
+        if running {
+            let mut cs = phys::ConstraintSet::new(dt);
+
+            cs.nail(None, seesaw_start, Some(seesaw.clone()), V3::zero());
+            cs.range(None, Some(seesaw.clone()), Quat::identity(),
+                vec3(0.0, -20.0, 0.0), vec3(0.0, 20.0, 0.0));
+
+            let mut bodies = demo_objects.iter()
+                .map(|item| item.body.clone())
+                .collect::<Vec<phys::RigidBodyRef>>();
+
+
+            phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt);
+        }
+
+
+        let params = glium::DrawParameters {
+            blend: glium::Blend::alpha_blending(),
+            depth: glium::Depth {
+                test: glium::draw_parameters::DepthTest::IfLess,
+                write: true,
+                .. Default::default()
+            },
+            .. Default::default()
+        };
+        {
+
+            let light = [0.0, 1.2, 1.0f32];
+
+            let camera = M4x4::look_at(vec3(0.0, -8.0, 3.0),
+                                       vec3(0.0, 0.0, 0.0),
+                                       vec3(0.0, 0.0, 1.0));
+
+
+            let cam_info = <[[f32; 4]; 4]>::from(camera);//.to_mat4());
+            let proj = <[[f32; 4]; 4]>::from(proj_matrix);
+
+            target.borrow_mut().draw((&ground_mesh.vbo,), &ground_mesh.ibo, &program,
+                &uniform! {
+                    model: <[[f32; 4]; 4]>::from(M4x4::identity()),
+                    u_color: <[f32; 4]>::from(ground_mesh.color),
+                    view: cam_info,
+                    perspective: proj,
+                    u_light: light,
+                },
+                &params).unwrap();
+
+            for obj in demo_objects.iter() {
+                let pose = obj.body.borrow().pose;
+                let model_mat = <[[f32; 4]; 4]>::from(pose.to_mat4());
+                for mesh in obj.meshes.iter() {
+                    target.borrow_mut().draw((&mesh.vbo,), &mesh.ibo, &program,
+                        &uniform! {
+                            model: model_mat,
+                            u_color: <[f32; 4]>::from(mesh.color),
+                            view: cam_info,
+                            perspective: proj,
+                            u_light: light,
+                        },
+                        &params).unwrap();
+                }
+            }
+        }
+
+        target.into_inner().finish().unwrap();
+
+        // let need_reset = bodies[0..body_sizes.len()].iter().find(|b| b.borrow().pose.position.length() > 25.0).is_some();
+        // if need_reset {
+        //     for body in bodies[0..body_sizes.len()].iter_mut() {
+        //         let momentum = body.borrow().linear_momentum;
+        //         let ang_momentum = body.borrow().angular_momentum;
+        //         let start_pose = body.borrow_mut().start_pose;
+        //         body.borrow_mut().linear_momentum = -momentum;
+        //         body.borrow_mut().pose = start_pose;
+        //     }
+        //     time = 0.0;
+        // }
+    }
+}
 
 fn main() {
     // run_hull_test();
-    run_joint_test();
+    // run_joint_test();
     // run_gjk_test();
+    run_phys_test();
 }

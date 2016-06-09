@@ -196,7 +196,23 @@ impl Quat {
 
     #[inline]
     pub fn to_mat3(self) -> M3x3 {
-        M3x3::from_cols(self.x_dir(), self.y_dir(), self.z_dir())
+        let x2 = self.0.x + self.0.x;
+        let y2 = self.0.y + self.0.y;
+        let z2 = self.0.z + self.0.z;
+        let xx = self.0.x * x2;
+        let yx = self.0.y * x2;
+        let yy = self.0.y * y2;
+        let zx = self.0.z * x2;
+        let zy = self.0.z * y2;
+        let zz = self.0.z * z2;
+        let wx = self.0.w * x2;
+        let wy = self.0.w * y2;
+        let wz = self.0.w * z2;
+
+        mat3(1.0 - yy - zz, yx + wz, zx - wy,
+             yx - wz, 1.0 - xx - zz, zy + wx,
+             zx + wy, zy - wx, 1.0 - xx - yy)
+        // M3x3::from_cols(self.x_dir(), self.y_dir(), self.z_dir())
     }
 
     #[inline]
@@ -227,17 +243,20 @@ impl Quat {
 
     #[inline]
     pub fn inverse(self) -> Quat {
-        self.conj() / self.length_sq()
+        Quat(self.0.must_norm()).conj()
+        // self.conj() / self.length_sq()
     }
 
     #[inline]
     pub fn shortest_arc(v0: V3, v1: V3) -> Quat {
+        debug_assert!(dot(v0, v0) != 0.0);
+        debug_assert!(dot(v1, v1) != 0.0);
         let v0 = v0.norm_or_zero();
         let v1 = v1.norm_or_zero();
 
-        if v0.approx_eq(&v1) {
-            return Quat::identity();
-        }
+        // if v0.approx_eq(&v1) {
+            // return Quat::identity();
+        // }
 
         let c = v0.cross(v1);
         let d = v0.dot(v1);
@@ -271,8 +290,17 @@ impl Mul<V3> for Quat {
     type Output = V3;
     #[inline]
     fn mul(self, o: V3) -> V3 {
+        let V3 { x: vx, y: vy, z: vz } = o;
+        let Quat(V4 { x: qx, y: qy, z: qz, w: qw }) = self;
+        let ix =  qw*vx + qy*vz - qz*vy;
+        let iy =  qw*vy + qz*vx - qx*vz;
+        let iz =  qw*vz + qx*vy - qy*vx;
+        let iw = -qx*vx - qy*vy - qz*vz;
+        vec3(ix*qw + iw*-qx + iy*-qz - iz*-qy,
+             iy*qw + iw*-qy + iz*-qx - ix*-qz,
+             iz*qw + iw*-qz + ix*-qy - iy*-qx)
         // this is slow and bad...
-        self.to_mat3() * o
+        // self.to_mat3() * o
     }
 }
 

@@ -1,0 +1,1680 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"VIEW",
+				"viewMat"
+			],
+			[
+				"upd",
+				"updateNormals"
+			],
+			[
+				"GLY",
+				"GLYPH_TO_ID"
+			],
+			[
+				"Gly",
+				"GlyphAliases"
+			],
+			[
+				"requ",
+				"requestAnimationFrame"
+			],
+			[
+				"req",
+				"requestAnimationFrame"
+			],
+			[
+				"appro",
+				"approxEqual"
+			],
+			[
+				"inser",
+				"insertionSort"
+			],
+			[
+				"or",
+				"originalIndex"
+			],
+			[
+				"def",
+				"defaultFaceOrder"
+			],
+			[
+				"pixel",
+				"pixelStoreOpts"
+			],
+			[
+				"un",
+				"unpackColorspaceConversion"
+			],
+			[
+				"vec",
+				"vec_header_internal_"
+			],
+			[
+				"probably",
+				"probablyGlobalObject"
+			],
+			[
+				"frame",
+				"frameTimeLeft"
+			],
+			[
+				"mou",
+				"mouseTarget"
+			],
+			[
+				"Fix",
+				"FixedLine"
+			],
+			[
+				"dyn",
+				"dynamicObjects"
+			],
+			[
+				"curren",
+				"currentMilliseconds"
+			],
+			[
+				"D",
+				"DynamicObject"
+			],
+			[
+				"Fixed",
+				"FixedCircSeg"
+			],
+			[
+				"BEZI",
+				"BEZIER_LINE_TOLERANCE"
+			],
+			[
+				"BEZ",
+				"FixedBezier"
+			],
+			[
+				"res",
+				"BEZIER_RESOLUTION"
+			],
+			[
+				"const",
+				"constructor"
+			],
+			[
+				"col",
+				"collidePointVsSegment"
+			],
+			[
+				"Be",
+				"QuadraticBezier"
+			],
+			[
+				"nan",
+				"nanCheck"
+			],
+			[
+				"switch",
+				"SwitchCaseBlock"
+			],
+			[
+				"unre",
+				"unresolved-highlight"
+			],
+			[
+				"anla",
+				"analysisErrors"
+			],
+			[
+				"bloc",
+				"block_comment"
+			],
+			[
+				"cu",
+				"currentScope"
+			],
+			[
+				"Ident",
+				"Identifier"
+			],
+			[
+				"magn",
+				"mangleName_"
+			],
+			[
+				"TOKEN",
+				"TOKEN_STRINGS"
+			],
+			[
+				"error",
+				"errorExpected"
+			],
+			[
+				"line",
+				"lineColumnOfPos"
+			],
+			[
+				"curr",
+				"currentToken"
+			],
+			[
+				"case",
+				"caseBlocks"
+			],
+			[
+				"init",
+				"initializer"
+			],
+			[
+				"le",
+				"lexer"
+			],
+			[
+				"cond",
+				"condition"
+			],
+			[
+				"Unay",
+				"UnaryExpr"
+			],
+			[
+				"Minu",
+				"MinusMinus"
+			],
+			[
+				"isC",
+				"isCondSwitch"
+			],
+			[
+				"token",
+				"TOKEN"
+			],
+			[
+				"Var",
+				"VariableGroupDecl"
+			],
+			[
+				"parseG",
+				"parseVarGroupDecl"
+			],
+			[
+				"parse",
+				"parseGroupDecl"
+			],
+			[
+				"parseV",
+				"parseVariable"
+			],
+			[
+				"parsef",
+				"parseFieldList"
+			],
+			[
+				"can",
+				"canEvaluate"
+			],
+			[
+				"funct",
+				"Function"
+			],
+			[
+				"Plu",
+				"PlusPlus"
+			],
+			[
+				"Pre",
+				"PRECEDENCE"
+			],
+			[
+				"ali",
+				"alignment"
+			],
+			[
+				"isI",
+				"isIdent"
+			],
+			[
+				"PunCP",
+				"PuncPlusPlus"
+			],
+			[
+				"Punc",
+				"PuncDot"
+			],
+			[
+				"flo",
+				"floatAllowed"
+			],
+			[
+				"is",
+				"isDigitInBase"
+			],
+			[
+				"source",
+				"sourceFilename"
+			],
+			[
+				"c",
+				"captureStackTrace"
+			],
+			[
+				"rb",
+				"R_hBlocks"
+			],
+			[
+				"R_blo",
+				"R_blockFullIndexEnd"
+			],
+			[
+				"R_bloc",
+				"R_blockFullIndex"
+			],
+			[
+				"R_b",
+				"R_blockFullIndexEnd"
+			],
+			[
+				"R_block",
+				"R_blockFullIndexEnd"
+			],
+			[
+				"BLOCK",
+				"BLOCKSIZE"
+			],
+			[
+				"blco",
+				"blockStep"
+			],
+			[
+				"BLO",
+				"BLOCKSIZE"
+			],
+			[
+				"block",
+				"blockFullOffset"
+			],
+			[
+				"blo",
+				"blockFullOffset"
+			],
+			[
+				"ras",
+				"rasterizeModule"
+			],
+			[
+				"HEAP",
+				"HEAP_U32"
+			],
+			[
+				"debu",
+				"debugCanvas"
+			],
+			[
+				"Cli",
+				"ClientScreenHeight"
+			],
+			[
+				"CLie",
+				"ClientScreenWidth"
+			],
+			[
+				"Defa",
+				"defaultPreventedKeys"
+			],
+			[
+				"Twe",
+				"TweenManager"
+			],
+			[
+				"Tw",
+				"TweenGroup"
+			],
+			[
+				"resol",
+				"resolveQueue_"
+			],
+			[
+				"Ease",
+				"EaseTypeShake"
+			],
+			[
+				"quick",
+				"quick-noise-js"
+			],
+			[
+				"Ea",
+				"EaseTypeOut"
+			],
+			[
+				"oc",
+				"octaveNoise"
+			],
+			[
+				"makeC",
+				"makeCanvas2D"
+			],
+			[
+				"lineP",
+				"lineProjectTime"
+			],
+			[
+				"_ch",
+				"_changes32"
+			],
+			[
+				"_c",
+				"_changes32"
+			],
+			[
+				"keybo",
+				"keyboardIsInitialized"
+			],
+			[
+				"kcAl",
+				"kcAlias"
+			],
+			[
+				"DEF",
+				"DEFAULT_WEBGL_CONTEXT_ATTRIBUTES"
+			],
+			[
+				"DEFAU",
+				"DEFAULT_2D_CONTEXT_ATTRIBUTES"
+			],
+			[
+				"cret",
+				"createElement"
+			],
+			[
+				"devic",
+				"devicePixelRatio"
+			],
+			[
+				"DEBUG",
+				"DEBUG_RENDER"
+			],
+			[
+				"accu",
+				"accuracy"
+			],
+			[
+				"ma",
+				"maxVelocity"
+			],
+			[
+				"min",
+				"minSize"
+			],
+			[
+				"overl",
+				"overlapAmount"
+			],
+			[
+				"glob",
+				"globalCompositeOperation"
+			],
+			[
+				"global",
+				"globalAlpha"
+			],
+			[
+				"glo",
+				"globalAlpha"
+			],
+			[
+				"bgBlo",
+				"bgBloodSplatterBack"
+			],
+			[
+				"bgBl",
+				"bgBloodSplatterFront"
+			],
+			[
+				"view",
+				"viewportHeight"
+			],
+			[
+				"blood",
+				"tileBloodSplatter"
+			],
+			[
+				"len",
+				"normLen"
+			],
+			[
+				"Par",
+				"Particle"
+			],
+			[
+				"vie",
+				"viewportHeight"
+			],
+			[
+				"TILE",
+				"TileSize"
+			],
+			[
+				"clear",
+				"clearDead"
+			],
+			[
+				"PART",
+				"PARTICLE_Y"
+			],
+			[
+				"PARTIC",
+				"PARTICLE_LIFE"
+			],
+			[
+				"paic",
+				"particles"
+			],
+			[
+				"par",
+				"particleCount"
+			],
+			[
+				"Partic",
+				"ParticleSystem"
+			],
+			[
+				"Part",
+				"ParticleSystem"
+			],
+			[
+				"gifC",
+				"gifCanvas"
+			],
+			[
+				"bloodS",
+				"bloodSplatCanvas"
+			],
+			[
+				"Exit",
+				"ExitParticle"
+			],
+			[
+				"dist",
+				"distBetween"
+			],
+			[
+				"back",
+				"backdropsY"
+			],
+			[
+				"add",
+				"addEffect"
+			],
+			[
+				"set",
+				"setPosition"
+			],
+			[
+				"v",
+				"viewportHeight"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "src/gjk.rs",
+			"settings":
+			{
+				"buffer_size": 14447,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "Package Control Messages\n========================\n\nSublimeLinter-contrib-rustc\n---------------------------\n\n  SublimeLinter-contrib-rustc\n  -------------------------------\n  This linter plugin for SublimeLinter provides an interface to rustc.\n  \n  ** IMPORTANT! **\n  \n  Before this plugin will activate, you *must*\n  follow the installation instructions here:\n  \n  https://github.com/oschwald/SublimeLinter-contrib-rustc\n",
+			"settings":
+			{
+				"buffer_size": 421,
+				"line_ending": "Unix",
+				"name": "Package Control Messages",
+				"read_only": true,
+				"scratch": true
+			}
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 375.0,
+		"last_filter": "pa",
+		"selected_items":
+		[
+			[
+				"pa",
+				"Package Control: Install Package"
+			],
+			[
+				"lint",
+				"SublimeLinter: Show All Errors"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"linter",
+				"Preferences: SublimeLinter Settings – Default"
+			],
+			[
+				"show",
+				"SublimeLinter: Show Errors on Save"
+			],
+			[
+				"eslint",
+				"Preferences: SublimeLinter Settings – Default"
+			],
+			[
+				"pack",
+				"Package Control: Enable Package"
+			],
+			[
+				"text",
+				"Text Pastry: From 0 To X"
+			],
+			[
+				"clang",
+				"Clang Format: Format Selection"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"pretty",
+				"Pretty JSON: Format (Pretty Print) JSON"
+			],
+			[
+				"git diff",
+				"Git: Diff Current File"
+			],
+			[
+				"git ",
+				"GitGutter: Compare Against Commit"
+			],
+			[
+				"git log",
+				"Git: Quick Log Current File"
+			],
+			[
+				"pac",
+				"Package Control: Install Package"
+			],
+			[
+				"buil",
+				"Build: Build"
+			],
+			[
+				"snip",
+				"Snippet: defmod"
+			],
+			[
+				"git status",
+				"Git: Status"
+			],
+			[
+				"git am",
+				"Git: Amend Commit"
+			],
+			[
+				"git qu",
+				"Git: Quick Add"
+			],
+			[
+				"git commit",
+				"Git: Commit"
+			],
+			[
+				"git checkout ",
+				"Git: Checkout"
+			],
+			[
+				"git che",
+				"Git: Checkout"
+			],
+			[
+				"git diff cac",
+				"Git: Diff Cached Current File"
+			],
+			[
+				"git diff ",
+				"Git: Diff Current File"
+			],
+			[
+				"git q",
+				"Git: Quick Add"
+			],
+			[
+				"git ame",
+				"Git: Amend Commit"
+			],
+			[
+				"git sta",
+				"Git: Status"
+			],
+			[
+				"gitq",
+				"Git: Quick Add"
+			],
+			[
+				"git commi",
+				"Git: Commit"
+			],
+			[
+				"git stats",
+				"Git: Status"
+			],
+			[
+				"git comm",
+				"Git: Amend Commit"
+			],
+			[
+				"diff c",
+				"Git: Diff Cached Current File"
+			],
+			[
+				"git checkout",
+				"Git: Checkout"
+			],
+			[
+				"git add",
+				"Git: Quick Add"
+			],
+			[
+				"git amen",
+				"Git: Amend Commit"
+			],
+			[
+				"h",
+				"HSL: Convert All RGB to HSL"
+			],
+			[
+				"git diff cu",
+				"Git: Diff Current File"
+			],
+			[
+				"git qui",
+				"Git: Quick Add"
+			],
+			[
+				"git c",
+				"Git: Commit"
+			],
+			[
+				"git b",
+				"Git: Blame"
+			],
+			[
+				"git bl",
+				"Git: Blame"
+			],
+			[
+				"git quick add",
+				"Git: Quick Add"
+			],
+			[
+				"git co",
+				"Git: Commit"
+			],
+			[
+				"git com",
+				"Git: Commit"
+			],
+			[
+				"pastry",
+				"Text Pastry: From 1 To X"
+			],
+			[
+				"git blame",
+				"Git: Blame"
+			],
+			[
+				"load",
+				"Git-flow: Init With Defaults"
+			],
+			[
+				"TODO",
+				"View: Toggle Open Files in Side Bar"
+			],
+			[
+				"git di",
+				"Git: Diff"
+			],
+			[
+				"git quick a",
+				"Git: Quick Add"
+			],
+			[
+				"git st",
+				"Git: Stash Include Untracked"
+			],
+			[
+				"git stah",
+				"Git: Pop Stash"
+			],
+			[
+				"git stash",
+				"Git: Stash Include Untracked"
+			],
+			[
+				"git quic",
+				"Git: Quick Add"
+			],
+			[
+				"git log ",
+				"Git: Quick Log Current File"
+			],
+			[
+				"git",
+				"Git: Fetch"
+			],
+			[
+				"git quick",
+				"Git: Quick Add"
+			],
+			[
+				"git checkout new",
+				"Git: Checkout New Branch"
+			],
+			[
+				"snipp",
+				"Snippet: ${ } .. (^X)"
+			],
+			[
+				"pac k",
+				"Package Control: Disable Package"
+			],
+			[
+				"git bla",
+				"Git: Blame"
+			],
+			[
+				"git checkout new ",
+				"Git: Checkout New Branch"
+			],
+			[
+				"git stat",
+				"Git: Status"
+			],
+			[
+				"git quick ",
+				"Git: Quick Add"
+			],
+			[
+				"git check",
+				"Git: Checkout New Branch"
+			],
+			[
+				"git chec",
+				"Git: Checkout New Branch"
+			],
+			[
+				"qu",
+				"Git: Quick Add"
+			],
+			[
+				"git amend",
+				"Git: Amend Commit"
+			],
+			[
+				"git checkou",
+				"Git: Checkout New Branch"
+			],
+			[
+				"gi am",
+				"Git: Amend Commit"
+			],
+			[
+				"qui",
+				"Git: Quick Status"
+			],
+			[
+				"",
+				"Convert Case: Upper Case"
+			],
+			[
+				"git commit ",
+				"Git: Amend Commit"
+			],
+			[
+				"bUse",
+				"Preferences: Key Bindings - User"
+			],
+			[
+				"git amm",
+				"Git: Amend Commit"
+			],
+			[
+				"git comit",
+				"Git: Commit"
+			],
+			[
+				"git comi",
+				"Git: Commit"
+			],
+			[
+				"template",
+				"HTML: Encode Special Characters"
+			],
+			[
+				" git qui",
+				"Git: Quick Add"
+			],
+			[
+				"locus",
+				"Set Syntax: Locust XML"
+			],
+			[
+				"Ll",
+				"Set Syntax: LaTeX Log"
+			],
+			[
+				"git quick comm",
+				"Git: Quick Commit"
+			],
+			[
+				"git checkout ne",
+				"Git: Checkout New Branch"
+			],
+			[
+				"git chek",
+				"Git: Checkout New Branch"
+			],
+			[
+				"git merge",
+				"Git: Merge"
+			],
+			[
+				"git stt",
+				"Git: Status"
+			],
+			[
+				"git stau",
+				"Git: Status"
+			],
+			[
+				"git chekc",
+				"Git: Checkout New Branch"
+			],
+			[
+				"git stash ",
+				"Git: Pop Stash"
+			],
+			[
+				"checkout",
+				"Git: Checkout New Branch"
+			],
+			[
+				"commi",
+				"Git: Commit"
+			],
+			[
+				"git amme",
+				"Git: Amend Commit"
+			],
+			[
+				"commit",
+				"Git: Commit"
+			],
+			[
+				"git chek	",
+				"Git: Checkout"
+			],
+			[
+				"position",
+				"z:AAAPackageDev: New JSON Syntax Definition"
+			],
+			[
+				"git add ",
+				"Git: Quick Add"
+			],
+			[
+				"git ad",
+				"Git: Quick Add"
+			],
+			[
+				"Paloma",
+				"Package Control: Remove Package"
+			],
+			[
+				"Egg",
+				"Legit: Graft"
+			],
+			[
+				"amend",
+				"Git: Amend Commit"
+			],
+			[
+				"add",
+				"Git: Quick Add"
+			],
+			[
+				"am",
+				"Git: Amend Commit"
+			],
+			[
+				"NPC",
+				"Preferences: Package Control Settings – Default"
+			],
+			[
+				"git quicka",
+				"Git: Quick Add"
+			],
+			[
+				"Park",
+				"Package Control: Remove Package"
+			],
+			[
+				"qi",
+				"Git: Quick Add"
+			],
+			[
+				"git qucik",
+				"Git: Quick Add"
+			],
+			[
+				"git add cu",
+				"Git: Add Current File"
+			],
+			[
+				"quick",
+				"Git: Quick Add"
+			],
+			[
+				"quick add",
+				"Git: Quick Add"
+			],
+			[
+				"comit",
+				"Git: Commit"
+			],
+			[
+				"set syntax locus",
+				"Set Syntax: Locust XML"
+			],
+			[
+				"sublime",
+				"SublimeGit: Add License"
+			],
+			[
+				"locust",
+				"Set Syntax: Locust XML"
+			],
+			[
+				"locu",
+				"Set Syntax: Locust Query"
+			],
+			[
+				"Snippet: ",
+				"Snippet: sortAscending"
+			],
+			[
+				"scope",
+				"Scope Hunter: Show Scope Under Cursor(s)"
+			],
+			[
+				"user",
+				"Preferences: Settings - User"
+			],
+			[
+				"setting",
+				"Preferences: Settings - User"
+			],
+			[
+				"key",
+				"Preferences: Key Bindings - Default"
+			],
+			[
+				"search",
+				"File: Search Files"
+			],
+			[
+				"package",
+				"Package Control: Install Package"
+			],
+			[
+				"INSTALL",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 579.0
+	},
+	"console":
+	{
+		"height": 295.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = '7183a2d3e96f11eeadd761d777e62404e330c659d4bb41d3bdf022e94cab3cd0'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/thom/Dropbox/code/rust/bad3d",
+		"/Users/thom/Dropbox/code/rust/bad3d/src",
+		"/Users/thom/Dropbox/code/rust/bad3d/src/math"
+	],
+	"file_history":
+	[
+		"/Users/thom/Dropbox/code/rust/bad3d/src/gjk.rs",
+		"/Users/thom/Downloads/main.js",
+		"/Users/thom/Dropbox/code/tent-ske;.js",
+		"/Users/thom/Dropbox/code/tent-tail-unity.cs",
+		"/Users/thom/Library/Application Support/Sublime Text 3/Packages/User/Plain text.sublime-settings",
+		"/Users/thom/Dropbox/code/7drl-2016/src/renderer.js",
+		"/Users/thom/Dropbox/code/7drl-2016/node_modules/pollable-input-js/pollable-input.js",
+		"/Users/thom/Dropbox/code/7drl-2016/src/coord.js",
+		"/Users/thom/Dropbox/automaton-src/AStar.hh",
+		"/Users/thom/Dropbox/code/7drl-2016/src/main.js",
+		"/Users/thom/Dropbox/code/7drl-2016/index.html",
+		"/Users/thom/Dropbox/code/7drl-2016/src/clock.js",
+		"/Users/thom/Dropbox/code/7drl-2016/package.json",
+		"/Users/thom/Dropbox/code/7drl-2016/7drl.js",
+		"/Users/thom/Dropbox/code/7drl-2016/dev.sh",
+		"/Users/thom/Dropbox/code/7drl-2016/src/rect.js",
+		"/Users/thom/Dropbox/code/7drl-2016/src/rng.js",
+		"/Users/thom/Dropbox/code/7drl-2016/src/game.js",
+		"/Users/thom/Dropbox/code/7drl-2016/node_modules/quick-noise-js/package.json",
+		"/Users/thom/Dropbox/code/7drl-2016/.eslintrc.json",
+		"/Users/thom/Dropbox/code/7drl-2016/src/debug.js",
+		"/Users/thom/Dropbox/code/7drl-2016/src/vec2.js",
+		"/Users/thom/Dropbox/code/7drl-2016/src/math.js",
+		"/Users/thom/Dropbox/code/7drl-2016/.gitignore",
+		"/Users/thom/Dropbox/code/7drl-2016/src/style.css",
+		"/Users/thom/Library/Application Support/Sublime Text 3/Packages/SublimeLinter/SublimeLinter.sublime-settings",
+		"/Users/thom/Library/Application Support/Sublime Text 3/Packages/User/SublimeLinter.sublime-settings",
+		"/Users/thom/Dropbox/code/7drl-2016/game.css",
+		"/Users/thom/src/sandbox-melax/include/misc_gl.h",
+		"/Users/thom/src/sandbox-melax/include/hull.h",
+		"/var/folders/8n/_1bx48s509dfc5rxpfcfqfw40000gn/T/asmcc20160222-65346-1muz172.cpp",
+		"/Users/thom/Dropbox/code/math-util-js/package.json",
+		"/Users/thom/Downloads/Revive/de/popforge/revive/geom/BezierQuadric.as",
+		"/Users/thom/Downloads/Revive/de/popforge/revive/geom/BezierCubic.as",
+		"/Users/thom/Downloads/Revive/de/popforge/revive/geom/BoundingBox.as",
+		"/Users/thom/Downloads/Revive/de/popforge/revive/member/ImmovableBezierQuadric.as",
+		"/Users/thom/Downloads/Revive/de/popforge/revive/member/MovableParticle.as",
+		"/Users/thom/Downloads/bezier_clipping/src/Vertex.as",
+		"/Users/thom/Downloads/bezier_clipping/src/Bezier.as",
+		"/Users/thom/Dropbox/code/asmscript/src/functype.js",
+		"/Users/thom/Dropbox/code/asmscript/src/module.js",
+		"/Users/thom/Dropbox/code/asmscript/src/types.js",
+		"/Users/thom/Dropbox/code/asmscript/src/parser.js",
+		"/Users/thom/Dropbox/code/asmscript/src/lexer.js",
+		"/Users/thom/Dropbox/code/asmscript/src/analyze.js",
+		"/Users/thom/Dropbox/code/asmscript/src/signature.js",
+		"/Users/thom/Dropbox/code/asmscript/package.json",
+		"/Users/thom/Dropbox/code/asmscript/src/scope.js",
+		"/Users/thom/Dropbox/code/asmscript/demo/index.html",
+		"/Users/thom/Dropbox/code/asmscript/src/demo-main.js",
+		"/Users/thom/Dropbox/code/asmscript/src/ast.js",
+		"/Users/thom/Dropbox/code/asmscript/demo/mode-wmm.js",
+		"/Users/thom/Dropbox/code/asmscript/src/index.js",
+		"/Users/thom/Dropbox/code/asmscript/demo/ace-extension.js",
+		"/Users/thom/Dropbox/code/asmscript/src/srcpos.js",
+		"/Users/thom/Dropbox/code/asmscript/src/token.js",
+		"/Users/thom/Dropbox/code/asmscript/build/parser.js",
+		"/Users/thom/Dropbox/code/asmscript/build/lexer.js",
+		"/Users/thom/src/go/src/go/parser/parser.go",
+		"/Users/thom/.zshrc",
+		"/Users/thom/Dropbox/code/asmscript/src/assert.js",
+		"/Users/thom/Dropbox/code/asmscript/README.md",
+		"/Users/thom/.emscripten",
+		"/Users/thom/Dropbox/code/asmscript/.gitignore",
+		"/Users/thom/Dropbox/code/asmscript/build/index.js",
+		"/Users/thom/Dropbox/code/ld34/src/player.js",
+		"/Users/thom/Dropbox/code/ld34/src/debug.js",
+		"/Users/thom/Dropbox/code/ld34/src/input.js",
+		"/Users/thom/Dropbox/code/ld34/src/constants.js",
+		"/Users/thom/Dropbox/code/ld34/src/gfx_layer.js",
+		"/Users/thom/Dropbox/code/ld34/src/clock.js",
+		"/Users/thom/Dropbox/code/ld34/out/index.html",
+		"/Users/thom/Dropbox/code/ld34/src/ease.js",
+		"/Users/thom/Dropbox/code/ld34/src/pixel_buffer.js",
+		"/Users/thom/Dropbox/code/ld34/node_modules/quick-noise-js/package.json",
+		"/Users/thom/Dropbox/code/ld34/package.json",
+		"/Users/thom/Dropbox/code/ld34/src/rand.js",
+		"/Users/thom/Dropbox/code/ld34/src/util.js",
+		"/Users/thom/Dropbox/code/ld34/out/ld34.js",
+		"/Users/thom/Dropbox/code/ld34/src/util",
+		"/Users/thom/Dropbox/code/ld34/out/game.js",
+		"/Users/thom/Dropbox/code/ld34/src/FloatArrayPool.js",
+		"/Users/thom/Desktop/hand.json",
+		"/Users/thom/Dropbox/code/ld34/pub/index.html",
+		"/Users/thom/Dropbox/code/chull.js",
+		"/Users/thom/src/sandbox-melax/bunnylod/progmesh.h",
+		"/Users/thom/src/sandbox-melax/bunnylod/bunnylod.vcxproj",
+		"/Users/thom/src/sandbox-melax/include/mesh.h",
+		"/Users/thom/src/sandbox-melax/testrig/default_hand.chr",
+		"/Users/thom/src/sandbox-melax/include/vecmatquat.h",
+		"/Users/thom/src/sandbox-melax/bunnylod/rabdata.cpp",
+		"/Users/thom/src/sandbox-melax/testhull/testhull.vcxproj",
+		"/Users/thom/Dropbox/code/js/Demo.js",
+		"/Users/thom/src/sandbox-melax/include/dxwin.h",
+		"/Users/thom/src/sandbox-melax/testcov/testcov.cpp",
+		"/var/folders/8n/_1bx48s509dfc5rxpfcfqfw40000gn/T/asmcc20151017-27227-12eocmk.cpp",
+		"/var/folders/8n/_1bx48s509dfc5rxpfcfqfw40000gn/T/asmcc20151017-26323-xrr2n1.cpp",
+		"/Users/thom/work/pandemic/.git/MERGE_MSG",
+		"/Users/thom/src/jai-demo-traveller/modules/Mixer_Win32.jai",
+		"/Users/thom/src/jai-demo-traveller/modules/Mixer_Async.jai",
+		"/var/folders/8n/_1bx48s509dfc5rxpfcfqfw40000gn/T/asmcc20151013-81722-16ptu2a.cpp",
+		"/Users/thom/Dropbox/ld33-old/package.json",
+		"/Users/thom/Dropbox/ld33",
+		"/Users/thom/Dropbox/code/base-cxx/src/Logging.hh",
+		"/Users/thom/Dropbox/code/base-cxx/src/Logging.cc",
+		"/Users/thom/Dropbox/code/base-cxx/src/Input.hh",
+		"/Users/thom/Dropbox/code/base-cxx/src/Audio.hh",
+		"/Users/thom/Dropbox/code/base-cxx/src/Base.hh",
+		"/Users/thom/Dropbox/code/base-cxx/src/Platform.hh",
+		"/Users/thom/tmp/foo.txt",
+		"/Users/thom/tmp/test.js",
+		"/Users/thom/Dropbox/fizzbuzz-obfusc.js",
+		"/Users/thom/src/thekla_atlas/src/nvcore/RadixSort.h",
+		"/Users/thom/ld33/out/Build.js",
+		"/Users/thom/ld33/src/math.js",
+		"/Users/thom/ld33/src/util.js",
+		"/Users/thom/ld33/out/gif.js",
+		"/Users/thom/ld33/index.html",
+		"/Users/thom/ld33/Build.js",
+		"/Users/thom/ld33/src/Main.js",
+		"/Users/thom/ld33/out/gif.worker.js",
+		"/Users/thom/ld33/out/index.html",
+		"/Users/thom/ld33/src/Assets.js",
+		"/Users/thom/ld33/README.md",
+		"/Users/thom/ld33/brainstorm.md",
+		"/Users/thom/ld33/.gitignore",
+		"/Users/thom/ld33/package.json",
+		"/Users/thom/Downloads/SunriderAcademyDenpa-all/game/options.rpy"
+	],
+	"find":
+	{
+		"height": 25.0
+	},
+	"find_in_files":
+	{
+		"height": 92.0,
+		"where_history":
+		[
+			"/Users/thom/src/handmade-hero-cpp/code",
+			"/Users/thom/Downloads/Brogue v1.7.4/Brogue source/Brogue/BrogueCode",
+			"/Users/thom/Downloads/Revive/de/popforge/revive",
+			"/Users/thom/src/handmade-hero-cpp/code",
+			"/Users/thom/Dropbox/code/asmscript/src",
+			"/Users/thom/Dropbox/code/ld34/src",
+			"/Users/thom/src/sandbox-melax",
+			"/Users/thom/src/sandbox-melax/include",
+			"/Users/thom/src/melax/src",
+			"/Users/thom/Downloads/SunriderAcademyDenpa-all/game",
+			"/Users/thom/Dropbox/rax/game/src",
+			"/Users/thom/Dropbox/rax",
+			"/Users/thom/work/authoring-nova/src",
+			"/Users/thom/Desktop/nscripts/scripts",
+			"/Users/thom/Downloads/collisiondummies/OBBs",
+			"/Users/thom/work/paloma-minigames/public/static/js",
+			"/Users/thom/src/doom3.gpl/neo",
+			"/Users/thom/src/thekla_atlas/src",
+			"/Users/thom/Downloads/handmade_hero_035_source",
+			"/Users/thom/Downloads/handmade_hero_035_source/handmade_hero_day_035_source",
+			"/Users/thom/Downloads/handmade_hero_035_source/handmade_hero_day_035/",
+			"/Users/thom/Downloads/handmade_hero_035_source/",
+			"/Users/thom/Downloads/handmade_hero_035_source/handmade_hero_day_035_source",
+			"/Users/thom/Downloads/handmade_hero_035_source/handmade_hero_day_031_source/code",
+			"/Users/thom/src/HaxeDungeons/src/dungeons",
+			"/Users/thom/Dropbox/zuurr-dev/reference/crawl/crawl-ref/source",
+			"/Users/thom/Dropbox/rl/glow/src/glow/core",
+			"C:\\projects\\paloma-minigames\\public\\static",
+			"C:\\projects\\paloma-minigames\\public\\static\\css",
+			"C:\\projects\\paloma-minigames\\public\\static\\data",
+			"C:\\projects\\paloma-minigames\\public\\static\\css",
+			"C:\\projects\\paloma-minigames\\public\\static\\js",
+			"C:\\projects\\paloma-minigames\\public\\static",
+			"C:\\projects\\paloma-minigames\\public\\static\\css",
+			"C:\\projects\\paloma-minigames\\public\\static\\js",
+			"C:\\projects\\paloma-minigames\\public\\static\\js\\streak",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\modules\\core\\",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules\\core\\",
+			"C:\\projects\\Paloma\\game\\modules\\",
+			"C:\\projects\\Paloma\\game\\modules\\core\\server content",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\modules\\core\\client content\\franken",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\scripts",
+			"C:\\projects\\Paloma\\game\\modules\\",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\scripts\\audio\\conversations",
+			"C:\\projects\\Paloma\\game\\modules\\",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\pretask\\static\\js",
+			"C:\\projects\\Paloma\\game\\modules\\",
+			"C:\\projects\\Paloma\\game\\pretask\\",
+			"C:\\projects\\Paloma\\game\\modules\\",
+			"C:\\projects\\Paloma\\game\\modules\\core\\client game systems",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\pretask\\data",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma-launcher",
+			"C:\\projects\\Paloma-launcher\\android",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\",
+			"C:\\projects\\Paloma-launcher",
+			"C:\\projects\\Paloma\\game\\pretask",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\pretask\\data",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\art\\exports",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core\\client game systems",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma-launcher\\iOS",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules\\",
+			"C:\\projects\\Paloma\\game\\modules\\core\\client content\\franken",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\",
+			"C:\\projects\\Paloma\\game\\scripts",
+			"C:\\projects\\Paloma\\game\\modules\\task1",
+			"C:\\projects\\Paloma\\game\\shortcuts\\task1",
+			"C:\\projects\\Paloma\\game\\build",
+			"C:\\projects\\Paloma\\game\\scripts",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\modules\\full\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\full\\ui",
+			"C:\\projects\\Paloma\\art\\UI",
+			"C:\\projects\\Paloma\\game\\modules\\full\\ui",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game",
+			"C:\\projects\\Paloma\\game\\modules\\full",
+			"C:\\projects\\Paloma\\authoring_tools\\phase1\\client\\js\\objectives",
+			"C:\\projects\\Paloma\\game",
+			"C:\\projects\\vantage\\modules\\vantage",
+			"<project>",
+			"C:\\projects\\Paloma\\game\\modules",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			"C:\\projects\\Paloma\\game\\",
+			"C:\\projects\\Paloma\\game\\modules\\core\\ui",
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"verts",
+			"Verts",
+			"verts",
+			"Verts",
+			"verts",
+			"Verts",
+			"verts",
+			"Verts",
+			"verts",
+			"out",
+			"getSupportFunction",
+			"set",
+			"fold",
+			"#[inline]",
+			"// ",
+			"Zero::",
+			"Vn",
+			"pub fn",
+			"pub type",
+			"&",
+			"zip",
+			"impl<T>",
+			"T>",
+			"impl<$T>",
+			"Primitive",
+			"where T: Primitive",
+			"Copy + Clone",
+			"Mul",
+			"T",
+			"v",
+			"v.",
+			"From",
+			"as_ref",
+			"from",
+			"Vec2",
+			"Elem",
+			"Output",
+			"$Output",
+			"from",
+			"VecType",
+			"VecType<T> ",
+			"T",
+			"VecType",
+			"z",
+			"V3",
+			" { x",
+			"Clone",
+			"V2",
+			"Mul",
+			"V2",
+			"apply",
+			"#[inline]",
+			"AsRef",
+			"V3",
+			"V2",
+			"V3",
+			"#[inline] ",
+			"V2",
+			"V3",
+			"V3<T>",
+			"V2",
+			"<T>",
+			"T>",
+			"V2",
+			"+",
+			"other",
+			"Point",
+			"func",
+			" * ",
+			")",
+			"(",
+			"other",
+			"self",
+			"V4<S>",
+			"<S>",
+			"V3<S>",
+			"V3",
+			"$n",
+			"$S",
+			"$I",
+			"VectorN",
+			"$VecType",
+			"$TyParam",
+			"VectorN",
+			"$n",
+			"$S",
+			"V3",
+			"0",
+			", w: 0",
+			"V4",
+			"V3",
+			"V2",
+			"V3",
+			"Vec3",
+			"functionName",
+			"gl.",
+			"u_normalMat",
+			"TENT_SPECULAR",
+			"u_specular",
+			"COLOR",
+			"diffuse",
+			"TENT_AMBIENT",
+			"ambient",
+			"u_shine",
+			"uniform",
+			"updateMesh",
+			"let",
+			"b",
+			"a",
+			"const",
+			"let",
+			"Math.",
+			"dx",
+			"let",
+			"len",
+			".",
+			"py",
+			"n",
+			"b",
+			"bx",
+			"x",
+			"y",
+			"x",
+			"p",
+			"pos",
+			"p",
+			"const",
+			"vel"
+		],
+		"highlight": false,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"gs_server.Gender",
+			"mlui.objUI.objRoot.objUIData",
+			"getUIData()",
+			"Task1",
+			"../../",
+			"..\\..\\",
+			"mlui.objUI.objRoot.objUIData.",
+			"mlui.objUI.objRoot.objUIData",
+			"$1 type=\"core_ui.$2\"",
+			"$1 $2 type=\"core_ui.$3\"",
+			"$1 type=\"core_ui.$2\"",
+			"	,",
+			"this",
+			"console"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "src/gjk.rs",
+					"semi_transient": true,
+					"settings":
+					{
+						"buffer_size": 14447,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2617,
+								2617
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Rust/Rust.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1011.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 421,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								420,
+								365
+							]
+						],
+						"settings":
+						{
+							"auto_indent": false,
+							"default_dir": "/Users/thom/Dropbox/code/rust/bad3d",
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_width": 2,
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 25.0
+	},
+	"input":
+	{
+		"height": 37.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.dart.config.check":
+	{
+		"height": 108.0
+	},
+	"output.exec":
+	{
+		"height": 114.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.git-checkout":
+	{
+		"height": 132.0
+	},
+	"output.git-commit":
+	{
+		"height": 126.0
+	},
+	"pinned_build_system": "",
+	"project": "bad3d.sublime-project",
+	"replace":
+	{
+		"height": 46.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"C:\\projects\\sublime-project-files\\LocustVS2012.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
+		"height": 375.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"Thief",
+				"getHadConversationFlagName"
+			],
+			[
+				"ordercamer",
+				"OrderTransitionToClosestCamera"
+			]
+		],
+		"width": 687.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 186.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

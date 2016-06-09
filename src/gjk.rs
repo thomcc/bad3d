@@ -3,6 +3,7 @@ use hull;
 use std::default::Default;
 // use math::geom;
 use support::{TransformedSupport, Support};
+use std::f32;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum ContactType {
@@ -31,6 +32,49 @@ pub struct ContactInfo {
 impl ContactInfo {
     fn fill_simplex(&mut self, src: &Simplex) {
         self.ty = ContactType::Unknown;
+
+        if src.points[0].a == src.points[1].a && src.points[0].a == src.points[2].a {
+            self.ty = ContactType::PtPlane;
+            self.simplex[0] = src.points[0].a;
+            self.simplex[1] = src.points[0].b;
+            self.simplex[2] = src.points[1].b;
+            self.simplex[3] = src.points[2].b;
+            if dot(self.plane.normal,
+                   cross(src.points[1].p - src.points[0].p,
+                         src.points[2].p - src.points[0].p)) < 0.0 {
+                self.simplex.swap(1, 2);
+            }
+        }
+        else if src.points[0].b == src.points[1].b && src.points[0].b == src.points[2].b {
+            self.ty = ContactType::PlanePt;
+            self.simplex[0] = src.points[0].a;
+            self.simplex[1] = src.points[1].a;
+            self.simplex[2] = src.points[2].a;
+            self.simplex[3] = src.points[2].b;
+            if dot(self.plane.normal, cross(src.points[1].p - src.points[0].p,
+                                            src.points[2].p - src.points[0].p)) < 0.0 {
+                self.simplex.swap(1, 2);
+            }
+        }
+        else if (src.points[0].a == src.points[1].a || src.points[0].a == src.points[2].a || src.points[1].a == src.points[2].a) &&
+                (src.points[0].b == src.points[1].b || src.points[0].b == src.points[2].b || src.points[1].b == src.points[2].b) {
+
+            self.ty = ContactType::EdgeEdge;
+
+            self.simplex[0] = src.points[0].a;
+            self.simplex[1] = if src.points[1].a != src.points[0].a {src.points[1].a} else {src.points[2].a};
+            self.simplex[2] = src.points[0].b;
+            self.simplex[3] = if src.points[1].b != src.points[0].b {src.points[1].b} else {src.points[2].b};
+
+            let dp = dot(self.plane.normal,
+                         cross(src.points[1].p - src.points[0].p,
+                               src.points[2].p - src.points[0].p));
+
+            if (dp < 0.0 && src.points[1].a != src.points[0].a) || (dp > 0.0 && src.points[1].a == src.points[0].a) {
+                self.simplex.swap(2, 3);
+            }
+        }
+        /*
         if src.size != 3 {
             return;
         }
@@ -61,7 +105,7 @@ impl ContactInfo {
             if (face_proj < 0.0 && p1a != p0a) || (face_proj > 0.0 && p1a == p0a) {
                 self.simplex.swap(2, 3);
             }
-        }
+        }*/
     }
 }
 
@@ -87,7 +131,14 @@ impl Point {
     fn with_t(&self, t: f32) -> Point {
         Point { t: t, .. *self }
     }
+
+    #[inline]
+    fn same_as(&self, o: &Point) -> bool {
+        self.a == o.a && self.b == o.b
+    }
 }
+
+
 
 #[derive(Copy, Clone, Debug, Default)]
 struct Simplex {
@@ -102,54 +153,37 @@ fn towards_origin(a: V3, b: V3) -> bool {
 }
 
 impl Simplex {
-    // fn make(v: V3, pts: &[Point]) -> Simplex {
-    //     debug_assert!(pts.len() < 4 && pts.len() > 0);
-    //     let mut arr: [Point; 4] = Default::default();
-    //     for (&a, b) in pts.iter().zip(arr.iter_mut()) {
-    //         *b = a;
-    //     }
-    //     Simplex { v: v, points: arr, size: pts.len() as u32 }
+
+    fn set(&self, v: V3, pts: &[Point]) -> Simplex {
+        let mut res = *self;
+        res.v = v;
+        for (i, p) in pts.iter().enumerate() {
+            res.points[i] = *p;
+        }
+        res.size = pts.len() as u32;
+        res
+    }
+
+    // fn make2(v: V3, p0: Point, p1: Point) -> Simplex {
+    //     Simplex { v: v, size: 2, points: [p0, p1, Default::default(), Default::default()] }
     // }
 
-    fn make2(v: V3, p0: Point, p1: Point) -> Simplex {
-        Simplex {
-            v: v,
-            size: 2,
-            points: [p0, p1, Default::default(), Default::default()]
-        }
-        // debug_assert!(pts.len() < 4 && pts.len() > 0);
-        // let mut arr: [Point; 4] = Default::default();
-        // for (&a, b) in pts.iter().zip(arr.iter_mut()) {
-        //     *b = a;
-        // }
-        // Simplex { v: v, points: arr, size: pts.len() as u32 }
-    }
-    fn make3(v: V3, p0: Point, p1: Point, p2: Point) -> Simplex {
-        Simplex {
-            v: v,
-            size: 3,
-            points: [p0, p1, p2, Default::default()]
-        }
-        // debug_assert!(pts.len() < 4 && pts.len() > 0);
-        // let mut arr: [Point; 4] = Default::default();
-        // for (&a, b) in pts.iter().zip(arr.iter_mut()) {
-        //     *b = a;
-        // }
-        // Simplex { v: v, points: arr, size: pts.len() as u32 }
-    }
+    // fn make3(v: V3, p0: Point, p1: Point, p2: Point) -> Simplex {
+    //     Simplex { v: v, size: 3, points: [p0, p1, p2, Default::default()] }
+    // }
 
-    fn from_point(w: &Point) -> Simplex {
-        Simplex {
-            v: w.p,
-            size: 1,
-            points: [
-                w.with_t(1.0),
-                Default::default(),
-                Default::default(),
-                Default::default()
-            ]
-        }
-    }
+    // fn from_point(w: &Point) -> Simplex {
+    //     Simplex {
+    //         v: w.p,
+    //         size: 1,
+    //         points: [
+    //             w.with_t(1.0),
+    //             Default::default(),
+    //             Default::default(),
+    //             Default::default()
+    //         ]
+    //     }
+    // }
 
     fn initial(v: V3) -> Simplex {
         Simplex { v: v, size: 0, .. Default::default() }
@@ -157,21 +191,21 @@ impl Simplex {
 
     fn finish(&self, w: &Point) -> Simplex {
         debug_assert!(self.size == 3);
-        let mut result = Simplex{ v: V3::zero(), size: 4, .. *self };
+        let mut result = *self; //Simplex{ v: V3::zero(), size: 4, .. *self };
         result.points[3] = *w;
+        result.size = 4;
+        result.v = V3::zero();
         result
     }
 
     fn next1(&self, w: &Point) -> Simplex {
-        /* println!("NEXT1"); */
         let s = self.points[0];
         let t = geom::line_project_time(w.p, s.p, V3::zero());
-        if t < 0.0 { /* println!("1:T<0"); */ Simplex::from_point(w) }
-        else { /* println!("1:ELSE"); */ Simplex::make2(w.p.lerp(s.p, t), s.with_t(t), w.with_t(1.0-t)) }
+        if t < 0.0 { self.set(w.p, &[w.with_t(1.0)]) }
+        else { self.set(w.p + (self.points[0].p - w.p) * t, &[s.with_t(t), w.with_t(1.0-t)]) }
     }
 
     fn next2(&self, w: &Point) -> Simplex {
-        /* println!("NEXT2"); */
         let s0 = self.points[0];
         let s1 = self.points[1];
 
@@ -184,56 +218,51 @@ impl Simplex {
         let in_edge0 = towards_origin(v0, s1.p);
         let in_edge1 = towards_origin(v1, s0.p);
 
-        if in_edge0 && in_edge1 { /* println!("2:IN E0 E2"); */ Simplex::make3(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), s0, s1, *w) }
-        else if !in_edge0 && t0 > 0.0 { /* println!("2:!IN E0 & T0 > 0"); */ Simplex::make2(v0, s0.with_t(t0), w.with_t(1.0 - t0)) }
-        else if !in_edge1 && t1 > 0.0 { /* println!("2:!IN E0 & T0 > 0"); */ Simplex::make2(v1, s1.with_t(t1), w.with_t(1.0 - t1)) }
-        else { /* println!("2:ELSE"); */ Simplex::from_point(w) }
+        if in_edge0 && in_edge1 { self.set(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), &[s0, s1, *w]) }
+        else if !in_edge0 && t0 > 0.0 { self.set(v0, &[s0.with_t(t0), w.with_t(1.0 - t0)]) }
+        else if !in_edge1 && t1 > 0.0 { self.set(v1, &[s1.with_t(t1), w.with_t(1.0 - t1)]) }
+        else { self.set(w.p, &[w.with_t(1.0)]) }
     }
 
     fn next3(&self, w: &Point) -> Simplex {
-        /* println!("NEXT3"); */
         let s0 = self.points[0];
         let s1 = self.points[1];
         let s2 = self.points[2];
-
         let t0 = geom::line_project_time(w.p, s0.p, V3::zero());
         let t1 = geom::line_project_time(w.p, s1.p, V3::zero());
         let t2 = geom::line_project_time(w.p, s2.p, V3::zero());
-
-        let v0 = w.p.lerp(s0.p, t0);
-        let v1 = w.p.lerp(s1.p, t1);
-        let v2 = w.p.lerp(s2.p, t2);
-
+        let v0 = w.p + (s0.p - w.p)*t0;
+        let v1 = w.p + (s1.p - w.p)*t1;
+        let v2 = w.p + (s2.p - w.p)*t2;
         let c0 = geom::tri_project(w.p, s1.p, s2.p, V3::zero());
         let c1 = geom::tri_project(w.p, s2.p, s0.p, V3::zero());
         let c2 = geom::tri_project(w.p, s0.p, s1.p, V3::zero());
 
-        let in_p0 = towards_origin(c0, s0.p);
-        let in_p1 = towards_origin(c1, s1.p);
-        let in_p2 = towards_origin(c2, s2.p);
+        let inp0 = towards_origin(c0, s0.p);
+        let inp1 = towards_origin(c1, s1.p);
+        let inp2 = towards_origin(c2, s2.p);
 
-        let in_p2_e0 = towards_origin(v0, s1.p);
-        let in_p2_e1 = towards_origin(v1, s0.p);
+        let inp2e0 = towards_origin(v0, s1.p);
+        let inp2e1 = towards_origin(v1, s0.p);
 
-        let in_p0_e1 = towards_origin(v1, s2.p);
-        let in_p0_e2 = towards_origin(v2, s1.p);
+        let inp0e1 = towards_origin(v1, s2.p);
+        let inp0e2 = towards_origin(v2, s1.p);
 
-        let in_p1_e2 = towards_origin(v2, s0.p);
-        let in_p1_e0 = towards_origin(v0, s2.p);
-
-        if in_p0 && in_p1 && in_p2 { /* println!("3:FINISH"); */ self.finish(w) /* terminated */ }
-        else if !in_p2 && in_p2_e0 && in_p2_e1 { /* println!("3:!in_p2 && in_p2_e0 && in_p2_e1 "); */ Simplex::make3(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), s0, s1, *w) }
-        else if !in_p0 && in_p0_e1 && in_p0_e2 { /* println!("3:!in_p0 && in_p0_e1 && in_p0_e2 "); */ Simplex::make3(geom::tri_project(s1.p, s2.p, w.p, V3::zero()), s1, s2, *w) }
-        else if !in_p1 && in_p1_e2 && in_p1_e0 { /* println!("3:!in_p1 && in_p1_e2 && in_p1_e0 "); */ Simplex::make3(geom::tri_project(s2.p, s0.p, w.p, V3::zero()), s2, s0, *w) }
-        else if !in_p1_e0 && !in_p2_e0 && t0 > 0.0 { /* println!("3:!in_p1_e0 && !in_p2_e0 && t0 > 0.0 "); */ Simplex::make2(v0, s0.with_t(t0), w.with_t(1.0 - t0)) }
-        else if !in_p2_e1 && !in_p0_e1 && t1 > 0.0 { /* println!("3:!in_p2_e1 && !in_p0_e1 && t1 > 0.0 "); */ Simplex::make2(v1, s1.with_t(t1), w.with_t(1.0 - t1)) }
-        else if !in_p0_e2 && !in_p1_e2 && t2 > 0.0 { /* println!("3:!in_p0_e2 && !in_p1_e2 && t2 > 0.0 "); */ Simplex::make2(v2, s2.with_t(t2), w.with_t(1.0 - t2)) }
-        else { /* println!("3:ELSE"); */ Simplex::from_point(w) }
+        let inp1e2 = towards_origin(v2, s0.p);
+        let inp1e0 = towards_origin(v0, s2.p);
+        if inp0 && inp1 && inp2 { self.finish(w) /* terminated */ }
+        else if !inp2 && inp2e0 && inp2e1 { self.set(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), &[self.points[0], self.points[1], *w]) }
+        else if !inp0 && inp0e1 && inp0e2 { self.set(geom::tri_project(s1.p, s2.p, w.p, V3::zero()), &[self.points[1], self.points[2], *w]) }
+        else if !inp1 && inp1e2 && inp1e0 { self.set(geom::tri_project(s2.p, s0.p, w.p, V3::zero()), &[self.points[2], self.points[0], *w]) }
+        else if !inp1e0 && !inp2e0 && t0 > 0.0 { self.set(v0, &[self.points[0].with_t(t0), w.with_t(1.0 - t0)]) }
+        else if !inp2e1 && !inp0e1 && t1 > 0.0 { self.set(v1, &[self.points[1].with_t(t1), w.with_t(1.0 - t1)]) }
+        else if !inp0e2 && !inp1e2 && t2 > 0.0 { self.set(v2, &[self.points[2].with_t(t2), w.with_t(1.0 - t2)]) }
+        else { self.set(w.p, &[w.with_t(1.0)]) }
     }
 
     fn next(&self, w: &Point) -> Simplex {
         match self.size {
-            0 => { /* println!("NEXT0"); */ Simplex::from_point(w) },
+            0 => { self.set(w.p, &[w.with_t(1.0)]) },
             1 => self.next1(w),
             2 => self.next2(w),
             3 => self.next3(w),
@@ -241,17 +270,23 @@ impl Simplex {
         }
     }
 
-    fn compute_points(&self) -> ContactInfo {
+    fn compute_points(&mut self) -> ContactInfo {
         assert!(self.size > 0);
-        {
-            let mut pts = self.points;
-            if self.size == 3 {
-                let b = geom::barycentric(pts[0].p, pts[1].p, pts[2].p, self.v);
-                pts[0].t = b.x;
-                pts[1].t = b.y;
-                pts[2].t = b.z;
-            }
+        if self.size == 3 {
+            let b = geom::barycentric(self.points[0].p, self.points[1].p, self.points[2].p, self.v);
+            self.points[0].t = b.x;
+            self.points[1].t = b.y;
+            self.points[2].t = b.z;
         }
+
+
+        let mut pa = V3::zero();
+        let mut pb = V3::zero();
+        for pt in self.points[0..(self.size as usize)].iter() {
+            pa += pt.t * pt.a;
+            pb += pt.t * pt.b;
+        }
+
         let (pa, pb) = self.points[0..(self.size as usize)].iter().fold((V3::zero(), V3::zero()),
             |(pa, pb), p| (pa + p.t*p.a, pb + p.t*p.b));
 
@@ -261,38 +296,16 @@ impl Simplex {
         let mut hit_info = ContactInfo {
             points: (pa, pb),
             impact: impact,
-            separation: pa.dist(pb) + 1.0e-30_f32,
+            separation: pa.dist(pb) + f32::MIN_POSITIVE,
             plane: geom::Plane::from_norm_and_point(norm, impact),
             .. Default::default()
         };
         hit_info.fill_simplex(self);
+
+        assert!(hit_info.separation > 0.0);
         hit_info
     }
 }
-
-fn epa_tri(w0: usize, w1: usize, w2: usize, pts: &[Point]) -> (usize, usize, usize, V3) {
-    let mut v = tri_project(pts[w0].p, pts[w1].p, pts[w2].p, V3::zero());
-    let b = barycentric(pts[w0].p, pts[w1].p, pts[w2].p, v);
-    if b.x < 0.0 || b.x > 1.0 || b.y < 0.0 || b.y > 1.0 || b.z < 0.0 || b.z > 1.0 {
-        v = (pts[w0].p + pts[w1].p + pts[w2].p) / 3.0;
-    }
-    (w0, w1, w2, v)
-}
-
-fn do_hacky_epa(next: &Simplex, last: &mut Simplex, a: &Support, b: &Support) {
-    let mut points: Vec<Point> = Vec::from(&next.points[..]);
-    let mut tris: Vec<(usize, usize, usize, V3)> = Vec::new();
-
-    tris.push(epa_tri(0, 1, 2, points));
-    tris.push(epa_tri(1, 0, 3, points));
-    tris.push(epa_tri(2, 1, 3, points));
-    tris.push(epa_tri(0, 2, 3, points));
-
-    let mut
-
-
-}
-
 
 pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
     let eps = 0.00001_f32;
@@ -301,10 +314,9 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
     let mut last = Simplex::initial(v);
 
     let mut w = Point::on_sum(a, b, -v);
-    let mut next = Simplex::from_point(&w);
+    let mut next = last.next(&w); //Simplex::from_point(&w);
 
     let mut iter = 0;
-    // println!("ENTER");
     while iter == 0 || (dot(w.p, v) < dot(v, v) - eps) && iter < 100 {
         iter += 1;
         last = next;
@@ -314,7 +326,6 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
         if !find_closest && dot(w.p, v) >= 0.0 { break; }
 
         next = last.next(&w);
-        // println!("NEXT COUNT {}, v {:?}", next.size, next.v);
         if next.v.is_zero() {
             if next.size == 2 {
                 last = next;
@@ -333,14 +344,20 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
                 (next.points[0].p, next.points[1].p, next.points[2].p, next.points[3].p),
                 |v| a.support(v) - b.support(-v));
 
-            let mp = M4x4::from_cols(V4::expand(next.points[0].p, 1.0), V4::expand(next.points[1].p, 1.0),
-                                     V4::expand(next.points[2].p, 1.0), V4::expand(next.points[3].p, 1.0));
+            let mp = M4x4::from_cols(V4::expand(next.points[0].p, 1.0),
+                                     V4::expand(next.points[1].p, 1.0),
+                                     V4::expand(next.points[2].p, 1.0),
+                                     V4::expand(next.points[3].p, 1.0));
 
-            let ma = M4x4::from_cols(V4::expand(next.points[0].a, 1.0), V4::expand(next.points[1].a, 1.0),
-                                     V4::expand(next.points[2].a, 1.0), V4::expand(next.points[3].a, 1.0));
+            let ma = M4x4::from_cols(V4::expand(next.points[0].a, 1.0),
+                                     V4::expand(next.points[1].a, 1.0),
+                                     V4::expand(next.points[2].a, 1.0),
+                                     V4::expand(next.points[3].a, 1.0));
 
-            let mb = M4x4::from_cols(V4::expand(next.points[0].b, 1.0), V4::expand(next.points[1].b, 1.0),
-                                     V4::expand(next.points[2].b, 1.0), V4::expand(next.points[3].b, 1.0));
+            let mb = M4x4::from_cols(V4::expand(next.points[0].b, 1.0),
+                                     V4::expand(next.points[1].b, 1.0),
+                                     V4::expand(next.points[2].b, 1.0),
+                                     V4::expand(next.points[3].b, 1.0));
 
             let b = mp.inverse().unwrap().w; // just unwrap directly? (no chance this can't be inverted, right?)
 
@@ -356,7 +373,6 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
             };
             hit_info.fill_simplex(&last);
             assert!(hit_info.separation <= 0.0);
-            // println!("EXIT (pass)");
             return hit_info;
         }
         if dot(next.v, next.v) >= dot(last.v, last.v) {
@@ -387,7 +403,8 @@ impl ContactPatch {
         let n = result.hit_info[0].plane.normal;
         result.count += 1;
         // return result;
-
+        // let tan = n.orth();
+        // let bit = cross(n, tan);
         let qs = Quat::shortest_arc(n, vec3(0.0, 0.0, 1.0));
         let tan = qs.x_dir();
         let bit = qs.y_dir();
@@ -411,12 +428,20 @@ impl ContactPatch {
                 let p0 = next.points.0;
                 next.points.0 = ar.inverse() * p0;
             }
-
             next.separation = dot(n, next.points.0 - next.points.1);
 
-            let matched = result.hit_info[0..result.count].iter().find(|item|
-                next.points.0.dist(item.points.0) < 0.05 ||
-                next.points.1.dist(item.points.1) < 0.05).is_some();
+            let mut matched = false;
+            for j in 0..result.count {
+                if (next.points.0-result.hit_info[j].points.0).length() < 0.05 ||
+                   (next.points.1-result.hit_info[j].points.1).length() < 0.05 {
+                    matched = true;
+                    break;
+                }
+            }
+
+            // let matched = result.hit_info[0..result.count].iter().find(|item|
+            //     next.points.0.dist(item.points.0) < 0.05 ||
+            //     next.points.1.dist(item.points.1) < 0.05).is_some();
 
             if !matched {
                 let c = result.count;
