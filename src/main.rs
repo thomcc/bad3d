@@ -15,6 +15,8 @@ mod support;
 mod gjk;
 mod phys;
 
+mod wingmesh;
+
 use math::*;
 
 use glium::{DisplayBuild, Surface};
@@ -863,6 +865,17 @@ fn run_gjk_test() {
     }
 }
 
+fn wm_shape(m: wingmesh::WingMesh) -> phys::Shape {
+    phys::Shape::new(m.verts.clone(), m.generate_tris())
+}
+
+fn wm_object(display: &GlutinFacade, m: wingmesh::WingMesh, com: V3) -> DemoObject {
+    let body = Rc::new(RefCell::new(phys::RigidBody::new(vec![wm_shape(m)], com, 1.0)));
+    let c = rand_color();
+    let meshes = body.borrow().shapes.iter().map(|s|
+        Box::new(DemoMesh::new(display, &s.vertices[..], &s.tris[..], c))).collect::<Vec<_>>();
+    DemoObject { body: body, meshes: meshes }
+}
 
 fn create_demo_blob(display: &GlutinFacade, com: V3) -> DemoObject {
     let (verts, tris) = random_point_cloud(15);
@@ -903,8 +916,8 @@ fn run_phys_test() {
     let jack_momentum_2 = vec3(0.3, 0.4, 1.0);
 
     let seesaw_start    = vec3(0.0, -4.0, 0.25);
-
-    demo_objects.push(create_box(&display, V3::splat(1.0), vec3(1.5, 0.0, 1.5)));
+    demo_objects.push(wm_object(&display, wingmesh::WingMesh::new_cone(10, 0.5, 1.0), vec3(1.5, 0.0, 1.5)));
+    // demo_objects.push(create_box(&display, V3::splat(1.0), vec3(1.5, 0.0, 1.5)));
     {
         let o = create_box(&display, V3::splat(1.0), vec3(-1.5, 0.0, 1.5));
         let r = quat(0.1, 0.01, 0.3, 1.0).must_norm();
@@ -921,7 +934,10 @@ fn run_phys_test() {
     }
 
     {
-        let l = create_box(&display, V3::splat(0.75), seesaw_start + vec3(2.5, 0.0, 32.0));
+        let mut wm = wingmesh::WingMesh::new_cylinder(30, 1.0, 2.0);
+        wm.translate(V3::splat(-1.0));
+        wm.rotate(Quat::shortest_arc(vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0)));
+        let l = wm_object(&display, wm, seesaw_start + vec3(2.5, 0.0, 50.0));
         l.body.borrow_mut().scale_mass(6.0);
 
         let l2 = create_box(&display, V3::splat(0.25), seesaw_start + vec3(2.5, 0.0, 0.4));
@@ -972,6 +988,11 @@ fn run_phys_test() {
 
     demo_objects.push(create_box(&display, vec3(2.0, 0.1, 0.1), vec3(0.0, 0.0, -0.5)));
     demo_objects.push(create_box(&display, vec3(2.0, 0.4, 0.1), vec3(0.0, 1.0, -0.5)));
+    {
+        let mut wm = wingmesh::WingMesh::new_cone(30, 0.5, 2.0);
+        wm.rotate(Quat::shortest_arc(vec3(0.0, 0.0, 1.0), vec3(0.0, -0.5, -0.5)));
+        demo_objects.push(wm_object(&display, wm, vec3(-4.0, -4.0, 4.0)));
+    }
 
     let program = glium::Program::from_source(&display,
         VERT_SRC, FRAG_SRC, None).unwrap();

@@ -59,10 +59,21 @@ pub fn tri_project(v0: V3, v1: V3, v2: V3, p: V3) -> V3 {
     }
 }
 
+
+pub const DEFAULT_PLANE_WIDTH: f32 = 0.0008_f32;
+
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Plane {
     pub normal: V3,
     pub offset: f32,
+}
+
+#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]
+pub enum PlaneTestResult {
+    Coplanar = 0b00,
+    Under    = 0b01,
+    Over     = 0b10,
+    Split    = 0b11, // Under | Over, not possible for points
 }
 
 impl Plane {
@@ -74,6 +85,17 @@ impl Plane {
     #[inline]
     pub fn from_v4(v: V4) -> Plane {
         Plane::new(v.xyz(), v.w)
+    }
+
+    #[inline]
+    pub fn from_points(points: &[V3]) -> Plane {
+        let c = points.iter().fold(V3::zero(), |a, &b| a+b) / (points.len() as f32);
+        let mut n = V3::zero();
+        for i in 0..points.len() {
+            let i1 = (i + 1) % points.len();
+            n += cross(points[i] - c, points[i1] - c);
+        }
+        Plane::from_norm_and_point(n.norm_or(0.0, 0.0, 1.0), c)
     }
 
     #[inline]
@@ -126,6 +148,19 @@ impl Plane {
     pub fn scale(&self, s: f32) -> Plane {
         Plane::new(self.normal, self.offset*s)
     }
+
+    #[inline]
+    pub fn test_e(&self, pos: V3, e: f32) -> PlaneTestResult {
+        let a = dot(pos, self.normal) + self.offset;
+        if a > e { PlaneTestResult::Over }
+        else if a < -e { PlaneTestResult::Under }
+        else { PlaneTestResult::Coplanar }
+    }
+
+    #[inline]
+    pub fn test(&self, pos: V3) -> PlaneTestResult {
+        self.test_e(pos, DEFAULT_PLANE_WIDTH)
+    }
 }
 
 
@@ -177,5 +212,8 @@ pub fn inertia<Tri: TriIndices>(verts: &[V3], tris: &[Tri], com: V3) -> M3x3 {
 }
 
 
-
+#[inline]
+pub fn plane(nx: f32, ny: f32, nz: f32, o: f32) -> Plane {
+    Plane::new(vec3(nx, ny, nz), o)
+}
 
