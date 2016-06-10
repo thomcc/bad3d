@@ -34,10 +34,3 @@ pub fn safe_div(a: f32, b: f32, default: f32) -> f32 {
 #[inline] pub fn safe_div0(a: f32, b: f32) -> f32 { safe_div(a, b, 0.0) }
 #[inline] pub fn safe_div1(a: f32, b: f32) -> f32 { safe_div(a, b, 1.0) }
 
-
-
-
-
-
-
-

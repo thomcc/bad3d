@@ -67,3 +67,31 @@ macro_rules! impl_ref_operators {
         }
     }
 }
+
+
+#[inline]
+pub fn maximum<T: Copy + PartialOrd>(a: T, b: T) -> T {
+    if a < b { b } else { a }
+}
+
+#[inline]
+pub fn minimum<T: Copy + PartialOrd>(a: T, b: T) -> T {
+    if a < b { a } else { b }
+}
+
+#[macro_export]
+macro_rules! max {
+    ($e: expr) => ($e);
+    ($a: expr, $b: expr) => ({let _a = $a; let _b = $b; if _a < _b { _b } else { _a }});
+    ($a: expr, $b: expr, $($rest: expr),+) => (max!($a, max!($b, $($rest),+)))
+}
+
+#[macro_export]
+macro_rules! min {
+    ($e: expr) => ($e);
+    ($a: expr, $b: expr) => ({let _a = $a; let _b = $b; if _a < _b { _a } else { _b }});
+    ($a: expr, $b: expr, $($rest: expr),+) => (min!($a, min!($b, $($rest),+)))
+}
+
+
+
