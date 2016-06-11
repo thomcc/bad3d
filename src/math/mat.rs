@@ -29,6 +29,7 @@ pub struct M4x4 {
     pub w: V4,
 }
 
+
 #[inline]
 pub fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
     M2x2::new(m00, m01,

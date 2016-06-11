@@ -1,3 +1,4 @@
+use std::{cmp,fmt};
 
 #[macro_export]
 macro_rules! try_opt {
@@ -93,5 +94,24 @@ macro_rules! min {
     ($a: expr, $b: expr, $($rest: expr),+) => (min!($a, min!($b, $($rest),+)))
 }
 
+#[macro_export]
+macro_rules! default_for_enum {
+    ($ty: ident :: $which: ident) => {
+        impl ::std::default::Default for $ty {
+            #[inline] fn default() -> $ty { $ty :: $which }
+        }
+    }
+}
 
 
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+pub struct OrdFloat(pub f32);
+// TODO Hash?
+impl cmp::Eq for OrdFloat {}
+impl cmp::Ord for OrdFloat {
+    fn cmp(&self, o: &Self) -> cmp::Ordering { self.partial_cmp(o).unwrap_or(cmp::Ordering::Equal) }
+}
+
+impl fmt::Display for OrdFloat {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{}", self.0) }
+}

@@ -54,6 +54,10 @@ pub trait TriIndices {
     fn tri_indices(&self) -> (usize, usize, usize);
 }
 
+pub trait Dot {
+    fn dot(self, o: Self) -> f32;
+}
+
 pub trait Map: Copy + Clone {
 
     fn map3<F>(self, a: Self, b: Self, f: F) -> Self
@@ -100,9 +104,16 @@ impl TriIndices for (u32, u32, u32) {
     }
 }
 
+impl<T> Dot for T where T: Map + Fold {
+    #[inline]
+    fn dot(self, o: Self) -> f32 {
+        self.map2(o, |x, y| x * y).fold(|a, b| a + b)
+    }
+}
+
 #[inline]
-pub fn dot<T: Map + Fold>(a: T, b: T) -> f32 {
-    a.map2(b, |x, y| x * y).fold(|a, b| a + b)
+pub fn dot<T: Dot>(a: T, b: T) -> f32 {
+    a.dot(b)
 }
 
 #[inline]

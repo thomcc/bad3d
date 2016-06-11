@@ -4,7 +4,7 @@ use math::mat::*;
 use math::geom;
 
 use std::ops::*;
-use std::mem;
+use std::{mem, fmt};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Quat(pub V4);
@@ -12,6 +12,12 @@ pub struct Quat(pub V4);
 #[inline]
 pub fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
     Quat(vec4(x, y, z, w))
+}
+
+impl fmt::Display for Quat {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "quat({}, {}, {}, {})", self.0.x, self.0.y, self.0.z, self.0.w)
+    }
 }
 
 impl From<V4> for Quat { #[inline] fn from(v: V4) -> Quat { Quat(v) } }

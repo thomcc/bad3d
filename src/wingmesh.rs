@@ -67,6 +67,10 @@ pub struct WingMesh {
     pub is_packed: bool,
 }
 
+impl default::Default for WingMesh {
+    fn default() -> WingMesh { WingMesh::new() }
+}
+
 pub struct FaceViewIterator<'a> {
     pub wm: &'a WingMesh,
     pub start: i32,
@@ -804,19 +808,7 @@ impl WingMesh {
     }
 
     pub fn split_test(&self, plane: Plane) -> PlaneTestResult {
-        let mut u = 0usize;
-        for &v in self.verts.iter() {
-            u |= plane.test(v) as usize;
-            if u == PlaneTestResult::Split as usize {
-                return PlaneTestResult::Split;
-            }
-        }
-
-        if u == PlaneTestResult::Coplanar as usize { PlaneTestResult::Coplanar }
-        else if u == PlaneTestResult::Under as usize { PlaneTestResult::Under }
-        else if u == PlaneTestResult::Over as usize { PlaneTestResult::Over }
-        else if u == PlaneTestResult::Split as usize { PlaneTestResult::Split }
-        else { unreachable!("bad plane test result: {}", u) }
+        plane.split_test(&self.verts[..])
     }
 
     pub fn volume(&self) -> f32 {
