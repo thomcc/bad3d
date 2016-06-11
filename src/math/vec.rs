@@ -1,5 +1,5 @@
 use std::ops::*;
-use std::mem;
+use std::{mem, fmt};
 
 use util::{min_index, max_index};
 use math::mat::*;
@@ -43,6 +43,18 @@ pub struct V4 {
 #[inline]
 pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
     V4 { x: x, y: y, z: z, w: w }
+}
+
+impl fmt::Display for V2 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "V2({}, {})", self.x, self.y) }
+}
+
+impl fmt::Display for V3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "V3({}, {}, {})", self.x, self.y, self.z) }
+}
+
+impl fmt::Display for V4 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "V4({}, {}, {}, {})", self.x, self.y, self.z, self.w) }
 }
 
 pub trait VecType
@@ -92,8 +104,6 @@ pub trait VecType
 
     #[inline] fn min(self, o: Self) -> Self { self.map2(o, |a, b| a.min(b)) }
     #[inline] fn max(self, o: Self) -> Self { self.map2(o, |a, b| a.max(b)) }
-
-    #[inline] fn dot(self, o: Self) -> f32 { self.hadamard(o).fold(|a, b| a + b) }
 
     #[inline] fn length_sq(self) -> f32 { self.dot(self) }
     #[inline] fn length(self) -> f32 { self.length_sq().sqrt() }
@@ -457,6 +467,7 @@ impl V2 {
     #[inline] pub fn max_index(&self) -> usize { if self.x > self.y { 0 } else { 1 } }
     #[inline] pub fn outer_prod(self, o: V2) -> M2x2 { M2x2{x: self*o.x, y: self*o.y } }
     #[inline] pub fn cross(self, o: V2) -> f32 { self.x*o.y - self.y*o.x }
+    #[inline] pub fn norm_or_unit(self) -> V2 { self.norm_or(0.0, 1.0) }
 }
 
 impl V3 {
@@ -511,7 +522,7 @@ impl V3 {
         let c = a.cross(b);
         (a, b, c)
     }
-
+    #[inline] pub fn norm_or_unit(self) -> V3 { self.norm_or(0.0, 0.0, 1.0) }
 }
 
 impl V4 {
@@ -520,6 +531,7 @@ impl V4 {
     #[inline] pub fn max_index(&self) -> usize { max_index(&<[f32; 4]>::from(*self)) }
     #[inline] pub fn outer_prod(self, o: V4) -> M4x4 { M4x4{ x: self*o.x, y: self*o.y, z: self*o.z, w: self*o.w } }
     #[inline] pub fn xyz(self) -> V3 { V3{ x: self.x, y: self.y, z: self.z } }
+    #[inline] pub fn norm_or_unit(self) -> V4 { self.norm_or(0.0, 0.0, 0.0, 1.0) }
 }
 
 impl From<V3> for V2 { #[inline] fn from(v: V3) -> V2 { V2 { x: v.x, y: v.y                 } } }

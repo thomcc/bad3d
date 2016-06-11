@@ -17,6 +17,8 @@ mod phys;
 
 mod wingmesh;
 
+mod bsp;
+
 use math::*;
 
 use glium::{DisplayBuild, Surface};
@@ -162,7 +164,7 @@ impl InputState {
     }
 
     fn get_projection_matrix(&self, near: f32, far: f32) -> M4x4 {
-        M4x4::perspective(self.view_angle, self.size.0 as f32 / self.size.1 as f32, near, far)
+        M4x4::perspective(self.view_angle.to_radians(), self.size.0 as f32 / self.size.1 as f32, near, far)
     }
 
     fn update(&mut self, display: &glium::backend::glutin_backend::GlutinFacade) -> bool {
@@ -204,7 +206,7 @@ impl InputState {
             }
         }
         self.mouse_vec = {
-            let spread = (self.view_angle * 0.5).to_radians().tan();
+            let spread = (self.view_angle.to_radians() * 0.5).to_radians().tan();
             let (w, h) = (self.size.0 as f32, self.size.1 as f32);
             let (mx, my) = (self.mouse_pos.0 as f32, self.mouse_pos.1 as f32);
             let hh = h * 0.5;
@@ -225,7 +227,7 @@ fn run_hull_test() {
     let mut input_state = {
         let (win_w, win_h) = display.get_window().unwrap()
             .get_inner_size_pixels().unwrap();
-        InputState::new(win_w, win_h, 90.0)
+        InputState::new(win_w, win_h, 75.0)
     };
 
     let (vertices, triangles) = random_point_cloud(64);
@@ -434,7 +436,7 @@ fn run_joint_test() {
     let mut input_state = {
         let (win_w, win_h) = display.get_window().unwrap()
             .get_inner_size_pixels().unwrap();
-        InputState::new(win_w, win_h, 90.0)
+        InputState::new(win_w, win_h, 75.0)
     };
 
     let mut ground_verts = create_box_verts(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
@@ -487,7 +489,7 @@ fn run_joint_test() {
 
         target.borrow_mut().clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
 
-        let proj_matrix = input_state.get_projection_matrix(0.01, 50.0);
+        let proj_matrix = input_state.get_projection_matrix(0.01, 500.0);
         let dt = 1.0 / 60.0f32;
         time += 0.06f32;
 
@@ -662,7 +664,7 @@ fn run_gjk_test() {
     let mut input_state = {
         let (win_w, win_h) = display.get_window().unwrap()
             .get_inner_size_pixels().unwrap();
-        InputState::new(win_w, win_h, 90.0)
+        InputState::new(win_w, win_h, 75.0)
     };
 
     let program = glium::Program::from_source(&display,
@@ -686,7 +688,7 @@ fn run_gjk_test() {
     let mut model_orientation = Quat::identity();
     let mut print_hit_info = true;
     while input_state.update(&display) {
-        let proj_matrix = input_state.get_projection_matrix(0.01, 50.0);
+        let proj_matrix = input_state.get_projection_matrix(0.01, 500.0);
 
         for &(key, down) in input_state.key_changes.iter() {
             if !down { continue; }
@@ -895,7 +897,7 @@ fn run_phys_test() {
     let mut input_state = {
         let (win_w, win_h) = display.get_window().unwrap()
             .get_inner_size_pixels().unwrap();
-        InputState::new(win_w, win_h, 90.0)
+        InputState::new(win_w, win_h, 75.0)
     };
 
     let mut ground_verts = create_box_verts(vec3(-10.0, -10.0, -5.0), vec3(10.0, 10.0, -2.0));
@@ -928,7 +930,7 @@ fn run_phys_test() {
 
     let seesaw;
     {
-        let o = create_box(&display, vec3(3.0, 0.5, 0.1), seesaw_start);
+        let o = create_box(&display, vec3(4.0, 0.5, 0.1), seesaw_start);
         seesaw = o.body.clone();
         demo_objects.push(o);
     }
@@ -937,14 +939,14 @@ fn run_phys_test() {
         let mut wm = wingmesh::WingMesh::new_cylinder(30, 1.0, 2.0);
         wm.translate(V3::splat(-1.0));
         wm.rotate(Quat::shortest_arc(vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0)));
-        let l = wm_object(&display, wm, seesaw_start + vec3(2.5, 0.0, 50.0));
+        let l = wm_object(&display, wm, seesaw_start + vec3(3.5, 0.0, 50.0));
         l.body.borrow_mut().scale_mass(6.0);
 
-        let l2 = create_box(&display, V3::splat(0.25), seesaw_start + vec3(2.5, 0.0, 0.4));
+        let l2 = create_box(&display, V3::splat(0.25), seesaw_start + vec3(3.0, 0.0, 0.4));
         l2.body.borrow_mut().scale_mass(0.75);
 
-        let r = create_box(&display, V3::splat(0.5), seesaw_start + vec3(-1.5, 0.0, 5.0));
-        r.body.borrow_mut().scale_mass(3.0);
+        let r = create_box(&display, V3::splat(0.5), seesaw_start + vec3(-2.5, 0.0, 5.0));
+        r.body.borrow_mut().scale_mass(2.0);
 
         demo_objects.push(l);
         demo_objects.push(l2);
@@ -1028,7 +1030,7 @@ fn run_phys_test() {
 
         target.borrow_mut().clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
 
-        let proj_matrix = input_state.get_projection_matrix(0.01, 50.0);
+        let proj_matrix = input_state.get_projection_matrix(0.01, 100.0);
         let dt = 1.0 / 60.0f32;
 
         if running {
@@ -1060,7 +1062,7 @@ fn run_phys_test() {
 
             let light = [0.0, 1.2, 1.0f32];
 
-            let camera = M4x4::look_at(vec3(0.0, -8.0, 3.0),
+            let camera = M4x4::look_at(vec3(0.0, -10.0, 5.0),
                                        vec3(0.0, 0.0, 0.0),
                                        vec3(0.0, 0.0, 1.0));
 
