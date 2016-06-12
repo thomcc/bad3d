@@ -28,65 +28,12 @@ use std::rc::Rc;
 use glium::backend::glutin_backend::GlutinFacade;
 
 // flat phong
-static VERT_SRC: &'static str = r#"
-    #version 140
-    in vec3 position;
-    out vec3 v_position;
-    out vec3 v_viewpos;
-    uniform mat4 perspective;
-    uniform mat4 view;
-    uniform mat4 model;
-
-    void main() {
-        mat4 modelview = view * model;
-        vec4 mpos = modelview * vec4(position, 1.0);
-        gl_Position = perspective * mpos;
-        v_position = gl_Position.xyz / gl_Position.w;
-        v_viewpos = -mpos.xyz;
-    }
-    "#;
-
-static FRAG_SRC: &'static str = r#"
-    #version 140
-
-    in vec3 v_position;
-    in vec3 v_viewpos;
-
-    out vec4 color;
-    uniform vec3 u_light;
-    uniform vec4 u_color;
-
-    const vec3 ambient_color = vec3(0.1, 0.1, 0.1);
-    // const vec3 diffuse_color = vec3(0.5, 0.5, 0.5);
-    const vec3 specular_color = vec3(1.0, 1.0, 1.0);
-
-    void main() {
-        vec3 normal = normalize(cross(dFdx(v_viewpos), dFdy(v_viewpos)));
-        float diffuse = max(dot(normal, normalize(u_light)), 0.0);
-        vec3 camera_dir = normalize(-v_position);
-        vec3 half_direction = normalize(normalize(u_light) + camera_dir);
-        float specular = pow(max(dot(half_direction, normal), 0.0), 16.0);
-        color = vec4(ambient_color + diffuse*u_color.rgb + specular * specular_color, u_color.a);
-    }"#;
+static VERT_SRC: &'static str = include_str!("../shaders/phong-vs.glsl");
+static FRAG_SRC: &'static str = include_str!("../shaders/phong-fs.glsl");
 
 // solid color
-static SOLID_VERT_SRC: &'static str = r#"
-    #version 140
-    in vec3 position;
-    uniform mat4 perspective, view, model;
-    void main() {
-        mat4 modelview = view * model;
-        vec4 mpos = modelview * vec4(position, 1.0);
-        gl_Position = perspective * mpos;
-    }"#;
-static SOLID_FRAG_SRC: &'static str = r#"
-    #version 140
-    out vec4 color;
-    uniform vec4 u_color;
-    void main() {
-        color = u_color;
-    }"#;
-
+static SOLID_VERT_SRC: &'static str = include_str!("../shaders/solid-vs.glsl");
+static SOLID_FRAG_SRC: &'static str = include_str!("../shaders/solid-fs.glsl");
 
 impl rand::Rand for V3 {
     fn rand<R: rand::Rng>(rng: &mut R) -> V3 {
@@ -133,7 +80,6 @@ fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
         }
     }
 }
-
 
 struct InputState {
     pub mouse_pos: (i32, i32),
@@ -221,6 +167,7 @@ impl InputState {
 fn run_hull_test() {
     let display = glium::glutin::WindowBuilder::new()
                         .with_depth_buffer(24)
+                        .with_vsync()
                         .build_glium()
                         .unwrap();
     let mut input_state = {
@@ -352,12 +299,10 @@ fn create_box(display: &GlutinFacade, r: V3, com: V3) -> DemoObject {
     let meshes = body.borrow().shapes.iter().map(|s|
         Box::new(DemoMesh::new(&display, &s.vertices[..], &s.tris[..], rand_color())))
         .collect::<Vec<_>>();
-    let o = DemoObject {
+    DemoObject {
         body: body,
         meshes: meshes,
-    };
-    println!("  inertia {:?}, {:?}", o.body.borrow().inv_tensor, o.body.borrow().inv_tensor_massless);
-    o
+    }
 }
 
 fn create_cube_shape(r: V3) -> phys::Shape {
@@ -430,6 +375,7 @@ fn run_joint_test() {
 
     let display = glium::glutin::WindowBuilder::new()
                         .with_depth_buffer(24)
+                        .with_vsync()
                         .build_glium()
                         .unwrap();
     let mut input_state = {
@@ -654,6 +600,7 @@ impl GjkTestState {
 fn run_gjk_test() {
     let display = glium::glutin::WindowBuilder::new()
                         .with_depth_buffer(24)
+                        .with_vsync()
                         .build_glium()
                         .unwrap();
 
