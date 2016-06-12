@@ -130,7 +130,11 @@ fn plane_cost(input: &[Face], split: Plane, space: &WingMesh) -> f32 {
     plane_cost_c(input, split, space).0
 }
 
-pub fn compile(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> BspNode {
+pub fn compile(faces: Vec<Face>, space: WingMesh) -> BspNode {
+    compile_let(faces, space, LeafType::NotLeaf);
+}
+
+pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> BspNode {
     if faces.is_empty() {
         return BspNode {
             convex: space,
@@ -195,8 +199,8 @@ pub fn compile(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> BspNode
         }
     }
 
-    node.over = Some(Box::new(compile(over, over_space, LeafType::Over)));
-    node.under = Some(Box::new(compile(under, under_space, LeafType::Under)));
+    node.over = Some(Box::new(compile_lt(over, over_space, LeafType::Over)));
+    node.under = Some(Box::new(compile_lt(under, under_space, LeafType::Under)));
     node
 }
 
@@ -502,10 +506,10 @@ impl BspNode {
         }
     }
 
-    pub fn make_brep(&mut self, faces: &[Face], mat_id: usize) {
+    pub fn make_brep(&mut self, faces: Vec<Face>, mat_id: usize) {
         self.gen_faces(mat_id);
         self.splitify_edges();
-        for face in faces.iter() {
+        for face in faces {
             self.extract_mat(face);
         }
     }
