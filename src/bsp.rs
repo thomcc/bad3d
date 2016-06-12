@@ -131,7 +131,7 @@ fn plane_cost(input: &[Face], split: Plane, space: &WingMesh) -> f32 {
 }
 
 pub fn compile(faces: Vec<Face>, space: WingMesh) -> BspNode {
-    compile_let(faces, space, LeafType::NotLeaf);
+    compile_lt(faces, space, LeafType::NotLeaf)
 }
 
 pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> BspNode {
@@ -510,7 +510,7 @@ impl BspNode {
         self.gen_faces(mat_id);
         self.splitify_edges();
         for face in faces {
-            self.extract_mat(face);
+            self.extract_mat(&face);
         }
     }
 

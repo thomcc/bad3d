@@ -26,7 +26,7 @@ use std::collections::{HashSet};
 use std::cell::{RefCell};
 use std::rc::Rc;
 use wingmesh::WingMesh;
-use bsp;
+// use bsp;
 use glium::backend::glutin_backend::GlutinFacade;
 
 // flat phong
