@@ -9,7 +9,7 @@
 
 
 fn wm_faces(wm: &WingMesh) -> Vec<Face> {
-    let res = Vec::with_capacity(wm.faces.len());
+    let mut res = Vec::with_capacity(wm.faces.len());
     assert!(wm.is_packed);
     assert!(wm.fback.len() == wm.faces.len());
     for i in 0..wm.faces.len() {
@@ -20,10 +20,8 @@ fn wm_faces(wm: &WingMesh) -> Vec<Face> {
     }
     res
 }
-fn wm_big_box(r: f32) -> WingMesh {
-    WingMesh::
-}
-fn make_bsp(wm0: &WingMesh, wm1: WingMesh) -> {
+
+fn make_bsp(wm0: &WingMesh, wm1: WingMesh) -> Box<BspNode> {
     Box::new(bsp::compile(wm_faces(wm0), wm1))
 }
 
@@ -43,7 +41,7 @@ fn run_play_test() {
     let ground_tris = hull::compute_hull(&mut ground_verts[..]).unwrap();
     ground_verts.truncate((ground_tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);
 
-    let arena = WingMesh::new_box(vec3(-10.0, -10.0, -5.0) vec3(10.0, 10.0, 5.0));
+    let arena = WingMesh::new_box(vec3(-10.0, -10.0, -5.0), vec3(10.0, 10.0, 5.0));
     let mut bsp_geom = make_bsp(&arena, WingMesh::new_cube(32.0));
     bsp_geom.negate();
 
@@ -64,17 +62,17 @@ fn run_play_test() {
     }
 
     for x in door_xs.iter() {
-        let dx = make_bsp(WingMesh::new_box(vec3(x-1.0, 9.0, 0.1), vec3(x+1.0, 9.0, 2.5)),
-                          WingMesh::new_cube(16.0));
+        let mut dx = make_bsp(&WingMesh::new_box(vec3(x-1.0, 9.0, 0.1), vec3(x+1.0, 9.0, 2.5)),
+                              WingMesh::new_cube(16.0));
         dx.negate();
         bsp_geom = bsp::intersect(dx, bsp_geom);
     }
 
     for y in door_ys.iter() {
-        let dy = make_bsp(WingMesh::new_box(vec3(-9.0, y-1.0, 0.1), vec3(9.0, y+1.0, 2.5)),
-                          WingMesh::new_cube(16.0));
-        dx.negate();
-        bsp_geom = bsp::intersect(dx, bsp_geom);
+        let mut dy = make_bsp(&WingMesh::new_box(vec3(-9.0, y-1.0, 0.1), vec3(9.0, y+1.0, 2.5)),
+                              WingMesh::new_cube(16.0));
+        dy.negate();
+        bsp_geom = bsp::intersect(dy, bsp_geom);
     }
 
     let brep = bsp_geom.rip_brep();
@@ -92,6 +90,3 @@ fn run_play_test() {
 
 
 }
-
-
-

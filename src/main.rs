@@ -1023,6 +1023,60 @@ fn create_demo_blob(display: &GlutinFacade, com: V3) -> DemoObject {
     DemoObject { body: body, meshes: meshes }
 }
 
+struct DemoCamera {
+    pub head_tilt: f32,
+    pub head_turn: f32,
+    pub position: V3,
+    pub mouse_sensitivity: f32,
+    pub movement_speed: f32,
+}
+
+impl DemoCamera {
+    pub fn new(tilt: f32, turn: f32, pos: V3) -> DemoCamera {
+        DemoCamera {
+            head_tilt: tilt,
+            head_turn: turn,
+            position: pos,
+            mouse_sensitivity: 0.15,
+            movement_speed: 0.1,
+        }
+    }
+
+    pub fn matrix(&self) -> M4x4 {
+        Pose::new(self.position, self.orientation())
+            .to_mat4().inverse().unwrap()
+    }
+
+    pub fn orientation(&self) -> Quat {
+        Quat::from_yaw_pitch_roll(
+            self.head_turn, self.head_tilt+f32::consts::PI/4.0, 0.0)
+    }
+
+    pub fn handle_input(&mut self, is: &InputState) {
+        let impulse = {
+            use glium::glutin::VirtualKeyCode::*;
+            vec3(is.keys_dir(A, D), is.keys_dir(Q, E), is.keys_dir(W, S))
+        };
+        let mut move_turn = 0.0;
+        let mut move_tilt = 0.0;
+        if is.mouse_down {
+            let dm = is.mouse_delta();
+            move_turn = (-dm.x*self.mouse_sensitivity*is.view_angle).to_radians()/100.0;
+            move_tilt = (-dm.y*self.mouse_sensitivity*is.view_angle).to_radians()/100.0;
+        }
+
+        self.head_turn += move_turn;
+        self.head_tilt += move_tilt;
+
+        let ht = self.head_tilt.clamp(-f32::consts::PI, f32::consts::PI);
+        self.head_tilt = ht;
+
+        self.position += self.orientation() * impulse * self.movement_speed;
+    }
+
+}
+
+
 fn run_phys_test() {
     let display = glium::glutin::WindowBuilder::new()
                         .with_depth_buffer(24)
@@ -1133,16 +1187,12 @@ fn run_phys_test() {
 
     let program = glium::Program::from_source(&display,
         VERT_SRC, FRAG_SRC, None).unwrap();
-    let mut cam = Pose::from_translation(vec3(0.2, -20.6, 6.5));
-    let world_geom = [ground_verts];
-    let mouse_sensitivity = 0.15;
-    let mut head_tilt = 0.76;
-    let mut head_turn = 0.0;
 
-    cam.orientation = Quat::identity();
-    // cam.orientation *= Quat::from_yaw_pitch_roll(0.0, cam.orientation.pitch(), 0.0).conj();
+    let world_geom = [ground_verts];
+
+    let mut cam = DemoCamera::new(0.76, 0.0, vec3(0.2, -20.6, 6.5));
+
     let mut running = false;
-    println!("initial ea: {:?}", cam.orientation.yaw_pitch_roll());
     while input_state.update(&display) {
         for &(key, down) in input_state.key_changes.iter() {
             if !down { continue; }
@@ -1150,9 +1200,6 @@ fn run_phys_test() {
                 glium::glutin::VirtualKeyCode::Space => {
                     let r = running;
                     running = !r;
-                },
-                glium::glutin::VirtualKeyCode::C => {
-                    println!("Camera: tilt = {}, turn = {}, pos = {}", head_tilt, head_turn, cam.position);
                 },
                 glium::glutin::VirtualKeyCode::R => {
                     for &mut DemoObject{ body: ref b, .. } in demo_objects.iter_mut() {
@@ -1169,46 +1216,10 @@ fn run_phys_test() {
                 _ => {},
             }
         }
-        let (move_fb, move_rl, move_ud) = {
-            use glium::glutin::VirtualKeyCode::*;
-            (input_state.keys_dir(W, S), input_state.keys_dir(A, D), input_state.keys_dir(Q, E))
-        };
-        let mut move_turn = 0.0;
-        let mut move_tilt = 0.0;
-        if input_state.mouse_down {
-            let dm = input_state.mouse_delta();
 
-            move_turn = (-dm.x*mouse_sensitivity*input_state.view_angle).to_radians()/100.0;
-            move_tilt = (-dm.y*mouse_sensitivity*input_state.view_angle).to_radians()/100.0;
-        }
-        head_turn += move_turn;
-        head_tilt += move_tilt;
-        {
-            let ht = head_tilt.clamp(-f32::consts::PI, f32::consts::PI);
-            head_tilt = ht;
-        }
-
-        cam.orientation = Quat::from_yaw_pitch_roll(head_turn, head_tilt+f32::consts::PI/4.0, 0.0);
-        cam.position += cam.orientation * vec3(move_rl, move_ud, move_fb)*0.1;
-
-        // let ncam = Pose::from_translation(cam.position) *
-        //            Pose::from_rotation() *
-        //            Pose::from_translation(cam.position + vec3(move_rl, move_ud, move_fb)*0.1);
-        // cam = ncam;
-        //            /*(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), head_tilt) *
-        //                    Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), head_turn)).must_norm();*/
-
-
-        // cam.orientation = (Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), head_tilt) *
-                           // Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), head_turn)).must_norm();
-
-        // cam.position += cam.orientation.conj()*vec3(move_rl, move_ud, move_fb)*0.1;
-        // cam.position = ncam.position;
-        // cam.position = ncam.position;
-
+        cam.handle_input(&input_state);
 
         let target = RefCell::new(display.draw());
-
 
         target.borrow_mut().clear_color_and_depth((0.5, 0.6, 1.0, 1.0), 1.0);
 
@@ -1244,7 +1255,7 @@ fn run_phys_test() {
 
             let light = [0.0, 1.2, 1.0f32];
 
-            let cam_info = <[[f32; 4]; 4]>::from(M4x4::from_pose(cam.position, cam.orientation).inverse().unwrap());
+            let cam_info = <[[f32; 4]; 4]>::from(cam.matrix());
             let proj = <[[f32; 4]; 4]>::from(proj_matrix);
 
             target.borrow_mut().draw((&ground_mesh.vbo,), &ground_mesh.ibo, &program,
@@ -1304,6 +1315,7 @@ pub fn run_bsp_test() {
             }
         }
 
+
     float4 cameraorientation = normalize(float4(sinf(60.0f*3.14f/180.0f/2),0,0,cosf(60.0f*3.14f/180.0f/2)));
     float  cameradist = 5;
     float3 camerapos;
@@ -1316,9 +1328,9 @@ pub fn run_bsp_test() {
         win.end_frame();
     }
 }
+
+
 */
-
-
 
 
 // https://gfycat.com/ElaborateHarshHyrax
