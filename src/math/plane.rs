@@ -54,6 +54,7 @@ impl Plane {
 
     #[inline]
     pub fn from_points(points: &[V3]) -> Plane {
+        assert_ge!(points.len(), 3);
         let c = points.iter().fold(V3::zero(), |a, &b| a+b) / (points.len() as f32);
         let mut n = V3::zero();
         for i in 0..points.len() {
@@ -82,6 +83,7 @@ impl Plane {
     pub fn intersect_with_line(&self, line_p0: V3, line_p1: V3) -> V3 {
         let dif = line_p1 - line_p0;
         let dn = self.normal.dot(dif);
+        // debug_assert_ne!(dn, 0.0); // they're on the plane.
         let t = safe_div0(-(self.offset + dot(self.normal, line_p0)), dn);
         line_p0 + dif*t
     }
@@ -116,6 +118,7 @@ impl Plane {
 
     #[inline]
     pub fn test_e(&self, pos: V3, e: f32) -> PlaneTestResult {
+        debug_assert_ge!(e, 0.0);
         let a = dot(pos, self.normal) + self.offset;
         if a > e { PlaneTestResult::Over }
         else if a < -e { PlaneTestResult::Under }

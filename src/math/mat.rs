@@ -528,6 +528,14 @@ impl M4x4 {
                         V4::new(0.0, 0.0, 0.0, 1.0))
     }
 
+     #[inline]
+    pub fn from_scale(v: V3) -> M4x4 {
+        M4x4::new(v.x, 0.0, 0.0, 0.0,
+                  0.0, v.y, 0.0, 0.0,
+                  0.0, 0.0, v.z, 0.0,
+                  0.0, 0.0, 0.0, 1.0)
+    }
+
     #[inline]
     pub fn from_pose(p: V3, q: Quat) -> M4x4 {
         M4x4::from_cols(V4::expand(q.x_dir(), 0.0),

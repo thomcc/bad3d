@@ -190,7 +190,7 @@ impl InputState {
             }
         }
         self.mouse_vec = {
-            let spread = (self.view_angle.to_radians() * 0.5).to_radians().tan();
+            let spread = (self.view_angle.to_radians() * 0.5).tan();
             let (w, h) = (self.size.0 as f32, self.size.1 as f32);
             let (mx, my) = (self.mouse_pos.0 as f32, self.mouse_pos.1 as f32);
             let hh = h * 0.5;
@@ -341,6 +341,12 @@ impl DemoWindow {
 
     pub fn draw_face(&mut self, mat: M4x4, color: V4, f: &Face) {
         self.draw_lit_tris(mat, color, &f.vertex, Some(&f.gen_tris()[..]));
+    }
+    pub fn draw_faces(&mut self, mat: M4x4, faces: &[Face]) {
+        // TODO: we could do this in 1 draw call if we offset the indices and abandon the color
+        for face in faces.iter() {
+            self.draw_face(mat, V4::expand(face.plane.normal, 1.0), face);
+        }
     }
 
     pub fn new_mesh(&self, verts: &[V3], tris: &[[u16; 3]], color: V4) -> DemoMesh {
@@ -1042,6 +1048,10 @@ impl DemoCamera {
         }
     }
 
+    pub fn new_at(pos: V3) -> DemoCamera {
+        DemoCamera::new(45_f32.to_radians(), 0.0, pos)
+    }
+
     pub fn matrix(&self) -> M4x4 {
         Pose::new(self.position, self.orientation())
             .to_mat4().inverse().unwrap()
@@ -1190,7 +1200,7 @@ fn run_phys_test() {
 
     let world_geom = [ground_verts];
 
-    let mut cam = DemoCamera::new(0.76, 0.0, vec3(0.2, -20.6, 6.5));
+    let mut cam = DemoCamera::new_at(vec3(0.2, -20.6, 6.5));
 
     let mut running = false;
     while input_state.update(&display) {
@@ -1290,16 +1300,37 @@ fn run_phys_test() {
     }
 }
 
-/*
+
 pub fn run_bsp_test() {
     let mut win = DemoWindow::new();
+    win.input.view_angle = 45.0;
     let mut draw_mode = 0;
-    let mut drag_mode = 0;
-    let mut cam = Pose::from_rotation(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), 60.0.to_radians()));
+    let mut drag_mode = 1;
+    let mut cam = Pose::from_rotation(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), 60f32.to_radians()));
+    let mut cam_dist = 5_f32;
+    let mut hit_dist = 0_f32;
+    win.light_pos = [-1.0, 0.5, 0.5];
+
+    let mut bpos = vec3(0.0, 0.0, 0.5);
+    let mut cpos = vec3(0.8, 0.0, 0.45);
+
+    let ac = WingMesh::new_cube(1.0);
+    let bc = WingMesh::new_box(vec3(0.5, 0.5, -1.2), vec3(-0.5, -0.5, 1.2));
+    let co = WingMesh::new_cube(1.0).dual_r(0.85);
+
+    let af = ac.faces();
+    let bf = bc.faces();
+    let cf = co.faces();
+
+    let mut bsp = None;
+
+    let mut faces: Vec<Face> = Vec::new();
+
+    win.near_far = (0.01, 10.0);
 
     while win.up() {
-        if win.input.key_changes.any(|(a,b)| b && a == glium::glutin::VirtualKeyCode::D) {
-            draw_mode = (draw_mode+1)%3;
+        if win.input.key_changes.iter().any(|&(a, b)| b && a == glium::glutin::VirtualKeyCode::D) {
+            draw_mode = (draw_mode+1)%2;
         }
         if win.input.mouse_down {
             match drag_mode {
@@ -1307,21 +1338,92 @@ pub fn run_bsp_test() {
                     cam.orientation *= Quat::virtual_track_ball(vec3(0.0, 0.0, 2.0), V3::zero(), win.input.mouse_vec_prev, win.input.mouse_vec).conj();
                 },
                 0 => {
-
+                    drag_mode = 1;
+                    let v0 = cam.position;
+                    let v1 = cam.position + cam.orientation * (win.input.mouse_vec*100.0);
+                    let bhit = geom::convex_hit_check_posed(
+                        &bc.faces[..], Pose::from_translation(bpos), v0, v1);
+                    let v1 = bhit.impact;
+                    let chit = geom::convex_hit_check_posed(
+                        &co.faces[..], Pose::from_translation(cpos), v0, v1);
+                    hit_dist = v0.dist(chit.impact);
+                    if bhit.did_hit {
+                        drag_mode = 2
+                    }
+                    if chit.did_hit {
+                        drag_mode = 3;
+                    }
+                    if draw_mode == 2 {
+                        drag_mode = 1;
+                    }
+                    println!("DRAG MODE => {}", drag_mode);
                 },
                 n => {
-
+                    let pos = if n == 2 { &mut bpos } else { &mut cpos };
+                    *pos += (cam.orientation * win.input.mouse_vec - cam.orientation * win.input.mouse_vec_prev) * hit_dist;
+                    bsp = None;
                 },
             }
+        } else {
+            drag_mode = 0;
         }
 
+        cam.position = cam.orientation.z_dir() * cam_dist;
+        if bsp.is_none() {
+            let mut bsp_a = Box::new(bsp::compile(af.clone(), WingMesh::new_cube(2.0)));
+            let mut bsp_b = Box::new(bsp::compile(bf.clone(), WingMesh::new_cube(2.0)));
+            let mut bsp_c = Box::new(bsp::compile(cf.clone(), WingMesh::new_cube(2.0)));
 
-    float4 cameraorientation = normalize(float4(sinf(60.0f*3.14f/180.0f/2),0,0,cosf(60.0f*3.14f/180.0f/2)));
-    float  cameradist = 5;
-    float3 camerapos;
-    int    dragmode = 0;   // for mouse motion.  1: orbit camera   2,3: move corresponding object
-    float  hitdist  = 0;   // if we select an operand this is how far it is from the viewpoint, so we know how much to translate for subsequent lateral mouse movement
-    float3 mousevec_prev;  // direction of mouse vector from previous frame
+            bsp_b.translate(bpos);
+            bsp_c.translate(cpos);
+
+            bsp_b.negate();
+            bsp_c.negate();
+
+            let mut bspres = bsp::intersect(bsp_c, bsp::intersect(bsp_b, bsp_a));
+
+            let brep = bspres.rip_brep();
+            bspres.make_brep(brep, 0);
+
+            faces = bspres.rip_brep();
+            bsp = bsp::clean(bspres);
+            assert!(bsp.is_some());
+        }
+
+        win.view = cam.inverse().to_mat4();
+
+        win.wm_draw_wireframe(M4x4::identity(), vec4(0.0, 1.0, 0.5, 1.0), &ac);
+        win.wm_draw_wireframe(M4x4::from_translation(bpos), vec4(0.0, 0.5, 1.0, 1.0), &bc);
+        win.wm_draw_wireframe(M4x4::from_translation(cpos), vec4(0.5, 0.0, 1.0, 1.0), &co);
+
+        match draw_mode {
+            0 => {
+                // faces (boundary)
+                win.draw_faces(M4x4::identity(), &faces[..]);
+            },
+            1 => {
+                // cells
+                let mut stack = vec![bsp.as_ref().unwrap().as_ref()];
+                while let Some(n) = stack.pop() {
+                    if n.leaf_type == bsp::LeafType::Under {
+                        let c = n.convex.verts.iter().fold(V3::zero(), |a, &b| a+b) / (n.convex.verts.len() as f32);
+                        let mut m = M4x4::from_translation(c);
+                        m *= M4x4::from_scale(V3::splat(0.95));
+                        m *= M4x4::from_translation(-c);
+                        win.draw_lit_tris(m, V4::splat(1.0), &n.convex.verts[..], Some(&n.convex.generate_tris()[..]))
+                    }
+                    if let Some(ref r) = n.under {
+                        stack.push(r.as_ref());
+                    }
+                    if let Some(ref r) = n.over {
+                        stack.push(r.as_ref());
+                    }
+                }
+            },
+            _ => {
+                unreachable!("bad draw_mode {}", draw_mode);
+            }
+        }
 
 
 
@@ -1330,7 +1432,7 @@ pub fn run_bsp_test() {
 }
 
 
-*/
+
 
 
 // https://gfycat.com/ElaborateHarshHyrax
@@ -1338,5 +1440,6 @@ fn main() {
     // run_hull_test();
     // run_joint_test();
     // run_gjk_test();
-    run_phys_test();
+    // run_phys_test();
+    run_bsp_test();
 }

@@ -2,6 +2,7 @@ use std::ops::*;
 use std::{mem, fmt};
 
 use util::{min_index, max_index};
+use math::scalar::round_to;
 use math::mat::*;
 use math::quat::*;
 use math::traits::*;
@@ -144,6 +145,9 @@ pub trait VecType
 
     #[inline] fn is_zero(self) -> bool { self.dot(self) == 0.0_f32 }
     #[inline] fn hadamard(self, o: Self) -> Self { self.map2(o, |a, b| a * b) }
+
+    #[inline] fn round_to(self, p: f32) -> Self { self.map(|v| round_to(v, p)) }
+
 }
 
 
@@ -358,7 +362,7 @@ macro_rules! do_vec_boilerplate {
             type Output = $Vn;
             #[inline]
             fn div(self, o: f32) -> $Vn {
-                debug_assert!(o != 0.0);
+                debug_assert_ne!(o, 0.0);
                 let inv = 1.0 / o;
                 $Vn{ $($field: (self.$field * inv)),+ }
             }

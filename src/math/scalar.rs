@@ -51,3 +51,7 @@ pub fn wrap_degrees(a: f32) -> f32 {
 }
 
 
+pub fn round_to(a: f32, p: f32) -> f32 {
+    (a / p).round() * p
+}
+

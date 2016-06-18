@@ -81,12 +81,15 @@ pub struct FaceViewIterator<'a> {
 impl<'a> Iterator for FaceViewIterator<'a> {
     type Item = &'a HalfEdge;
     fn next(&mut self) -> Option<&'a HalfEdge> {
-        if self.current == -1 || self.current == self.start {
+        if self.current == -1 {
             return None;
         }
         assert_eq!(self.current, self.wm.edges[self.current as usize].id);
         let result = &self.wm.edges[self.current as usize];
         self.current = result.next;
+        if self.current == self.start {
+            self.current = -1;
+        }
         Some(result)
     }
 }
@@ -691,7 +694,7 @@ impl WingMesh {
         for i in 0..loop_len {
             let ec = edge_loop[i];
             let en = edge_loop[(i+1)%loop_len];
-            let ep = edge_loop[(i-1+loop_len)%loop_len];
+            let ep = edge_loop[(i+loop_len-1)%loop_len];
             if self.edges[ec].next_idx() != en {
                 let nidx = self.edges[ec].next_idx();
                 if self.edges[nidx].id >= 0 {
@@ -898,18 +901,21 @@ impl WingMesh {
         for e in self.edges.iter() {
             d.edges.push(HalfEdge {
                 face: e.v,
-                v: self.edges[e.adj_idx()].face,
+                v:    self.edges[e.adj_idx()].face,
                 next: self.edges[e.prev_idx()].adj,
                 prev: self.edges[e.adj_idx()].next,
                 .. *e
             });
         }
-
-        for f in 0..d.faces.len() {
-            d.update_face_plane(f);
-        }
+        d.update_face_planes();
         d.debug_assert_valid();
         d
+    }
+
+    fn update_face_planes(&mut self) {
+        for f in 0..self.faces.len() {
+            self.update_face_plane(f);
+        }
     }
 
     pub fn dual(&self) -> WingMesh {
@@ -952,6 +958,7 @@ impl WingMesh {
             HalfEdge::new(22,7,12,23,21,5), HalfEdge::new(23,3, 1,20,22,5),
         ];
         result.init_back_lists();
+        result.update_face_planes(); // What's wrong with the above D:
         result.debug_assert_valid();
         result
     }
