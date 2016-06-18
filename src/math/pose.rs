@@ -36,6 +36,10 @@ impl Pose {
     pub fn to_mat4(&self) -> M4x4 {
         M4x4::from_pose(self.position, self.orientation)
     }
+    #[inline]
+    pub fn from_mat4(m: &M4x4) -> Pose {
+        Pose::new(m.w.xyz(), M3x3::from_cols(m.x.xyz(), m.y.xyz(), m.z.xyz()).to_quat())
+    }
 }
 
 impl Identity for Pose {

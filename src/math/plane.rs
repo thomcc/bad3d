@@ -145,6 +145,11 @@ impl Plane {
     }
 
     #[inline]
+    pub fn offset_by(&self, o: f32) -> Plane {
+        Plane::new(self.normal, self.offset+o)
+    }
+
+    #[inline]
     pub fn split_test(&self, verts: &[V3]) -> PlaneTestResult {
         self.split_test_e(verts, DEFAULT_PLANE_WIDTH)
     }

@@ -103,7 +103,6 @@ macro_rules! default_for_enum {
     }
 }
 
-
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct OrdFloat(pub f32);
 // TODO Hash?

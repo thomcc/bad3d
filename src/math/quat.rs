@@ -1,10 +1,10 @@
 use math::vec::*;
 use math::traits::*;
 use math::mat::*;
+use math::scalar::*;
 use math::geom;
-
 use std::ops::*;
-use std::{mem, fmt};
+use std::{mem, fmt, f32};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Quat(pub V4);
@@ -288,6 +288,41 @@ impl Quat {
         let mv = v.length();
         Quat::shortest_arc(if mu > 1.0 { u / mu } else { u - normal * (1.0 - mu*mu).sqrt() },
                            if mv > 1.0 { v / mv } else { v - normal * (1.0 - mv*mv).sqrt() })
+    }
+
+    #[inline]
+    pub fn from_yaw_pitch_roll(yaw: f32, pitch: f32, roll: f32) -> Quat {
+        Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), yaw) *
+        Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), pitch) *
+        Quat::from_axis_angle(vec3(0.0, 1.0, 0.0), roll)
+    }
+
+    #[inline]
+    pub fn yaw_pitch_roll(&self) -> (f32, f32, f32) {
+        // could optimize
+        (self.yaw(), self.pitch(), self.roll())
+    }
+
+    #[inline]
+    pub fn yaw(self) -> f32 {
+        let v = self.y_dir();
+        if v.x == 0.0 && v.y == 0.0 { 0.0 }
+        else { (-v.x).atan2(v.y) }
+    }
+
+    #[inline]
+    pub fn pitch(self) -> f32 {
+        let v = self.y_dir();
+        v.z.atan2((v.x*v.x + v.y*v.y).sqrt())
+    }
+
+    #[inline]
+    pub fn roll(self) -> f32 {
+        let q = self;
+        let q = Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), -q.yaw()) * q;
+        let q = Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), -q.pitch()) * q;
+        let v = q.x_dir();
+        (-v.z).atan2(v.x)
     }
 }
 

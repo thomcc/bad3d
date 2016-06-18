@@ -34,3 +34,20 @@ pub fn safe_div(a: f32, b: f32, default: f32) -> f32 {
 #[inline] pub fn safe_div0(a: f32, b: f32) -> f32 { safe_div(a, b, 0.0) }
 #[inline] pub fn safe_div1(a: f32, b: f32) -> f32 { safe_div(a, b, 1.0) }
 
+#[inline]
+pub fn repeat(v: f32, rep: f32) -> f32 {
+    ((v % rep) + rep) % rep
+}
+
+#[inline]
+pub fn wrap_between(v: f32, lo: f32, hi: f32) -> f32 {
+    assert!(lo < hi);
+    repeat(v-lo, hi-lo) + lo
+}
+
+#[inline]
+pub fn wrap_degrees(a: f32) -> f32 {
+    repeat(a, 360.0)
+}
+
+

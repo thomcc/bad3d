@@ -6,6 +6,9 @@ extern crate glium;
 extern crate rand;
 
 #[macro_use]
+extern crate more_asserts;
+
+#[macro_use]
 mod util;
 
 mod math;
@@ -19,12 +22,15 @@ mod wingmesh;
 
 mod bsp;
 
+use bsp::{BspNode, Face};
+use wingmesh::WingMesh;
 use math::*;
-
+use math::pose::Pose;
 use glium::{DisplayBuild, Surface};
 use std::collections::{HashSet};
 use std::cell::{RefCell};
 use std::rc::Rc;
+use std::f32;
 use glium::backend::glutin_backend::GlutinFacade;
 
 // flat phong
@@ -112,6 +118,39 @@ impl InputState {
         M4x4::perspective(self.view_angle.to_radians(), self.size.0 as f32 / self.size.1 as f32, near, far)
     }
 
+    pub fn mouse_delta(&self) -> V2 {
+        let now = vec2(self.mouse_pos.0 as f32, self.mouse_pos.1 as f32);
+        let prev = vec2(self.mouse_pos_prev.0 as f32, self.mouse_pos_prev.1 as f32);
+        (now - prev)
+    }
+
+    #[inline]
+    pub fn mouse_pos_v(&self) -> V2 {
+        vec2(self.mouse_pos.0 as f32, self.mouse_pos.1 as f32)
+    }
+
+    #[inline]
+    pub fn mouse_prev_v(&self) -> V2 {
+        vec2(self.mouse_pos_prev.0 as f32, self.mouse_pos_prev.1 as f32)
+    }
+
+    #[inline]
+    pub fn dims(&self) -> V2 {
+        vec2(self.size.0 as f32, self.size.1 as f32)
+    }
+
+    #[inline]
+    pub fn scaled_mouse_delta(&self) -> V2 {
+        (self.mouse_pos_v() - self.mouse_prev_v()) / self.dims()*0.5
+    }
+
+    #[inline]
+    pub fn keys_dir(&self, k1: glium::glutin::VirtualKeyCode, k2: glium::glutin::VirtualKeyCode) -> f32 {
+        let v1 = if self.keys_down.contains(&k1) { 1 } else { 0 };
+        let v2 = if self.keys_down.contains(&k2) { 1 } else { 0 };
+        (v2 - v1) as f32
+    }
+
     fn update(&mut self, display: &glium::backend::glutin_backend::GlutinFacade) -> bool {
         use glium::glutin::{Event, ElementState, MouseButton};
         let mouse_pos = self.mouse_pos;
@@ -160,6 +199,156 @@ impl InputState {
             vec3(x, y, -1.0).normalize().unwrap()
         };
         true
+    }
+}
+
+pub fn glmat(inp: M4x4) -> [[f32; 4]; 4] { inp.into() }
+
+struct DemoWindow {
+    pub display: GlutinFacade,
+    pub input: InputState,
+    pub view: M4x4,
+    pub lit_shader: glium::Program,
+    pub solid_shader: glium::Program,
+    pub clear_color: V4,
+    pub light_pos: [f32; 3],
+    pub targ: Option<glium::Frame>,
+    pub near_far: (f32, f32),
+}
+
+impl DemoWindow {
+    pub fn new() -> DemoWindow {
+        let display = glium::glutin::WindowBuilder::new()
+                            .with_depth_buffer(24)
+                            .with_vsync()
+                            .build_glium()
+                            .unwrap();
+        let input_state = {
+            let (win_w, win_h) = display.get_window().unwrap()
+                .get_inner_size_pixels().unwrap();
+            InputState::new(win_w, win_h, 75.0)
+        };
+
+        let phong_program = glium::Program::from_source(&display,
+            include_str!("../shaders/phong-vs.glsl"),
+            include_str!("../shaders/phong-fs.glsl"), None).unwrap();
+
+        let solid_program = glium::Program::from_source(&display,
+            include_str!("../shaders/solid-vs.glsl"),
+            include_str!("../shaders/solid-fs.glsl"), None).unwrap();
+
+        DemoWindow {
+            display: display,
+            input: input_state,
+            view: M4x4::identity(),
+            lit_shader: phong_program,
+            solid_shader: solid_program,
+            clear_color: vec4(0.5, 0.6, 1.0, 1.0),
+            light_pos: [1.4, 0.4, 0.7f32],
+            near_far: (0.01, 500.0),
+            targ: None,
+        }
+    }
+
+    pub fn up(&mut self) -> bool {
+        assert!(self.targ.is_none());
+        if !self.input.update(&self.display) {
+            false
+        } else {
+            self.targ = Some(self.display.draw());
+            self.targ.as_mut().unwrap()
+                .clear_color_and_depth(self.clear_color.into(), 1.0);
+            true
+        }
+    }
+
+    pub fn draw_lit_mesh(&mut self, mat: M4x4, mesh: &DemoMesh) {
+        self.targ.as_mut().unwrap().draw((&mesh.vbo,), &mesh.ibo, &self.lit_shader,
+                &uniform! {
+                    model: glmat(mat),
+                    u_color: <[f32; 4]>::from(mesh.color),
+                    view: glmat(self.view),
+                    perspective: glmat(self.input.get_projection_matrix(
+                        self.near_far.0, self.near_far.1)),
+                    u_light: self.light_pos,
+                },
+                &glium::DrawParameters {
+                    blend: glium::Blend::alpha_blending(),
+                    depth: glium::Depth {
+                        test: glium::draw_parameters::DepthTest::IfLess,
+                        write: true,
+                        .. Default::default()
+                    },
+                    .. Default::default()
+                }).unwrap();
+    }
+
+    pub fn draw_lit_tris(&mut self, mat: M4x4, color: V4, verts: &[V3], maybe_tris: Option<&[[u16; 3]]>) {
+        let vbo = glium::VertexBuffer::new(&self.display, vertex_slice(verts)).unwrap();
+        let params = glium::DrawParameters {
+            blend: glium::Blend::alpha_blending(),
+            depth: glium::Depth {
+                test: glium::draw_parameters::DepthTest::IfLess,
+                write: true,
+                .. Default::default()
+            },
+            .. Default::default()
+        };
+        let uniforms = uniform! {
+            model: glmat(mat),
+            u_color: <[f32; 4]>::from(color),
+            view: glmat(self.view),
+            perspective: glmat(self.input.get_projection_matrix(self.near_far.0, self.near_far.1)),
+            u_light: self.light_pos,
+        };
+        if let Some(tris) = maybe_tris {
+            let ibo = glium::IndexBuffer::new(&self.display,
+                glium::index::PrimitiveType::TrianglesList, unpack_arrays(tris)).unwrap();
+            self.targ.as_mut().unwrap().draw((&vbo,), &ibo, &self.lit_shader, &uniforms, &params).unwrap();
+        } else {
+            let ibo = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+            self.targ.as_mut().unwrap().draw((&vbo,), &ibo, &self.lit_shader, &uniforms, &params).unwrap();
+        }
+    }
+
+    pub fn draw_solid(&mut self, mat: M4x4, color: V4, verts: &[V3], prim_type: glium::index::PrimitiveType) {
+        let vbo = glium::VertexBuffer::new(&self.display, vertex_slice(verts)).unwrap();
+        let ibo = glium::index::NoIndices(prim_type);
+
+        self.targ.as_mut().unwrap().draw((&vbo,), &ibo, &self.solid_shader,
+                &uniform! {
+                    model: glmat(mat),
+                    u_color: <[f32; 4]>::from(color),
+                    view: glmat(self.view),
+                    perspective: glmat(self.input.get_projection_matrix(
+                        self.near_far.0, self.near_far.1)),
+                },
+                &glium::DrawParameters {
+                    point_size: Some(5.0),
+                    blend: glium::Blend::alpha_blending(),
+                    .. Default::default()
+                }).unwrap();
+    }
+
+    pub fn wm_draw_wireframe(&mut self, mat: M4x4, color: V4, wm: &WingMesh) {
+        let mut verts = Vec::with_capacity(wm.edges.len()*2);
+        for e in &wm.edges {
+            verts.push(wm.verts[e.vert_idx()]);
+            verts.push(wm.verts[wm.edges[e.next_idx()].vert_idx()]);
+        }
+        self.draw_solid(mat, color, &verts[..], glium::index::PrimitiveType::LinesList);
+    }
+
+    pub fn draw_face(&mut self, mat: M4x4, color: V4, f: &Face) {
+        self.draw_lit_tris(mat, color, &f.vertex, Some(&f.gen_tris()[..]));
+    }
+
+    pub fn new_mesh(&self, verts: &[V3], tris: &[[u16; 3]], color: V4) -> DemoMesh {
+        DemoMesh::new(&self.display, verts, tris, color)
+    }
+
+    pub fn end_frame(&mut self) {
+        self.targ.take().unwrap().finish().unwrap();
     }
 }
 
@@ -944,9 +1133,16 @@ fn run_phys_test() {
 
     let program = glium::Program::from_source(&display,
         VERT_SRC, FRAG_SRC, None).unwrap();
-
+    let mut cam = Pose::from_translation(vec3(0.2, -20.6, 6.5));
     let world_geom = [ground_verts];
+    let mouse_sensitivity = 0.15;
+    let mut head_tilt = 0.76;
+    let mut head_turn = 0.0;
+
+    cam.orientation = Quat::identity();
+    // cam.orientation *= Quat::from_yaw_pitch_roll(0.0, cam.orientation.pitch(), 0.0).conj();
     let mut running = false;
+    println!("initial ea: {:?}", cam.orientation.yaw_pitch_roll());
     while input_state.update(&display) {
         for &(key, down) in input_state.key_changes.iter() {
             if !down { continue; }
@@ -954,6 +1150,9 @@ fn run_phys_test() {
                 glium::glutin::VirtualKeyCode::Space => {
                     let r = running;
                     running = !r;
+                },
+                glium::glutin::VirtualKeyCode::C => {
+                    println!("Camera: tilt = {}, turn = {}, pos = {}", head_tilt, head_turn, cam.position);
                 },
                 glium::glutin::VirtualKeyCode::R => {
                     for &mut DemoObject{ body: ref b, .. } in demo_objects.iter_mut() {
@@ -970,6 +1169,43 @@ fn run_phys_test() {
                 _ => {},
             }
         }
+        let (move_fb, move_rl, move_ud) = {
+            use glium::glutin::VirtualKeyCode::*;
+            (input_state.keys_dir(W, S), input_state.keys_dir(A, D), input_state.keys_dir(Q, E))
+        };
+        let mut move_turn = 0.0;
+        let mut move_tilt = 0.0;
+        if input_state.mouse_down {
+            let dm = input_state.mouse_delta();
+
+            move_turn = (-dm.x*mouse_sensitivity*input_state.view_angle).to_radians()/100.0;
+            move_tilt = (-dm.y*mouse_sensitivity*input_state.view_angle).to_radians()/100.0;
+        }
+        head_turn += move_turn;
+        head_tilt += move_tilt;
+        {
+            let ht = head_tilt.clamp(-f32::consts::PI, f32::consts::PI);
+            head_tilt = ht;
+        }
+
+        cam.orientation = Quat::from_yaw_pitch_roll(head_turn, head_tilt+f32::consts::PI/4.0, 0.0);
+        cam.position += cam.orientation * vec3(move_rl, move_ud, move_fb)*0.1;
+
+        // let ncam = Pose::from_translation(cam.position) *
+        //            Pose::from_rotation() *
+        //            Pose::from_translation(cam.position + vec3(move_rl, move_ud, move_fb)*0.1);
+        // cam = ncam;
+        //            /*(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), head_tilt) *
+        //                    Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), head_turn)).must_norm();*/
+
+
+        // cam.orientation = (Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), head_tilt) *
+                           // Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), head_turn)).must_norm();
+
+        // cam.position += cam.orientation.conj()*vec3(move_rl, move_ud, move_fb)*0.1;
+        // cam.position = ncam.position;
+        // cam.position = ncam.position;
+
 
         let target = RefCell::new(display.draw());
 
@@ -1008,12 +1244,7 @@ fn run_phys_test() {
 
             let light = [0.0, 1.2, 1.0f32];
 
-            let camera = M4x4::look_at(vec3(0.0, -10.0, 5.0),
-                                       vec3(0.0, 0.0, 0.0),
-                                       vec3(0.0, 0.0, 1.0));
-
-
-            let cam_info = <[[f32; 4]; 4]>::from(camera);//.to_mat4());
+            let cam_info = <[[f32; 4]; 4]>::from(M4x4::from_pose(cam.position, cam.orientation).inverse().unwrap());
             let proj = <[[f32; 4]; 4]>::from(proj_matrix);
 
             target.borrow_mut().draw((&ground_mesh.vbo,), &ground_mesh.ibo, &program,
@@ -1047,6 +1278,48 @@ fn run_phys_test() {
 
     }
 }
+
+/*
+pub fn run_bsp_test() {
+    let mut win = DemoWindow::new();
+    let mut draw_mode = 0;
+    let mut drag_mode = 0;
+    let mut cam = Pose::from_rotation(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), 60.0.to_radians()));
+
+    while win.up() {
+        if win.input.key_changes.any(|(a,b)| b && a == glium::glutin::VirtualKeyCode::D) {
+            draw_mode = (draw_mode+1)%3;
+        }
+        if win.input.mouse_down {
+            match drag_mode {
+                1 => {
+                    cam.orientation *= Quat::virtual_track_ball(vec3(0.0, 0.0, 2.0), V3::zero(), win.input.mouse_vec_prev, win.input.mouse_vec).conj();
+                },
+                0 => {
+
+                },
+                n => {
+
+                },
+            }
+        }
+
+    float4 cameraorientation = normalize(float4(sinf(60.0f*3.14f/180.0f/2),0,0,cosf(60.0f*3.14f/180.0f/2)));
+    float  cameradist = 5;
+    float3 camerapos;
+    int    dragmode = 0;   // for mouse motion.  1: orbit camera   2,3: move corresponding object
+    float  hitdist  = 0;   // if we select an operand this is how far it is from the viewpoint, so we know how much to translate for subsequent lateral mouse movement
+    float3 mousevec_prev;  // direction of mouse vector from previous frame
+
+
+
+        win.end_frame();
+    }
+}
+*/
+
+
+
 
 // https://gfycat.com/ElaborateHarshHyrax
 fn main() {

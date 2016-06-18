@@ -506,6 +506,16 @@ impl BspNode {
         }
     }
 
+    pub fn get_solids(&self) -> Vec<&WingMesh> {
+        let mut result = Vec::new();
+        for n in self.iter() {
+            if n.leaf_type == LeafType::Under {
+                result.push(&n.convex);
+            }
+        }
+        result
+    }
+
     pub fn make_brep(&mut self, faces: Vec<Face>, mat_id: usize) {
         self.gen_faces(mat_id);
         self.splitify_edges();
@@ -649,8 +659,8 @@ pub fn clean(mut n: Box<BspNode>) -> Option<Box<BspNode>> {
         return Some(n);
     }
 
-    n.over = n.over.take().and_then(|v| clean(v));
-    n.under = n.under.take().and_then(|v| clean(v));
+    n.over = n.over.take().and_then(clean);
+    n.under = n.under.take().and_then(clean);
     match (n.over.is_some(), n.under.is_some()) {
         (false, false) => None,
         (true, false) => n.over,
@@ -891,8 +901,6 @@ impl Face {
         true
     }
 
-
-
     #[inline]
     pub fn vert_uv(&self, i: usize) -> V2 {
         vec2(self.ot.x + dot(self.vertex[i], self.gu),
@@ -1017,6 +1025,14 @@ impl Face {
         self.mat_id = face.mat_id;
         self.gu = face.gu;
         self.ot = face.ot;
+    }
+
+    pub fn gen_tris(&self) -> Vec<[u16; 3]> {
+        let mut tris = Vec::with_capacity(self.vertex.len()-2);
+        for i in 1..self.vertex.len()-1 {
+            tris.push([0, i as u16, (i+1) as u16]);
+        }
+        tris
     }
 }
 

@@ -3,6 +3,7 @@ use math::geom::{plane, Plane, PlaneTestResult};
 use std::{i32, u16, default};
 use std::f32;
 use support;
+use bsp;
 // TODO: this is a gnarly mess
 
 #[derive(Copy, Clone, Debug)]
@@ -32,12 +33,12 @@ impl HalfEdge {
             face: int(face),
         }
     }
-    #[inline] pub fn idx(&self) -> usize { assert!(self.id >= 0); self.id as usize }
-    #[inline] pub fn adj_idx(&self) -> usize { assert!(self.adj >= 0); self.adj as usize }
-    #[inline] pub fn vert_idx(&self) -> usize { assert!(self.v >= 0); self.v as usize }
-    #[inline] pub fn next_idx(&self) -> usize { assert!(self.next >= 0); self.next as usize }
-    #[inline] pub fn prev_idx(&self) -> usize { assert!(self.prev >= 0); self.prev as usize }
-    #[inline] pub fn face_idx(&self) -> usize { assert!(self.face >= 0); self.face as usize }
+    #[inline] pub fn idx(&self) -> usize { debug_assert!(self.id >= 0); self.id as usize }
+    #[inline] pub fn adj_idx(&self) -> usize { debug_assert!(self.adj >= 0); self.adj as usize }
+    #[inline] pub fn vert_idx(&self) -> usize { debug_assert!(self.v >= 0); self.v as usize }
+    #[inline] pub fn next_idx(&self) -> usize { debug_assert!(self.next >= 0); self.next as usize }
+    #[inline] pub fn prev_idx(&self) -> usize { debug_assert!(self.prev >= 0); self.prev as usize }
+    #[inline] pub fn face_idx(&self) -> usize { debug_assert!(self.face >= 0); self.face as usize }
 
     #[inline]
     pub fn cull(&mut self) {
@@ -53,7 +54,7 @@ impl HalfEdge {
 
 #[inline]
 fn int(u: usize) -> i32 {
-    assert!((u as i32) >= 0 && u < (i32::MAX as usize));
+    debug_assert!((u as i32) >= 0 && u < (i32::MAX as usize));
     u as i32
 }
 
@@ -83,7 +84,7 @@ impl<'a> Iterator for FaceViewIterator<'a> {
         if self.current == -1 || self.current == self.start {
             return None;
         }
-        assert!(self.current == self.wm.edges[self.current as usize].id);
+        assert_eq!(self.current, self.wm.edges[self.current as usize].id);
         let result = &self.wm.edges[self.current as usize];
         self.current = result.next;
         Some(result)
@@ -131,21 +132,21 @@ impl WingMesh {
     pub fn assert_valid(&self) {
         for (e, edge) in self.edges.iter().enumerate() {
             if !self.is_packed && edge.v == -1 {
-                assert!(edge.face == -1);
-                assert!(edge.next == -1);
-                assert!(edge.prev == -1);
+                assert_eq!(edge.face, -1);
+                assert_eq!(edge.next, -1);
+                assert_eq!(edge.prev, -1);
                 continue;
             }
             let id = int(e);
-            assert!(edge.id == id);
-            assert!(edge.v >= 0);
-            assert!(edge.face >= 0);
-            assert!(self.edges[edge.next_idx()].prev == id);
-            assert!(self.edges[edge.prev_idx()].next == id);
-            assert!(edge.adj != id);
-            assert!(self.edges[edge.adj_idx()].adj == id);
-            assert!(edge.v == self.edges[self.edges[edge.adj_idx()].next_idx()].v);
-            assert!(edge.v != self.edges[edge.adj_idx()].v);
+            assert_eq!(edge.id, id);
+            assert_ge!(edge.v, 0);
+            assert_ge!(edge.face, 0);
+            assert_eq!(self.edges[edge.next_idx()].prev, id);
+            assert_eq!(self.edges[edge.prev_idx()].next, id);
+            assert_ne!(edge.adj, id);
+            assert_eq!(self.edges[edge.adj_idx()].adj, id);
+            assert_eq!(edge.v, self.edges[self.edges[edge.adj_idx()].next_idx()].v);
+            assert_ne!(edge.v, self.edges[edge.adj_idx()].v);
         }
         for (i, &vb) in self.vback.iter().enumerate() {
             assert!((!self.is_packed && vb == -1) || self.edges[vb as usize].v == int(i));
@@ -1064,6 +1065,20 @@ impl WingMesh {
         mesh.add_face(&bottom[..]);
         mesh.finish();
         mesh
+    }
+
+
+    pub fn faces(&self) -> Vec<bsp::Face> {
+        assert!(self.is_packed);
+        assert!(self.faces.len() == self.fback.len());
+        let mut faces = Vec::with_capacity(self.faces.len());
+        for (i, &face) in self.faces.iter().enumerate() {
+            let mut f = bsp::Face::new();
+            f.plane = face;
+            f.vertex = self.face_verts(i);
+            faces.push(f);
+        }
+        faces
     }
 
 }

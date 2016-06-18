@@ -6,3 +6,4 @@ authors = ["Thom Chiovoloni <tchiovoloni@mozilla.com>"]
 [dependencies]
 glium = "*"
 rand = "0.3"
+more-asserts = "*"

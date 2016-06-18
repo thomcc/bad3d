@@ -537,6 +537,11 @@ impl M4x4 {
     }
 
     #[inline]
+    pub fn from_pose_2(p: V3, q: Quat) -> M4x4 {
+        M4x4::from_rotation(q)*M4x4::from_translation(p)
+    }
+
+    #[inline]
     pub fn new_frustum(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) -> M4x4 {
         M4x4::new(2.0 * n / (r-l),   0.0,               0.0,                    0.0,
                   0.0,               2.0 * n / (t - b), 0.0,                    0.0,
