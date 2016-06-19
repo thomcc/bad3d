@@ -378,8 +378,8 @@ impl WingMesh {
         if self.edges.len() == s {
             return;
         }
-        assert!(s < self.edges.len());
-        assert!(e.v >= 0);
+        debug_assert_lt!(s, self.edges.len());
+        debug_assert_ge!(e.v, 0);
 
         if !self.vback.is_empty() && self.vback[e.vert_idx()] == e.id { self.vback[e.vert_idx()] = int(s); }
         if !self.fback.is_empty() && self.fback[e.face_idx()] == e.id { self.fback[e.face_idx()] = int(s); }
@@ -392,8 +392,8 @@ impl WingMesh {
     }
 
     pub fn pack_slot_vert(&mut self, s: usize) {
-        assert!(self.vback.len() == self.verts.len());
-        assert!(self.vback[s] == -1);
+        debug_assert_eq!(self.vback.len(), self.verts.len());
+        debug_assert_eq!(self.vback[s], -1);
         let last = self.verts.len() - 1;
         if s == last {
             self.verts.pop();
@@ -407,10 +407,10 @@ impl WingMesh {
             self.verts[s] = vel;
         }
         let mut e = self.vback[s];
-        assert!(e != -1);
+        debug_assert_ne!(e, -1);
         loop {
             let eu = e as usize;
-            assert!(self.edges[eu].vert_idx() == last);
+            debug_assert_eq!(self.edges[eu].vert_idx(), last);
             self.edges[eu].v = int(s);
             e = self.adj_edge(eu).next;// self.edges[self.edges[eu].adj_idx()].next;
             if e == self.vback[s] {
@@ -422,8 +422,8 @@ impl WingMesh {
     }
 
     pub fn pack_slot_face(&mut self, s: usize) {
-        assert!(self.fback.len() == self.faces.len());
-        assert!(self.fback[s] == -1);
+        debug_assert_eq!(self.fback.len(), self.faces.len());
+        debug_assert_eq!(self.fback[s], -1);
         let last = self.faces.len() - 1;
         if s == last {
             self.faces.pop();
@@ -437,10 +437,10 @@ impl WingMesh {
             self.faces[s] = fel;
         }
         let mut e = self.fback[s];
-        assert!(e != -1);
+        debug_assert_ne!(e, -1);
         loop {
             let eu = e as usize;
-            assert!(self.edges[eu].face_idx() == last);
+            debug_assert_eq!(self.edges[eu].face_idx(), last);
             self.edges[eu].face = int(s);
             e = self.edges[eu].next;
             if e == self.fback[s] {
@@ -458,7 +458,7 @@ impl WingMesh {
             let mut e = self.fback[a];
             loop {
                 let eu = e as usize;
-                assert!(self.edges[eu].face == int(b));
+                debug_assert_eq!(self.edges[eu].face, int(b));
                 self.edges[eu].face = int(a);
                 e = self.edges[eu].next;
                 if e == self.fback[a] {
@@ -470,7 +470,7 @@ impl WingMesh {
             let mut e = self.fback[b];
             loop {
                 let eu = e as usize;
-                assert!(self.edges[eu].face == int(a));
+                debug_assert_eq!(self.edges[eu].face, int(a));
                 self.edges[eu].face = int(b);
                 e = self.edges[eu].next;
                 if e == self.fback[b] {
@@ -481,7 +481,7 @@ impl WingMesh {
     }
 
     pub fn pack_faces(&mut self) {
-        assert!(self.fback.len() == self.faces.len());
+        assert_eq!(self.fback.len(), self.faces.len());
         let mut s = 0;
         for i in 0..self.faces.len() {
             if self.fback[i] == -1 {
@@ -497,8 +497,8 @@ impl WingMesh {
     }
 
     pub fn compress(&mut self) {
-        assert!(self.fback.len() == self.faces.len());
-        assert!(self.vback.len() == self.verts.len());
+        assert_eq!(self.fback.len(), self.faces.len());
+        assert_eq!(self.vback.len(), self.verts.len());
         for i in (0..self.edges.len()).rev() {
             if self.edges[i].v == -1 {
                 self.pack_slot_edge(i);
@@ -519,14 +519,14 @@ impl WingMesh {
     pub fn avoid_back_refs(&mut self, eid: usize) {
         let ei = int(eid);
 
-        assert!(self.edges[eid].id == ei);
-        assert!(self.edges[eid].prev != ei);
+        debug_assert_eq!(self.edges[eid].id, ei);
+        debug_assert_ne!(self.edges[eid].prev, ei);
 
-        assert!(self.edges[self.edges[self.edges[eid].prev_idx()].adj_idx()].v
-                == self.edges[eid].v);
+        debug_assert_eq!(self.edges[self.edges[self.edges[eid].prev_idx()].adj_idx()].v,
+                         self.edges[eid].v);
 
-        assert!(self.edges[self.edges[eid].prev_idx()].face
-                == self.edges[eid].face);
+        debug_assert_eq!(self.edges[self.edges[eid].prev_idx()].face,
+                         self.edges[eid].face);
 
         if self.vback[self.edges[eid].vert_idx()] == ei {
             let nv = self.edges[self.edges[eid].prev_idx()].adj;

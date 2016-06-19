@@ -1315,7 +1315,7 @@ pub fn run_bsp_test() {
     let mut cpos = vec3(0.8, 0.0, 0.45);
 
     let ac = WingMesh::new_cube(1.0);
-    let bc = WingMesh::new_box(vec3(0.5, 0.5, -1.2), vec3(-0.5, -0.5, 1.2));
+    let bc = WingMesh::new_box(vec3(-0.5, -0.5, -1.2), vec3(0.5, 0.5, 1.2));
     let co = WingMesh::new_cube(1.0).dual_r(0.85);
 
     let af = ac.faces();
