@@ -1440,6 +1440,6 @@ fn main() {
     // run_hull_test();
     // run_joint_test();
     // run_gjk_test();
-    // run_phys_test();
-    run_bsp_test();
+    run_phys_test();
+    // run_bsp_test();
 }
