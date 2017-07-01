@@ -323,8 +323,7 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
             return hit_info;
         }
         if dot(next.v, next.v) >= dot(last.v, last.v) {
-            println!("Warning: GJK Robustness error (i = {}, n = {}, l = {}): {:?} >= {:?}", iter, dot(next.v, next.v), dot(last.v, last.v), next.v, last.v);
-
+            //println!("Warning: GJK Robustness error (i = {}, n = {}, l = {}): {:?} >= {:?}", iter, dot(next.v, next.v), dot(last.v, last.v), next.v, last.v);
             break;
         }
     }

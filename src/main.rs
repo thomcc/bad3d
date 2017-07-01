@@ -3,6 +3,9 @@
 #[macro_use]
 extern crate glium;
 
+// this has grown organially for a while and should be split up, refactored,
+// deleted, etc....
+
 extern crate rand;
 
 #[macro_use]
@@ -22,20 +25,21 @@ mod wingmesh;
 
 mod bsp;
 
-use bsp::{BspNode, Face};
+use bsp::Face;
 use wingmesh::WingMesh;
 use math::*;
 use math::pose::Pose;
 use glium::{DisplayBuild, Surface};
-use std::collections::{HashSet};
-use std::cell::{RefCell};
+use std::collections::HashSet;
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::f32;
+use std::env;
 use glium::backend::glutin_backend::GlutinFacade;
 
-// flat phong
-static VERT_SRC: &'static str = include_str!("../shaders/phong-vs.glsl");
-static FRAG_SRC: &'static str = include_str!("../shaders/phong-fs.glsl");
+// lit flat shader
+static VERT_SRC: &'static str = include_str!("../shaders/lit-vs.glsl");
+static FRAG_SRC: &'static str = include_str!("../shaders/lit-fs.glsl");
 
 // solid color
 static SOLID_VERT_SRC: &'static str = include_str!("../shaders/solid-vs.glsl");
@@ -230,8 +234,8 @@ impl DemoWindow {
         };
 
         let phong_program = glium::Program::from_source(&display,
-            include_str!("../shaders/phong-vs.glsl"),
-            include_str!("../shaders/phong-fs.glsl"), None).unwrap();
+            include_str!("../shaders/lit-vs.glsl"),
+            include_str!("../shaders/lit-fs.glsl"), None).unwrap();
 
         let solid_program = glium::Program::from_source(&display,
             include_str!("../shaders/solid-vs.glsl"),
@@ -485,11 +489,6 @@ fn create_box(display: &GlutinFacade, r: V3, com: V3) -> DemoObject {
     let tris = hull::compute_hull(&mut v[..]).unwrap();
     v.truncate((tris.iter().flat_map(|n| n.iter()).max().unwrap() + 1) as usize);
 
-    println!(r#"
-        made box with dim: {:?},
-        volume: {},
-        com: {:?}
-    "#, r, geom::volume(&v[..], &tris[..]), geom::center_of_mass(&v[..], &tris[..]));
     let body = Rc::new(RefCell::new(phys::RigidBody::new(vec![phys::Shape::new(v, tris)], com, 1.0)));
     let meshes = body.borrow().shapes.iter().map(|s|
         Box::new(DemoMesh::new(&display, &s.vertices[..], &s.tris[..], rand_color())))
@@ -1307,7 +1306,7 @@ pub fn run_bsp_test() {
     let mut draw_mode = 0;
     let mut drag_mode = 1;
     let mut cam = Pose::from_rotation(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), 60f32.to_radians()));
-    let mut cam_dist = 5_f32;
+    let cam_dist = 5_f32;
     let mut hit_dist = 0_f32;
     win.light_pos = [-1.0, 0.5, 0.5];
 
@@ -1370,7 +1369,7 @@ pub fn run_bsp_test() {
 
         cam.position = cam.orientation.z_dir() * cam_dist;
         if bsp.is_none() {
-            let mut bsp_a = Box::new(bsp::compile(af.clone(), WingMesh::new_cube(2.0)));
+            let bsp_a = Box::new(bsp::compile(af.clone(), WingMesh::new_cube(2.0)));
             let mut bsp_b = Box::new(bsp::compile(bf.clone(), WingMesh::new_cube(2.0)));
             let mut bsp_c = Box::new(bsp::compile(cf.clone(), WingMesh::new_cube(2.0)));
 
@@ -1431,15 +1430,23 @@ pub fn run_bsp_test() {
     }
 }
 
-
-
-
-
-// https://gfycat.com/ElaborateHarshHyrax
 fn main() {
-    // run_hull_test();
-    // run_joint_test();
-    // run_gjk_test();
-    run_phys_test();
-    // run_bsp_test();
+    let args: Vec<String> = env::args().collect();
+    let choice: i32 = if args.len() <= 1 {
+        -1
+    } else {
+        args[1].parse::<i32>().unwrap_or(-1)
+    };
+
+    match choice {
+        0 => run_phys_test(),
+        1 => run_joint_test(),
+        2 => run_bsp_test(),
+        3 => run_hull_test(),
+        4 => run_gjk_test(),
+        _ => {
+            print!("Expects number 0-4.\n0: physics collision test\n1: powered ragdoll test\n2: bsp/csg test\n3: hull test\n4: gjk test\n");
+            run_phys_test();
+        },
+    }
 }

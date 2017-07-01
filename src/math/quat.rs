@@ -1,7 +1,6 @@
 use math::vec::*;
 use math::traits::*;
 use math::mat::*;
-use math::scalar::*;
 use math::geom;
 use std::ops::*;
 use std::{mem, fmt, f32};
