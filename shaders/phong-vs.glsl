@@ -11,5 +11,5 @@ void main() {
     vec4 mpos = modelview * vec4(position, 1.0);
     gl_Position = perspective * mpos;
     v_position = gl_Position.xyz / gl_Position.w;
-    v_viewpos = -mpos.xyz;
+    v_viewpos = mpos.xyz;
 }
