@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Thom Chiovoloni <tchiovoloni@mozilla.com>"]
 
 [dependencies]
-glium = "*"
-rand = "0.3"
-more-asserts = "*"
+
+[dev-dependencies]
+rand = "0.4"
+glium = "0.21"
+failure = "0.1"

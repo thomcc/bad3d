@@ -3,8 +3,9 @@ use math::traits::*;
 use math::mat::*;
 use math::geom;
 use std::ops::*;
-use std::{mem, fmt, f32};
+use std::{fmt, f32};
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Quat(pub V4);
 
@@ -21,8 +22,8 @@ impl fmt::Display for Quat {
 
 impl From<V4> for Quat { #[inline] fn from(v: V4) -> Quat { Quat(v) } }
 
-impl AsRef<V4> for Quat { #[inline] fn as_ref(&    self) -> &    V4 { unsafe { mem::transmute(self) } } }
-impl AsMut<V4> for Quat { #[inline] fn as_mut(&mut self) -> &mut V4 { unsafe { mem::transmute(self) } } }
+impl AsRef<V4> for Quat { #[inline] fn as_ref(&    self) -> &    V4 { &    self.0 } }
+impl AsMut<V4> for Quat { #[inline] fn as_mut(&mut self) -> &mut V4 { &mut self.0 } }
 
 impl Identity for Quat {
     #[inline] fn identity() -> Quat { quat(0.0, 0.0, 0.0, 1.0) }
@@ -61,12 +62,12 @@ impl Mul<Quat> for Quat {
     type Output = Quat;
     #[inline]
     fn mul(self, other: Quat) -> Quat {
-        let Quat(V4{x: sx, y: sy, z: sz, w: sw}) = self;
-        let Quat(V4{x: ox, y: oy, z: oz, w: ow}) = other;
-        Quat::new(sx*ow + sw*ox + sy*oz - sz*oy,
-                  sy*ow + sw*oy + sz*ox - sx*oz,
-                  sz*ow + sw*oz + sx*oy - sy*ox,
-                  sw*ow - sx*ox - sy*oy - sz*oz)
+        let Quat(V4 { x: sx, y: sy, z: sz, w: sw }) = self;
+        let Quat(V4 { x: ox, y: oy, z: oz, w: ow }) = other;
+        Quat::new(sx * ow + sw * ox + sy * oz - sz * oy,
+                  sy * ow + sw * oy + sz * ox - sx * oz,
+                  sz * ow + sw * oz + sx * oy - sy * ox,
+                  sw * ow - sx * ox - sy * oy - sz * oz)
     }
 }
 
@@ -193,7 +194,7 @@ impl Quat {
 
     #[inline]
     pub fn z_dir(self) -> V3 {
-        let Quat(V4{x, y, z, w}) = self;
+        let Quat(V4 { x, y, z, w }) = self;
         vec3(z*x + y*w + z*x + y*w,
              y*z - x*w + y*z - x*w,
              w*w - x*x - y*y + z*z)
@@ -204,12 +205,15 @@ impl Quat {
         let x2 = self.0.x + self.0.x;
         let y2 = self.0.y + self.0.y;
         let z2 = self.0.z + self.0.z;
+
         let xx = self.0.x * x2;
         let yx = self.0.y * x2;
         let yy = self.0.y * y2;
+
         let zx = self.0.z * x2;
         let zy = self.0.z * y2;
         let zz = self.0.z * z2;
+
         let wx = self.0.w * x2;
         let wy = self.0.w * y2;
         let wz = self.0.w * z2;
@@ -217,7 +221,6 @@ impl Quat {
         mat3(1.0 - yy - zz, yx + wz, zx - wy,
              yx - wz, 1.0 - xx - zz, zy + wx,
              zx + wy, zy - wx, 1.0 - xx - yy)
-        // M3x3::from_cols(self.x_dir(), self.y_dir(), self.z_dir())
     }
 
     #[inline]
@@ -249,7 +252,6 @@ impl Quat {
     #[inline]
     pub fn inverse(self) -> Quat {
         Quat(self.0.must_norm()).conj()
-        // self.conj() / self.length_sq()
     }
 
     #[inline]
@@ -258,10 +260,6 @@ impl Quat {
         debug_assert!(dot(v1, v1) != 0.0);
         let v0 = v0.norm_or_zero();
         let v1 = v1.norm_or_zero();
-
-        // if v0.approx_eq(&v1) {
-            // return Quat::identity();
-        // }
 
         let c = v0.cross(v1);
         let d = v0.dot(v1);
@@ -325,7 +323,6 @@ impl Quat {
     }
 }
 
-
 impl Mul<V3> for Quat {
     type Output = V3;
     #[inline]
@@ -336,13 +333,10 @@ impl Mul<V3> for Quat {
         let iy =  qw*vy + qz*vx - qx*vz;
         let iz =  qw*vz + qx*vy - qy*vx;
         let iw = -qx*vx - qy*vy - qz*vz;
-        vec3(ix*qw + iw*-qx + iy*-qz - iz*-qy,
-             iy*qw + iw*-qy + iz*-qx - ix*-qz,
-             iz*qw + iw*-qz + ix*-qy - iy*-qx)
+        vec3(ix * qw + iw * -qx + iy * -qz - iz * -qy,
+             iy * qw + iw * -qy + iz * -qx - ix * -qz,
+             iz * qw + iw * -qz + ix * -qy - iy * -qx)
         // this is slow and bad...
         // self.to_mat3() * o
     }
 }
-
-
-

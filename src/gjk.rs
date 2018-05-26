@@ -1,7 +1,6 @@
 use math::*;
 use hull;
 use std::default::Default;
-// use math::geom;
 use support::{TransformedSupport, Support};
 use std::f32;
 
@@ -16,7 +15,6 @@ pub enum ContactType {
 impl Default for ContactType {
     #[inline] fn default() -> ContactType { ContactType::Unknown }
 }
-
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct ContactInfo {

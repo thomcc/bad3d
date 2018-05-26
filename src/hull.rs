@@ -140,7 +140,6 @@ impl Tri {
         self.ni[idx] = new_value;
     }
 
-
     fn update(&mut self, verts: &[V3], extreme_map: Option<&[bool]>) {
         let (v0, v1, v2) = tri(verts, self.vi);
         let n = tri_normal(v0, v1, v2);
@@ -154,7 +153,6 @@ impl Tri {
             self.rise = dot(n, verts[vmax] - v0);
         }
     }
-
 }
 
 fn neib_fix(tris: &mut[Tri], k_id: i32) {
@@ -185,15 +183,14 @@ fn swap_neib(tris: &mut[Tri], a: usize, b: usize) {
     neib_fix(tris, b as i32);
 }
 
-
 fn fix_back_to_back(tris: &mut[Tri], s: usize, t: usize) {
     for i in 0..3 {
         let (i1, i2) = next_mod3(i);
         let (va, vb) = (tris[s].vi[i1], tris[s].vi[i2]);
-        debug_assert!(tris[tris[s].get_neib(va, vb) as usize].get_neib(vb, va)
-                      == tris[s].id);
-        debug_assert!(tris[tris[t].get_neib(va, vb) as usize].get_neib(vb, va)
-                      == tris[t].id);
+        debug_assert_eq!(tris[tris[s].get_neib(va, vb) as usize].get_neib(vb, va),
+                         tris[s].id);
+        debug_assert_eq!(tris[tris[t].get_neib(va, vb) as usize].get_neib(vb, va),
+                         tris[t].id);
 
         let t_neib = tris[t].get_neib(vb, va);
         tris[tris[s].get_neib(va, vb) as usize].set_neib(vb, va, t_neib);
@@ -434,8 +431,7 @@ pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -
     }
 }
 
-
-fn finish_hull(tris: &mut [Tri], verts: &mut [V3]) -> Vec<[u16; 3]> {
+fn finish_hull(tris: &mut [Tri], verts: &mut [V3]) -> (Vec<[u16; 3]>, usize) {
     let mut used = vec![0usize; verts.len()];
     let mut map = vec![0isize; verts.len()];
 
@@ -463,20 +459,31 @@ fn finish_hull(tris: &mut [Tri], verts: &mut [V3]) -> Vec<[u16; 3]> {
         }
     }
 
-    tris.iter()
-        .map(|t| [t.vi[0] as u16, t.vi[1] as u16, t.vi[2] as u16])
-        .collect::<Vec<[u16; 3]>>()
+    let mut ts: Vec<[u16; 3]> = Vec::with_capacity(tris.len());
+    let mut max_idx = 0;
+
+    for t in tris.iter() {
+        let tmaxi = max!(t.vi[0] as usize,
+                         t.vi[1] as usize,
+                         t.vi[2] as usize);
+        if tmaxi > max_idx {
+            max_idx = tmaxi;
+        }
+        ts.push([t.vi[0] as u16, t.vi[1] as u16, t.vi[2] as u16]);
+    }
+
+    (ts, max_idx + 1)
 }
 
-
-
-pub fn compute_hull(verts: &mut [V3]) -> Option<Vec<[u16; 3]>> {
+pub fn compute_hull(verts: &mut [V3]) -> Option<(Vec<[u16; 3]>, usize)> {
     compute_hull_bounded(verts, 0)
 }
 
-pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[u16; 3]>> {
-    assert!(verts.len() > 4);
+pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<(Vec<[u16; 3]>, usize)> {
     assert!(verts.len() < (i32::MAX as usize));
+    if verts.len() < 4 {
+        return None;
+    }
 
     let mut vert_limit: isize = if vert_limit == 0 {
         isize::MAX
@@ -486,11 +493,11 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[
     let vert_count = verts.len();
 
     let mut is_extreme = vec![false; vert_count];
-    let (min_bound, max_bound) = try_opt!(compute_bounds(verts));
+    let (min_bound, max_bound) = compute_bounds(verts)?;
 
     let epsilon = max_bound.dist(min_bound) * 0.001_f32;
 
-    let (p0, p1, p2, p3) = try_opt!(find_simplex(verts));
+    let (p0, p1, p2, p3) = find_simplex(verts)?;
 
     let mut tris = Vec::from(&build_simplex(p0, p1, p2, p3)[..]);
 
@@ -542,4 +549,12 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<Vec<[
     Some(finish_hull(&mut tris[..], verts))
 }
 
+pub fn compute_hull_trunc(verts: &mut Vec<V3>, vert_limit: Option<usize>) -> Option<Vec<[u16; 3]>> {
+    if let Some((tris, size)) = compute_hull_bounded(verts, vert_limit.unwrap_or(0)) {
+        verts.truncate(size);
+        Some(tris)
+    } else {
+        None
+    }
+}
 

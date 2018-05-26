@@ -1,10 +1,7 @@
 use math::*;
-use math::geom::*;
 use wingmesh::WingMesh;
 use util::OrdFloat;
 use std::{f32, mem};
-
-
 
 const Q_SNAP: f32 = 0.05;
 const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);
@@ -18,7 +15,6 @@ const OVER: usize = PlaneTestResult::Over as usize;
 const UNDER: usize = PlaneTestResult::Under as usize;
 const SPLIT: usize = PlaneTestResult::Split as usize;
 const COPLANAR: usize = PlaneTestResult::Coplanar as usize;
-
 
 #[derive(Clone, Default)]
 pub struct Face {
@@ -38,7 +34,9 @@ pub enum LeafType {
     Over = (PlaneTestResult::Over as u8), // 0b10
 }
 
-default_for_enum!(LeafType::NotLeaf);
+impl Default for LeafType {
+    #[inline] fn default() -> LeafType { LeafType::NotLeaf }
+}
 
 #[derive(Clone, Default)]
 pub struct BspNode {
@@ -58,7 +56,7 @@ pub struct BspPreorder<'a> {
 impl<'a> Iterator for BspPreorder<'a> {
     type Item = &'a BspNode;
     fn next(&mut self) -> Option<&'a BspNode> {
-        let node = try_opt!(self.stack.pop());
+        let node = self.stack.pop()?;
         if let Some(ref b) = node.under {
             self.stack.push(b.as_ref()); // is &*b the same?
         }
@@ -78,7 +76,7 @@ pub struct BspBackToFront<'a> {
 impl<'a> Iterator for BspBackToFront<'a> {
     type Item = &'a BspNode;
     fn next(&mut self) -> Option<&'a BspNode> {
-        let node = try_opt!(self.stack.pop());
+        let node = self.stack.pop()?;
         let plane = Plane::new(self.p, 1.0);
         let mut np = if plane.dot(node.plane) > 0.0 {
             &node.over
@@ -195,6 +193,7 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> BspN
             debug_assert_ge!(dot(node.plane.normal, *v) + node.plane.offset, -FUZZY_WIDTH);
         }
     }
+
     for face in under.iter() {
         for v in face.vertex.iter() {
             debug_assert_le!(dot(node.plane.normal, *v) + node.plane.offset, FUZZY_WIDTH);
@@ -248,7 +247,6 @@ fn gen_faces_wm(wm: &WingMesh, mat: usize) -> Vec<Face> {
     r
 }
 
-
 pub fn divide_polys(split: Plane, input: Vec<Face>) -> (Vec<Face>, Vec<Face>, Vec<Face>) {
     let mut under = Vec::new();
     let mut over = Vec::new();
@@ -269,14 +267,12 @@ pub fn divide_polys(split: Plane, input: Vec<Face>) -> (Vec<Face>, Vec<Face>, Ve
 }
 
 impl BspNode {
+    #[inline]
     pub fn new(plane: Plane) -> BspNode {
-        BspNode {
-            leaf_type: LeafType::NotLeaf,
-            plane: plane,
-            .. Default::default()
-        }
+        BspNode { plane, .. Default::default() }
     }
 
+    #[inline]
     pub fn is_leaf(&self) -> bool {
         self.leaf_type != LeafType::NotLeaf
     }
@@ -458,7 +454,6 @@ impl BspNode {
         self
     }
 
-
     fn each_mut<F: FnMut(&mut BspNode)>(&mut self, mut f: F) {
         let mut stack: Vec<&mut BspNode> = vec![self];
         while let Some(n) = stack.pop() {
@@ -574,7 +569,6 @@ impl BspNode {
     }
     // pub fn hit_check(&self, solid: bool, v0: V3, v1: V3) -> Option<V3>;
     // pub fn hit_check_solid_reenter(&self, v0: V3, v1: V3) -> Option<V3>;
-
 }
 
 fn do_union(ao: Option<Box<BspNode>>, mut b: Box<BspNode>) -> Box<BspNode> {
@@ -784,7 +778,6 @@ pub fn partition(mut n: Box<BspNode>, p: Plane) -> (Option<Box<BspNode>>, Option
     }
     (Some(under), Some(over))
 }
-
 
 impl Face {
     pub fn new() -> Face { Default::default() }
@@ -1046,4 +1039,3 @@ impl Face {
         tris
     }
 }
-

@@ -9,11 +9,11 @@ pub struct Pose {
     pub orientation: Quat,
 }
 
-// rigid transformation
+/// rigid transformation
 impl Pose {
     #[inline]
     pub fn new(position: V3, orientation: Quat) -> Pose {
-        Pose{position: position, orientation: orientation}
+        Pose { position, orientation }
     }
 
     #[inline]
@@ -33,13 +33,28 @@ impl Pose {
     }
 
     #[inline]
-    pub fn to_mat4(&self) -> M4x4 {
+    pub fn to_mat4(self) -> M4x4 {
         M4x4::from_pose(self.position, self.orientation)
     }
+
     #[inline]
-    pub fn from_mat4(m: &M4x4) -> Pose {
+    pub fn from_mat4(m: M4x4) -> Pose {
         Pose::new(m.w.xyz(), M3x3::from_cols(m.x.xyz(), m.y.xyz(), m.z.xyz()).to_quat())
     }
+
+    #[inline]
+    pub fn new_look_at(eye: V3, target: V3, up: V3) -> Pose {
+        Pose::from_mat4(M4x4::look_at(eye, target, up))
+    }
+}
+
+// Hrm... This won't always result in a sane pose...
+impl From<M4x4> for Pose {
+    #[inline] fn from(m: M4x4) -> Pose { Pose::from_mat4(m) }
+}
+
+impl From<Pose> for M4x4 {
+    #[inline] fn from(p: Pose) -> M4x4 { p.to_mat4() }
 }
 
 impl Identity for Pose {

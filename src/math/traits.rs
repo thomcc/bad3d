@@ -44,14 +44,32 @@ pub trait Fold: Copy + Clone {
     fn fold2_init<T, F>(self, Self, init: T, f: F) -> T
             where F: Fn(T, f32, f32) -> T;
 
+    #[inline]
     fn fold_init<T, F>(self, init: T, f: F) -> T
             where F: Fn(T, f32) -> T {
         self.fold2_init(self, init, |acc, v, _| f(acc, v))
     }
 }
 
-pub trait TriIndices {
-    fn tri_indices(&self) -> (usize, usize, usize);
+pub trait TriIndices: Copy {
+    fn tri_indices(self) -> (usize, usize, usize);
+
+    #[inline]
+    fn tri_verts<V: Copy>(self, vs: &[V]) -> (V, V, V) {
+        let (a, b, c) = self.tri_indices();
+        (vs[a], vs[b], vs[c])
+    }
+
+    #[inline]
+    fn tri_verts_opt<V: Copy>(self, vs: &[V]) -> Option<(V, V, V)> {
+        let (a, b, c) = self.tri_indices();
+        // There's a clever way to optimize this: ((a-len)|(b-len)|(c-len)) >= 0
+        if a < vs.len() && b < vs.len() && c < vs.len() {
+            Some((vs[a], vs[b], vs[c]))
+        } else {
+            None
+        }
+    }
 }
 
 pub trait Dot {
@@ -78,28 +96,28 @@ pub trait Map: Copy + Clone {
 
 impl TriIndices for [u16; 3] {
     #[inline]
-    fn tri_indices(&self) -> (usize, usize, usize) {
+    fn tri_indices(self) -> (usize, usize, usize) {
         (self[0] as usize, self[1] as usize, self[2] as usize)
     }
 }
 
 impl TriIndices for (u16, u16, u16) {
     #[inline]
-    fn tri_indices(&self) -> (usize, usize, usize) {
+    fn tri_indices(self) -> (usize, usize, usize) {
         (self.0 as usize, self.1 as usize, self.2 as usize)
     }
 }
 
 impl TriIndices for [u32; 3] {
     #[inline]
-    fn tri_indices(&self) -> (usize, usize, usize) {
+    fn tri_indices(self) -> (usize, usize, usize) {
         (self[0] as usize, self[1] as usize, self[2] as usize)
     }
 }
 
 impl TriIndices for (u32, u32, u32) {
     #[inline]
-    fn tri_indices(&self) -> (usize, usize, usize) {
+    fn tri_indices(self) -> (usize, usize, usize) {
         (self.0 as usize, self.1 as usize, self.2 as usize)
     }
 }

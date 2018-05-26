@@ -1,0 +1,52 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
+
+#[macro_use]
+extern crate glium;
+extern crate rand;
+
+#[macro_use]
+extern crate bad3d;
+
+#[macro_use]
+extern crate failure;
+
+mod shared;
+use failure::Error;
+use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh};
+
+use bad3d::{hull};
+use bad3d::math::*;
+
+fn main() -> Result<()> {
+    let mut win = DemoWindow::new(DemoOptions {
+        title: "Hull test",
+        view: M4x4::look_at(vec3(0.0, 0.0, 2.0),
+                            vec3(0.0, 0.0, 0.0),
+                            vec3(0.0, 1.0, 0.0)),
+        clear_color: vec4(0.5, 0.6, 1.0, 1.0),
+        near_far: (0.01, 50.0),
+        .. Default::default()
+    })?;
+
+    let (vertices, triangles) = object::random_point_cloud(64);
+    let mut mesh = DemoMesh::new(&win.display, vertices, triangles, object::random_color())?;
+    let mut pose = Pose::identity();
+
+    while win.is_up() {
+        if win.input.mouse_down {
+            let q = pose.orientation;
+            pose.orientation = Quat::virtual_track_ball(
+                vec3(0.0, 0.0, 2.0),
+                vec3(0.0, 0.0, 0.0),
+                win.input.mouse_vec_prev,
+                win.input.mouse_vec
+            ) * q;
+        }
+
+        win.draw_lit_mesh(pose.to_mat4(), &mesh)?;
+
+        win.end_frame()?;
+    }
+    Ok(())
+}

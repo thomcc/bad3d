@@ -32,8 +32,7 @@ pub struct M4x4 {
 
 #[inline]
 pub fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
-    M2x2::new(m00, m01,
-              m10, m11)
+    M2x2::new(m00, m01, m10, m11)
 }
 
 
@@ -57,12 +56,11 @@ pub fn mat4(m00: f32, m01: f32, m02: f32, m03: f32,
               m30, m31, m32, m33)
 }
 
-
 impl Mul<V2> for M2x2 {
     type Output = V2;
     #[inline]
     fn mul(self, v: V2) -> V2 {
-        self.x*v.x + self.y*v.y
+        self.x * v.x + self.y * v.y
     }
 }
 
@@ -70,7 +68,7 @@ impl Mul<V3> for M3x3 {
     type Output = V3;
     #[inline]
     fn mul(self, v: V3) -> V3 {
-        self.x*v.x + self.y*v.y + self.z*v.z
+        self.x * v.x + self.y * v.y + self.z * v.z
     }
 }
 
@@ -78,7 +76,7 @@ impl Mul<V4> for M4x4 {
     type Output = V4;
     #[inline]
     fn mul(self, v: V4) -> V4 {
-        self.x*v.x + self.y*v.y + self.z*v.z + self.w*v.w
+        self.x * v.x + self.y * v.y + self.z * v.z + self.w * v.w
     }
 }
 
@@ -131,6 +129,34 @@ macro_rules! define_conversions {
     }
 }
 
+macro_rules! impl_ref_operators {
+    ($OperTrait:ident :: $func:ident, $lhs:ty, $rhs:ty) => {
+        impl<'a> $OperTrait<$rhs> for &'a $lhs {
+            type Output = <$lhs as $OperTrait<$rhs>>::Output;
+            #[inline]
+            fn $func(self, other: $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
+                $OperTrait::$func(*self, other)
+            }
+        }
+
+        impl<'a> $OperTrait<&'a $rhs> for $lhs {
+            type Output = <$lhs as $OperTrait<$rhs>>::Output;
+
+            #[inline] fn $func(self, other: &'a $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
+                $OperTrait::$func(self, *other)
+            }
+        }
+
+        impl<'a, 'b> $OperTrait<&'a $rhs> for &'b $lhs {
+            type Output = <$lhs as $OperTrait<$rhs>>::Output;
+
+            #[inline]
+            fn $func(self, other: &'a $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
+                $OperTrait::$func(*self, *other)
+            }
+        }
+    }
+}
 
 macro_rules! do_mat_boilerplate {
     ($Mn: ident { $($field: ident : $index: expr),+ },
@@ -576,23 +602,7 @@ impl M4x4 {
     }
 
     #[inline]
-    pub fn look_at(eye: V3, center: V3, up: V3) -> M4x4 {
-        M4x4::look_towards(center-eye, up) * M4x4::from_translation(-eye)
+    pub fn look_at(eye: V3, target: V3, up: V3) -> M4x4 {
+        M4x4::look_towards(target-eye, up) * M4x4::from_translation(-eye)
     }
-
 }
-
-// #[inline]
-// pub fn determinant<M: MatType>(m: &M) -> f32 {
-//     m.determinant()
-// }
-
-// #[inline]
-// pub fn adjugate<M: MatType>(m: &M) -> M {
-//     m.adjugate()
-// }
-
-// #[inline]
-// pub fn transpose<M: MatType>(m: &M) -> M {
-//     m.transpose()
-// }

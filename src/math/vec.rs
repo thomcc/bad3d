@@ -16,7 +16,7 @@ pub struct V2 {
 
 #[inline]
 pub fn vec2(x: f32, y: f32) -> V2 {
-    V2 { x: x, y: y }
+    V2 { x, y }
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -29,7 +29,7 @@ pub struct V3 {
 
 #[inline]
 pub fn vec3(x: f32, y: f32, z: f32) -> V3 {
-    V3 { x: x, y: y, z: z }
+    V3 { x, y, z }
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -43,19 +43,25 @@ pub struct V4 {
 
 #[inline]
 pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
-    V4 { x: x, y: y, z: z, w: w }
+    V4 { x, y, z, w }
 }
 
 impl fmt::Display for V2 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "V2({}, {})", self.x, self.y) }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "V2({}, {})", self.x, self.y)
+    }
 }
 
 impl fmt::Display for V3 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "V3({}, {}, {})", self.x, self.y, self.z) }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "V3({}, {}, {})", self.x, self.y, self.z)
+    }
 }
 
 impl fmt::Display for V4 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "V4({}, {}, {}, {})", self.x, self.y, self.z, self.w) }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "V4({}, {}, {}, {})", self.x, self.y, self.z, self.w)
+    }
 }
 
 pub trait VecType
@@ -89,9 +95,10 @@ pub trait VecType
     + MulAssign
     + DivAssign
 {
-    fn count() -> usize;
+    const SIZE: usize;
     fn splat(v: f32) -> Self;
 
+    #[inline] fn count() -> usize { <Self as VecType>::SIZE }
     #[inline] fn zero() -> Self { Self::splat(0.0) }
 
     #[inline] fn max_elem(self) -> f32 { self.fold(|a, b| a.max(b)) }
@@ -147,9 +154,7 @@ pub trait VecType
     #[inline] fn hadamard(self, o: Self) -> Self { self.map2(o, |a, b| a * b) }
 
     #[inline] fn round_to(self, p: f32) -> Self { self.map(|v| round_to(v, p)) }
-
 }
-
 
 impl<T: Fold> ApproxEq for T {
     #[inline]
@@ -162,7 +167,6 @@ impl<T: Fold> ApproxEq for T {
         self.fold2_init(*o, true, |cnd, l, r| cnd && l.approx_eq_e(&r, e))
     }
 }
-
 
 impl<T: Map> Clamp for T {
     #[inline]
@@ -455,7 +459,7 @@ macro_rules! do_vec_boilerplate {
         }
 
         impl VecType for $Vn {
-            #[inline] fn count() -> usize { $length }
+            const SIZE: usize = $length;
             #[inline] fn splat(v: f32) -> $Vn { $Vn{ $($field: v),+ } }
         }
     }
@@ -469,8 +473,8 @@ impl V2 {
     #[inline] pub fn unit() -> V2 { V2::new(1.0, 0.0) }
     #[inline] pub fn min_index(&self) -> usize { if self.x < self.y { 0 } else { 1 } }
     #[inline] pub fn max_index(&self) -> usize { if self.x > self.y { 0 } else { 1 } }
-    #[inline] pub fn outer_prod(self, o: V2) -> M2x2 { M2x2{x: self*o.x, y: self*o.y } }
-    #[inline] pub fn cross(self, o: V2) -> f32 { self.x*o.y - self.y*o.x }
+    #[inline] pub fn outer_prod(self, o: V2) -> M2x2 { M2x2 { x: self * o.x, y: self * o.y } }
+    #[inline] pub fn cross(self, o: V2) -> f32 { self.x * o.y - self.y * o.x }
     #[inline] pub fn norm_or_unit(self) -> V2 { self.norm_or(0.0, 1.0) }
 }
 
@@ -498,9 +502,9 @@ impl V3 {
 
     #[inline]
     pub fn cross(&self, b: V3) -> V3 {
-        vec3(self.y*b.z - self.z*b.y,
-             self.z*b.x - self.x*b.z,
-             self.x*b.y - self.y*b.x)
+        vec3(self.y * b.z - self.z * b.y,
+             self.z * b.x - self.x * b.z,
+             self.x * b.y - self.y * b.x)
     }
 
     #[inline]
@@ -533,9 +537,11 @@ impl V4 {
     #[inline] pub fn expand(v: V3, w: f32) -> V4 { V4{ x: v.x, y: v.y, z: v.z, w: w } }
     #[inline] pub fn min_index(&self) -> usize { min_index(&<[f32; 4]>::from(*self)) }
     #[inline] pub fn max_index(&self) -> usize { max_index(&<[f32; 4]>::from(*self)) }
-    #[inline] pub fn outer_prod(self, o: V4) -> M4x4 { M4x4{ x: self*o.x, y: self*o.y, z: self*o.z, w: self*o.w } }
-    #[inline] pub fn xyz(self) -> V3 { V3{ x: self.x, y: self.y, z: self.z } }
+    #[inline] pub fn xyz(self) -> V3 { V3 { x: self.x, y: self.y, z: self.z } }
     #[inline] pub fn norm_or_unit(self) -> V4 { self.norm_or(0.0, 0.0, 0.0, 1.0) }
+    #[inline] pub fn outer_prod(self, o: V4) -> M4x4 {
+        M4x4 { x: self * o.x, y: self * o.y, z: self * o.z, w: self * o.w }
+    }
 }
 
 impl From<V3> for V2 { #[inline] fn from(v: V3) -> V2 { V2 { x: v.x, y: v.y                 } } }
@@ -553,7 +559,6 @@ impl AsMut<V2> for V3 { #[inline] fn as_mut(&mut self) -> &mut V2 { unsafe { mem
 impl AsMut<V2> for V4 { #[inline] fn as_mut(&mut self) -> &mut V2 { unsafe { mem::transmute(self) } } }
 impl AsMut<V3> for V4 { #[inline] fn as_mut(&mut self) -> &mut V3 { unsafe { mem::transmute(self) } } }
 
-
 impl From<Quat> for V4 { #[inline] fn from(q: Quat) -> V4 { q.0 } }
 
 impl AsRef<Quat> for V4 { #[inline] fn as_ref(&    self) -> &    Quat { unsafe { mem::transmute(self) } } }
@@ -569,6 +574,7 @@ pub fn clamp_s<T: VecType>(a: T, min: f32, max: f32) -> T {
     a.clamp(T::splat(min), T::splat(max))
 }
 
+#[inline]
 pub fn max_dir(arr: &[V3], dir: V3) -> Option<V3> {
     match max_dir_index(arr, dir) {
         Some(index) => Some(arr[index]),
@@ -576,8 +582,9 @@ pub fn max_dir(arr: &[V3], dir: V3) -> Option<V3> {
     }
 }
 
+#[inline]
 pub fn max_dir_index(arr: &[V3], dir: V3) -> Option<usize> {
-     if arr.len() == 0 {
+    if arr.len() == 0 {
         return None;
     }
     let mut best_idx = 0;
@@ -589,8 +596,9 @@ pub fn max_dir_index(arr: &[V3], dir: V3) -> Option<usize> {
     Some(best_idx)
 }
 
+#[inline]
 pub fn max_dir_i<I: Iterator<Item = V3>>(dir: V3, iter: &mut I) -> Option<V3> {
-    let initial = try_opt!(iter.next());
+    let initial = iter.next()?;
 
     let mut best = initial;
     for item in iter {
@@ -601,10 +609,13 @@ pub fn max_dir_i<I: Iterator<Item = V3>>(dir: V3, iter: &mut I) -> Option<V3> {
     Some(best)
 }
 
-
+#[inline]
 pub fn compute_bounds_i<I, Vt>(iter: &mut I) -> Option<(Vt, Vt)>
-        where I: Iterator<Item = Vt>, Vt: VecType {
-    let initial = try_opt!(iter.next());
+where
+    I: Iterator<Item = Vt>,
+    Vt: VecType
+{
+    let initial = iter.next()?;
 
     let mut min_bound = initial;
     let mut max_bound = initial;
@@ -615,6 +626,7 @@ pub fn compute_bounds_i<I, Vt>(iter: &mut I) -> Option<(Vt, Vt)>
     Some((min_bound, max_bound))
 }
 
+#[inline]
 pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
     compute_bounds_i(&mut arr.iter().map(|v| *v))
 }

@@ -8,6 +8,7 @@ use std::{default, fmt};
 
 pub const DEFAULT_PLANE_WIDTH: f32 = 0.0008_f32;
 
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Plane {
     pub normal: V3,
@@ -24,7 +25,6 @@ impl fmt::Display for Plane {
     }
 }
 
-
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]
 pub enum PlaneTestResult {
@@ -36,11 +36,17 @@ pub enum PlaneTestResult {
 
 impl Neg for Plane {
     type Output = Plane;
-    #[inline] fn neg(self) -> Plane { Plane::new(-self.normal, -self.offset) }
+    #[inline]
+    fn neg(self) -> Plane {
+        Plane::new(-self.normal, -self.offset)
+    }
 }
 
 impl Plane {
-    #[inline] pub fn zero() -> Plane { Plane::new(V3::zero(), 0.0) }
+    #[inline]
+    pub fn zero() -> Plane {
+        Plane::new(V3::zero(), 0.0)
+    }
 
     #[inline]
     pub fn to_v4(&self) -> V4 {
@@ -113,7 +119,7 @@ impl Plane {
 
     #[inline]
     pub fn scale(&self, s: f32) -> Plane {
-        Plane::new(self.normal, self.offset*s)
+        Plane::new(self.normal, self.offset * s)
     }
 
     #[inline]
@@ -149,7 +155,7 @@ impl Plane {
 
     #[inline]
     pub fn offset_by(&self, o: f32) -> Plane {
-        Plane::new(self.normal, self.offset+o)
+        Plane::new(self.normal, self.offset + o)
     }
 
     #[inline]

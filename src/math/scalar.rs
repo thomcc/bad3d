@@ -27,6 +27,16 @@ impl Clamp for f32 {
 }
 
 #[inline]
+pub fn try_div(a: f32, b: f32) -> Option<f32> {
+    if b == 0.0 { None } else { Some(a / b) }
+}
+
+#[inline]
+pub fn try_div_e(a: f32, b: f32, e: f32) -> Option<f32> {
+    if b.approx_zero_e(e) { None } else { Some(a / b) }
+}
+
+#[inline]
 pub fn safe_div(a: f32, b: f32, default: f32) -> f32 {
     if b == 0.0 { default } else { a / b }
 }
@@ -42,7 +52,7 @@ pub fn repeat(v: f32, rep: f32) -> f32 {
 #[inline]
 pub fn wrap_between(v: f32, lo: f32, hi: f32) -> f32 {
     assert!(lo < hi);
-    repeat(v-lo, hi-lo) + lo
+    repeat(v - lo, hi - lo) + lo
 }
 
 #[inline]
@@ -50,7 +60,7 @@ pub fn wrap_degrees(a: f32) -> f32 {
     repeat(a, 360.0)
 }
 
-
+#[inline]
 pub fn round_to(a: f32, p: f32) -> f32 {
     (a / p).round() * p
 }

@@ -1,6 +1,7 @@
 use math::*;
-use math::pose::*;
-// use hull;
+
+use hull;
+use wingmesh;
 use gjk;
 use support::{TransformedSupport};
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
@@ -24,29 +25,107 @@ pub const MAX_DRIFT: f32 = 0.03;
 pub const DAMPING: f32 = 0.15;
 pub const EULER_PHYSICS: bool = false;
 
+#[derive(Debug, Clone, Default)]
 pub struct Shape {
     pub vertices: Vec<V3>,
     pub tris: Vec<[u16; 3]>,
-    pub planes: Option<Vec<V4>>
 }
 
 impl Shape {
-    pub fn new(vertices: Vec<V3>, tris: Vec<[u16; 3]>) -> Shape {
-        Shape { vertices: vertices, tris: tris, planes: None }
+    #[inline]
+    pub fn new(vertices: Vec<V3>, tris: Vec<[u16; 3]>) -> Self {
+        Self { vertices, tris }
+    }
+
+    #[inline]
+    pub fn from_winged(wm: &wingmesh::WingMesh) -> Shape {
+        let tris = wm.generate_tris();
+        Shape::new(wm.verts.clone(), tris)
+    }
+
+    #[inline]
+    pub fn new_hull(mut vertices: Vec<V3>) -> Option<Self> {
+        if let Some(tris) = hull::compute_hull_trunc(&mut vertices, None) {
+            Some(Self { vertices, tris})
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn new_box_at(radii: V3, com: V3) -> Self {
+        let size = radii.abs().map(|x| x.max(1.0e-3));
+        let mut vertices = Vec::with_capacity(8);
+        for &z in &[-size.z, size.z] {
+            for &y in &[-size.y, size.y] {
+                for &x in &[-size.x, size.x] {
+                    vertices.push(vec3(x, y, z) + com)
+                }
+            }
+        }
+        // This is so lazy...
+        Shape::new_hull(vertices).unwrap()
+    }
+
+    #[inline]
+    pub fn new_box(radii: V3) -> Self {
+        Shape::new_box_at(radii, V3::zero())
+    }
+
+    #[inline]
+    pub fn new_aabb(min: V3, max: V3) -> Self {
+        Shape::new_box_at((max - min) / 2.0, (max + min) / 2.0)
+    }
+
+    #[inline]
+    pub fn new_octa(radii: V3) -> Self {
+        let size = radii.abs().map(|x| x.max(1.0e-3));
+        let vertices = vec![
+            vec3(-size.x, 0.0, 0.0),
+            vec3( size.x, 0.0, 0.0),
+            vec3(0.0, -size.y, 0.0),
+            vec3(0.0,  size.y, 0.0),
+            vec3(0.0, 0.0, -size.z),
+            vec3(0.0, 0.0,  size.z),
+        ];
+        // This is so lazy...
+        Shape::new_hull(vertices).unwrap()
+    }
+
+    #[inline]
+    pub fn volume(&self) -> f32 {
+        geom::volume(&self.vertices, &self.tris)
+    }
+
+    #[inline]
+    pub fn center_of_mass(&self) -> V3 {
+        geom::center_of_mass(&self.vertices, &self.tris)
+    }
+
+    #[inline]
+    pub fn inertia(&self, com: V3) -> M3x3 {
+        geom::inertia(&self.vertices, &self.tris, com)
+    }
+}
+
+impl From<wingmesh::WingMesh> for Shape {
+    #[inline]
+    fn from(wm: wingmesh::WingMesh) -> Shape {
+        let tris = wm.generate_tris();
+        Shape::new(wm.verts, tris)
     }
 }
 
 pub fn combined_volume(shapes: &[Shape]) -> f32 {
-    shapes.iter().fold(0.0, |sum, shape|
-        sum + geom::volume(&shape.vertices[..], &shape.tris[..]))
+    shapes.iter().fold(0.0, |sum, shape| sum + shape.volume())
 }
 
 pub fn combined_center_of_mass(shapes: &[Shape]) -> V3 {
     let mut com = V3::zero();
     let mut vol = 0.0f32;
     for mesh in shapes {
-        let v = geom::volume(&mesh.vertices[..], &mesh.tris[..]);
-        let c = geom::center_of_mass(&mesh.vertices[..], &mesh.tris[..]);
+        let v = mesh.volume();
+        let c = mesh.center_of_mass();
         vol += v;
         com += c*v;
     }
@@ -59,10 +138,10 @@ pub fn combined_inertia(shapes: &[Shape], com: V3) -> M3x3 {
                            0.0, 0.0, 0.0,
                            0.0, 0.0, 0.0);
     for mesh in shapes {
-        let v = geom::volume(&mesh.vertices[..], &mesh.tris[..]);
-        let i = geom::inertia(&mesh.vertices[..], &mesh.tris[..], com);
+        let v = mesh.volume();
+        let i = mesh.inertia(com);
         vol += v;
-        inertia += i*v;
+        inertia += i * v;
     }
     inertia / vol
 }
@@ -70,6 +149,7 @@ pub fn combined_inertia(shapes: &[Shape], com: V3) -> M3x3 {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct RigidBodyID(usize);
 
+#[derive(Debug)]
 pub struct RigidBody {
     pub id: RigidBodyID,
 
@@ -114,6 +194,11 @@ pub type RigidBodyRef = Rc<RefCell<RigidBody>>;
 static RIGIDBODY_ID_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
 
 impl RigidBody {
+    #[inline]
+    pub fn new_ref(shapes: Vec<Shape>, posn: V3, mass: f32) -> RigidBodyRef {
+        Rc::new(RefCell::new(RigidBody::new(shapes, posn, mass)))
+    }
+
     pub fn new(shapes: Vec<Shape>, posn: V3, mass: f32) -> RigidBody {
         let mut res = RigidBody {
             id: RigidBodyID(RIGIDBODY_ID_COUNTER.fetch_add(1, Ordering::SeqCst)),
@@ -279,7 +364,8 @@ fn rk_update(s: Quat, tensor_inv: M3x3, angular: V3, dt: f32) -> Quat {
 
 #[inline]
 fn rb_map_or<F, T: Copy + Clone>(o: &Option<RigidBodyRef>, default: T, f: F) -> T
-        where F: Fn(&Ref<RigidBody>) -> T {
+    where F: Fn(&Ref<RigidBody>) -> T
+{
     if let &Some(ref a) = o {
         f(&a.borrow())
     } else {
@@ -371,12 +457,14 @@ pub struct LinearConstraint {
 
 impl LinearConstraint {
     #[inline]
-    pub fn new(bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>),
-               positions: (V3, V3),
-               normal: V3,
-               dist: f32,
-               targ_speed_nobias: Option<f32>,
-               force_lim: Option<(f32, f32)>) -> LinearConstraint {
+    pub fn new(
+        bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>),
+        positions: (V3, V3),
+        normal: V3,
+        dist: f32,
+        targ_speed_nobias: Option<f32>,
+        force_lim: Option<(f32, f32)>
+    ) -> LinearConstraint {
         let lim = force_lim.unwrap_or((-f32::MAX, f32::MAX));
         LinearConstraint {
             bodies: bodies,
@@ -688,8 +776,11 @@ impl PhysicsContact {
     }
 }
 
-fn find_world_contacts(bodies: &[RigidBodyRef], world_cells: &[Vec<V3>], dt: f32)
-                       -> Vec<PhysicsContact> {
+fn find_world_contacts(
+    bodies: &[RigidBodyRef],
+    world_cells: &[Vec<V3>],
+    dt: f32
+) -> Vec<PhysicsContact> {
     let mut result = Vec::new();
     for body_ref in bodies.iter() {
         let body = body_ref.borrow();
@@ -755,7 +846,6 @@ fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32) -> Vec<PhysicsContact> {
     }
     result
 }
-
 
 const PHYS_ITER: usize = 16;
 const PHYS_POST_ITER: usize = 8;

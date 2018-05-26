@@ -79,18 +79,22 @@ pub fn gradient(v0: V3, v1: V3, v2: V3, t0: f32, t1: f32, t2: f32) -> V3 {
     e * safe_div0(1.0, dot(e, e))
 }
 
+#[inline]
+fn tri_matrix<T: TriIndices>(tri: T, verts: &[V3]) -> M3x3 {
+    let (va, vb, vc) = tri.tri_verts(verts);
+    M3x3::from_cols(va, vb, vc)
+}
+
 // does this belong here?
 pub fn volume<Tri: TriIndices>(verts: &[V3], tris: &[Tri]) -> f32 {
-    (1.0 / 6.0) * tris.iter().fold(0.0, |acc, tri| {
-        let (a, b, c) = tri.tri_indices();
-        acc + M3x3::from_cols(verts[a], verts[b], verts[c]).determinant()
+    (1.0 / 6.0) * tris.iter().fold(0.0, |acc, &tri| {
+        acc + tri_matrix(tri, verts).determinant()
     })
 }
 
 pub fn center_of_mass<Tri: TriIndices>(verts: &[V3], tris: &[Tri]) -> V3 {
-    let (com, vol) = tris.iter().fold((V3::zero(), 0.0), |(acom, avol), tri| {
-        let (a, b, c) = tri.tri_indices();
-        let m = M3x3::from_cols(verts[a], verts[b], verts[c]);
+    let (com, vol) = tris.iter().fold((V3::zero(), 0.0), |(acom, avol), &tri| {
+        let m = tri_matrix(tri, verts);
         let vol = m.determinant();
         (acom + vol * (m.x + m.y + m.z),
          avol + vol)
@@ -193,16 +197,6 @@ pub fn convex_hit_check(planes: &[Plane], p0: V3, p1: V3) -> HitInfo {
 
 pub fn convex_hit_check_posed(planes: &[Plane], pose: Pose, p0: V3, p1: V3) -> HitInfo {
     let inv_pose = pose.inverse();
-    let hit = convex_hit_check(planes, inv_pose*p0, inv_pose*p1);
-    HitInfo::new(hit.did_hit, pose*hit.impact, pose.orientation*hit.normal)
+    let hit = convex_hit_check(planes, inv_pose * p0, inv_pose * p1);
+    HitInfo::new(hit.did_hit, pose * hit.impact, pose.orientation * hit.normal)
 }
-
-
-
-
-
-
-
-
-
-
