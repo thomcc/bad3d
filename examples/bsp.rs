@@ -4,6 +4,9 @@
 extern crate glium;
 extern crate rand;
 
+extern crate imgui;
+extern crate imgui_glium_renderer;
+
 #[macro_use]
 extern crate bad3d;
 
@@ -57,21 +60,21 @@ pub fn main() -> Result<()> {
             draw_mode = (draw_mode + 1) % 2;
         }
 
-        if win.input.mouse_down {
+        if win.input.mouse.down.0 {
             match drag_mode {
                 1 => {
                     cam.orientation *= Quat::virtual_track_ball(vec3(0.0, 0.0, 2.0), V3::zero(),
-                        win.input.mouse_vec_prev, win.input.mouse_vec).conj();
+                        win.input.mouse_prev.vec, win.input.mouse.vec).conj();
                 },
                 0 => {
                     drag_mode = 1;
                     let v0 = cam.position;
-                    let v1 = cam.position + cam.orientation * (win.input.mouse_vec*100.0);
+                    let v1 = cam.position + cam.orientation * (win.input.mouse.vec*100.0);
                     let bhit = geom::convex_hit_check_posed(
-                        &bc.faces[..], Pose::from_translation(bpos), v0, v1);
+                        bc.faces.iter().cloned(), Pose::from_translation(bpos), v0, v1);
                     let v1 = bhit.impact;
                     let chit = geom::convex_hit_check_posed(
-                        &co.faces[..], Pose::from_translation(cpos), v0, v1);
+                        co.faces.iter().cloned(), Pose::from_translation(cpos), v0, v1);
                     hit_dist = v0.dist(chit.impact);
                     if bhit.did_hit {
                         drag_mode = 2
@@ -86,7 +89,8 @@ pub fn main() -> Result<()> {
                 },
                 n => {
                     let pos = if n == 2 { &mut bpos } else { &mut cpos };
-                    *pos += (cam.orientation * win.input.mouse_vec - cam.orientation * win.input.mouse_vec_prev) * hit_dist;
+                    *pos += (cam.orientation * win.input.mouse.vec -
+                             cam.orientation * win.input.mouse_prev.vec) * hit_dist;
                     bsp = None;
                 },
             }

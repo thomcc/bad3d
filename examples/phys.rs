@@ -8,11 +8,15 @@ extern crate rand;
 extern crate bad3d;
 
 #[macro_use]
+extern crate imgui;
+extern crate imgui_glium_renderer;
+
+#[macro_use]
 extern crate failure;
 
 mod shared;
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
-
+use glium::glutin::VirtualKeyCode;
 use bad3d::{hull, gjk, wingmesh::WingMesh, phys::{self, Shape, RigidBody, RigidBodyRef}};
 use bad3d::math::*;
 use std::rc::Rc;
@@ -43,9 +47,12 @@ impl DemoCamera {
         DemoCamera::new(45_f32.to_radians(), 0.0, pos)
     }
 
-    pub fn matrix(&self) -> M4x4 {
+    pub fn view_matrix(&self) -> M4x4 {
+        self.pose().to_mat4().inverse().unwrap()
+    }
+
+    pub fn pose(&self) -> Pose {
         Pose::new(self.position, self.orientation())
-            .to_mat4().inverse().unwrap()
     }
 
     pub fn orientation(&self) -> Quat {
@@ -55,12 +62,12 @@ impl DemoCamera {
 
     pub fn handle_input(&mut self, is: &InputState) {
         let impulse = {
-            use glium::glutin::VirtualKeyCode::*;
+            use VirtualKeyCode::*;
             vec3(is.keys_dir(A, D), is.keys_dir(Q, E), is.keys_dir(W, S))
         };
         let mut move_turn = 0.0;
         let mut move_tilt = 0.0;
-        if is.mouse_down {
+        if is.mouse.down.0 && !is.shift_down() {
             let dm = is.mouse_delta();
             move_turn = (-dm.x*self.mouse_sensitivity*is.view_angle).to_radians()/100.0;
             move_tilt = (-dm.y*self.mouse_sensitivity*is.view_angle).to_radians()/100.0;
@@ -74,6 +81,20 @@ impl DemoCamera {
 
         self.position += self.orientation() * impulse * self.movement_speed;
     }
+}
+
+fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
+    let pose = body.pose;
+    for shape in &body.shapes {
+        let hit = geom::convex_hit_check_posed(shape.tris.iter().map(|&tri| {
+            let (v0, v1, v2) = tri.tri_verts(&shape.vertices);
+            Plane::from_tri(v0, v1, v2)
+        }), pose, p0, p1);
+        if hit.did_hit {
+            return Some(hit);
+        }
+    }
+    None
 }
 
 fn main() -> Result<()> {
@@ -173,6 +194,16 @@ fn main() -> Result<()> {
 
     let world_geom = [ground.vertices.clone()];
 
+    let mini_cube = DemoMesh::from_shape(
+        &win.display,
+        &Shape::new_box(vec3(0.025, 0.025, 0.025)),
+        Some(vec4(1.0, 0.0, 1.0, 1.0))
+    )?;
+    let mut cube_pos = cam.pose() * vec3(0.0, 0.0, -10.0);
+
+    let mut selected = None;
+    let mut rb_pos = V3::zero();
+
     let mut running = false;
     while win.is_up() {
         for &(key, down) in win.input.key_changes.iter() {
@@ -198,26 +229,62 @@ fn main() -> Result<()> {
             }
         }
 
+        let mouse_ray = (cam.orientation() * win.input.mouse.vec).must_norm();
+        let targ_pos = if selected.is_none() {
+            let mut picked = None;
+            let mut best_dist = 10000000.0;
+            let v1 = cam.position + mouse_ray * 100.0;
+            for obj in &demo_objects {
+                if let Some(hit) = body_hit_check(&obj.body.borrow(), cam.position, v1) {
+                    let dist = hit.impact.dist(cam.position);
+                    if dist < best_dist {
+                        rb_pos = obj.body.borrow().pose.inverse() * hit.impact;
+                        picked = Some((obj.body.clone(), hit));
+                        best_dist = dist;
+                    }
+                }
+            }
+            if let Some((obj, hit)) = picked {
+                selected = Some(obj.clone());
+                hit.impact
+            } else {
+                cube_pos
+            }
+        } else {
+            cube_pos
+        };
+        if !win.input.mouse.down.0 {
+            selected = None;
+        }
+        cube_pos = cam.position + mouse_ray *
+            (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
+
         if running {
             let dt = 1.0 / 60.0;
             let mut cs = phys::ConstraintSet::new(dt);
+
+            if win.input.shift_down() && win.input.mouse.down.0 {
+                if let Some(body) = &selected {
+                    cs.nail(None, cube_pos, Some(body.clone()), rb_pos);
+                }
+            }
 
             cs.nail(None, seesaw_start, Some(seesaw.clone()), V3::zero());
             cs.range(None, Some(seesaw.clone()), Quat::identity(),
                 vec3(0.0, -20.0, 0.0), vec3(0.0, 20.0, 0.0));
 
+
             let mut bodies = demo_objects.iter()
                 .map(|item| item.body.clone())
                 .collect::<Vec<phys::RigidBodyRef>>();
-
-
             phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt);
         }
 
         cam.handle_input(&win.input);
-        win.view = cam.matrix();
+        win.view = cam.view_matrix();
 
         win.draw_lit_mesh(M4x4::identity(), &ground_mesh)?;
+        win.draw_lit_mesh(M4x4::from_translation(cube_pos), &mini_cube)?;
 
         for obj in &demo_objects {
             let model_mat = obj.body.borrow().pose.to_mat4();
@@ -225,6 +292,29 @@ fn main() -> Result<()> {
                 win.draw_lit_mesh(model_mat, mesh)?;
             }
         }
+
+        win.ui(|ui| {
+            let framerate = ui.framerate();
+            ui.window(im_str!("test"))
+            // .size((200.0, 300.0), imgui::ImGuiCond::Appearing)
+            .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
+            // .size((300.0, 100.0), imgui::ImGuiCond::FirstUseEver)
+            .build(|| {
+                ui.text(im_str!("fps: {:.3}", framerate));
+                if ui.small_button(im_str!("[R]eset")) {
+                    for &mut DemoObject{ body: ref b, .. } in demo_objects.iter_mut() {
+                        let mut body = b.borrow_mut();
+                        body.pose = body.start_pose;
+                        body.linear_momentum = V3::zero();
+                        body.angular_momentum = V3::zero();
+                    }
+                    seesaw.borrow_mut().pose.orientation = Quat::identity();
+                    jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
+                    jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
+                }
+            });
+            Ok(())
+        })?;
         win.end_frame()?;
     }
     Ok(())

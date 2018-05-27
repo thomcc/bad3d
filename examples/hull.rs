@@ -11,6 +11,9 @@ extern crate bad3d;
 #[macro_use]
 extern crate failure;
 
+extern crate imgui;
+extern crate imgui_glium_renderer;
+
 mod shared;
 use failure::Error;
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh};
@@ -30,17 +33,17 @@ fn main() -> Result<()> {
     })?;
 
     let (vertices, triangles) = object::random_point_cloud(64);
-    let mut mesh = DemoMesh::new(&win.display, vertices, triangles, object::random_color())?;
+    let mesh = DemoMesh::new(&win.display, vertices, triangles, object::random_color())?;
     let mut pose = Pose::identity();
 
     while win.is_up() {
-        if win.input.mouse_down {
+        if win.input.mouse.down.0 {
             let q = pose.orientation;
             pose.orientation = Quat::virtual_track_ball(
                 vec3(0.0, 0.0, 2.0),
                 vec3(0.0, 0.0, 0.0),
-                win.input.mouse_vec_prev,
-                win.input.mouse_vec
+                win.input.mouse_prev.vec,
+                win.input.mouse.vec
             ) * q;
         }
 

@@ -10,6 +10,9 @@ extern crate bad3d;
 #[macro_use]
 extern crate failure;
 
+extern crate imgui;
+extern crate imgui_glium_renderer;
+
 mod shared;
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject};
 

@@ -171,11 +171,11 @@ pub fn poly_hit_check(verts: &[V3], v0: V3, v1: V3) -> HitInfo {
     poly_hit_check_p(verts, Plane::from_points(verts), v0, v1)
 }
 
-pub fn convex_hit_check(planes: &[Plane], p0: V3, p1: V3) -> HitInfo {
+pub fn convex_hit_check(planes: impl Iterator<Item = Plane>, p0: V3, p1: V3) -> HitInfo {
     let mut n = V3::zero();
     let mut v0 = p0;
     let mut v1 = p1;
-    for &plane in planes.iter() {
+    for plane in planes {
         let d0 = dot(Plane::new(v0, 1.0), plane);
         let d1 = dot(Plane::new(v1, 1.0), plane);
         if d0 >= 0.0 && d1 >= 0.0 {
@@ -192,10 +192,15 @@ pub fn convex_hit_check(planes: &[Plane], p0: V3, p1: V3) -> HitInfo {
             v1 = c;
         }
     }
-    return HitInfo::new(true, v0, n);
+    HitInfo::new(true, v0, n)
 }
 
-pub fn convex_hit_check_posed(planes: &[Plane], pose: Pose, p0: V3, p1: V3) -> HitInfo {
+pub fn convex_hit_check_posed(
+    planes: impl Iterator<Item = Plane>,
+    pose: Pose,
+    p0: V3,
+    p1: V3
+) -> HitInfo {
     let inv_pose = pose.inverse();
     let hit = convex_hit_check(planes, inv_pose * p0, inv_pose * p1);
     HitInfo::new(hit.did_hit, pose * hit.impact, pose.orientation * hit.normal)

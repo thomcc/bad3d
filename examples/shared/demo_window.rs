@@ -3,7 +3,13 @@ use bad3d::{WingMesh, bsp::Face, util::unpack_arr3};
 use shared::{object::{DemoMesh, vertex_slice}, input::InputState};
 use failure::Error;
 
+use std::time::Instant;
+use std::rc::Rc;
+use std::cell::RefCell;
+use imgui_glium_renderer::Renderer;
+
 use bad3d::math::*;
+use imgui::{self, Ui};
 
 use glium::{
     self,
@@ -13,7 +19,8 @@ use glium::{
         EventsLoop,
         ContextBuilder,
         WindowBuilder,
-    }
+    },
+    backend::Facade,
 };
 
 // lit flat shader
@@ -39,6 +46,10 @@ pub struct DemoWindow {
     pub light_pos: [f32; 3],
     pub targ: Option<glium::Frame>,
     pub near_far: (f32, f32),
+    pub gui: Rc<RefCell<imgui::ImGui>>,
+    pub gui_renderer: Renderer,
+    pub last_frame: Instant,
+    pub last_frame_time: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -80,8 +91,12 @@ impl DemoWindow {
 
         let display = Display::new(window, context, &events).unwrap();
 
+        let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
+        gui.borrow_mut().set_ini_filename(None);
+        let gui_renderer = Renderer::init(&mut gui.borrow_mut(), &display).unwrap();
+
         let input_state = InputState::new(
-            display.get_framebuffer_dimensions(), opts.fov);
+            display.get_framebuffer_dimensions(), opts.fov, gui.clone());
 
         let phong_program = glium::Program::from_source(&display, VERT_SRC, FRAG_SRC, None)?;
         let solid_program = glium::Program::from_source(&display, SOLID_VERT_SRC, SOLID_FRAG_SRC, None)?;
@@ -97,10 +112,20 @@ impl DemoWindow {
             light_pos: opts.light_pos.into(),
             near_far: opts.near_far,
             targ: None,
+            gui,
+            gui_renderer,
+            last_frame: Instant::now(),
+            last_frame_time: 0.0,
         })
     }
 
     pub fn is_up(&mut self) -> bool {
+        let now = Instant::now();
+        let delta = now - self.last_frame;
+        let delta_s = delta.as_secs() as f32 +
+                      delta.subsec_nanos() as f32 / 1_000_000_000.0;
+        self.last_frame = now;
+        self.last_frame_time = delta_s;
         assert!(self.targ.is_none());
         if !self.input.update(&mut self.events) {
             false
@@ -226,6 +251,26 @@ impl DemoWindow {
 
     pub fn end_frame(&mut self) -> Result<(), Error> {
         self.targ.take().unwrap().finish()?;
+        Ok(())
+    }
+
+    pub fn ui<F: FnMut(&Ui) -> Result<(), Error>>(&mut self, mut ui_callback: F) -> Result<(), Error> {
+        let gl_window = self.display.gl_window();
+        // let size_points = gl_window.get_inner_size_points().unwrap();
+        // let size_pixels = gl_window.get_inner_size_pixels().unwrap();
+        let dpi = gl_window.hidpi_factor();
+        let size = gl_window.get_inner_size().unwrap();
+        let size_points = ((size.0 as f32 * dpi) as u32,
+                           (size.1 as f32 * dpi) as u32);
+        let mut gui = self.gui.borrow_mut();
+        let ui = gui.frame(size, size_points, self.last_frame_time);
+        ui_callback(&ui)?;
+        let mut targ = self.targ.take().unwrap();
+        let result = self.gui_renderer.render(&mut targ, ui);
+        self.targ = Some(targ);
+        if let Err(e) = result {
+            println!("Error: {}", e);
+        }
         Ok(())
     }
 }
