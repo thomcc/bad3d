@@ -19,7 +19,17 @@ pub struct Vertex {
 }
 
 implement_vertex!(Vertex, position);
+/*
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct TVertex {
+    pub position: [f32; 3],
+    pub texcoord: [u16; 2],
+    pub color: [u8; 4],
+}
 
+implement_vertex!(TVertex, position, texcoord normalize(true), color normalize(true));
+*/
 pub fn vertex_slice<'a>(v3s: &'a [V3]) -> &'a [Vertex] {
     unsafe { slice::from_raw_parts(v3s.as_ptr() as *const Vertex, v3s.len()) }
 }
@@ -53,6 +63,37 @@ impl DemoMesh {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct PtLight {
+    pub pos: V3,
+    pub radius: f32,
+    pub color: V4,
+}
+/*
+pub struct MeshScene {
+    pub meshes: Vec<TDemoMesh>,
+    pub materials: Vec<Rc<MaterialData>>,
+    pub lights: Vec<PtLight>,
+}
+
+#[derive(Clone)]
+pub struct MaterialData {
+    pub diffuse: Rc<glium::Texture2d>,
+    pub emissive: V3,
+    pub diffuse_tint: V4,
+    pub diffuse_coef: f32,
+    pub gloss: f32,
+    pub specular_intensity: f32,
+}
+
+#[derive(Clone)]
+pub struct TDemoMesh {
+    pub ibo: glium::IndexBuffer<u16>,
+    pub vbo: glium::VertexBuffer<TVertex>,
+    pub material: Rc<MaterialData>,
+    pub matrix: M4x4,
+}
+*/
 pub fn random_color() -> V4 {
     let mut c = vec4(rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>(), 1.0);
     c[rand::random::<usize>() % 3] = rand::random::<f32>()*0.5;

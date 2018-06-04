@@ -62,7 +62,7 @@ fn main() -> Result<()> {
         light_pos: vec3(5.0, 1.2, 1.0),
         clear_color: vec4(0.5, 0.6, 1.0, 1.0),
         .. Default::default()
-    })?;
+    }, Rc::new(RefCell::new(imgui::ImGui::init())))?;
     let phys::Shape { vertices: ground_verts, tris: ground_tris } =
         phys::Shape::new_aabb(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
 

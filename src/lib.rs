@@ -1,10 +1,14 @@
 #![allow(dead_code)]
 
 #[macro_use]
-pub mod util;
+extern crate more_asserts;
 
 #[macro_use]
-mod asserts;
+extern crate log;
+
+#[macro_use]
+pub mod util;
+pub mod wrap_iter;
 
 pub mod math;
 pub mod hull;

@@ -21,6 +21,7 @@ use bad3d::{hull, gjk, wingmesh::WingMesh, phys::{self, Shape, RigidBody, RigidB
 use bad3d::math::*;
 use std::rc::Rc;
 use std::f32;
+use std::time::Instant;
 use std::cell::RefCell;
 
 
@@ -90,21 +91,25 @@ fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
             let (v0, v1, v2) = tri.tri_verts(&shape.vertices);
             Plane::from_tri(v0, v1, v2)
         }), pose, p0, p1);
-        if hit.did_hit {
-            return Some(hit);
+
+        if hit.is_some() {
+            return hit;
         }
     }
     None
 }
 
 fn main() -> Result<()> {
+    let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
+    gui.borrow_mut().set_ini_filename(None);
+
     let mut win = DemoWindow::new(DemoOptions {
         title: "Physics engine test",
         clear_color: vec4(0.5, 0.6, 1.0, 1.0),
         near_far: (0.01, 100.0),
         light_pos: vec3(0.0, 1.2, 1.0),
         .. Default::default()
-    })?;
+    }, gui.clone())?;
 
     let ground = Shape::new_aabb(vec3(-10.0, -10.0, -5.0), vec3(10.0, 10.0, -2.0));
 
@@ -201,11 +206,16 @@ fn main() -> Result<()> {
     )?;
     let mut cube_pos = cam.pose() * vec3(0.0, 0.0, -10.0);
 
-    let mut selected = None;
+    let mut selected: Option<RigidBodyRef> = None;
     let mut rb_pos = V3::zero();
+
+    let mut gui_renderer = imgui_glium_renderer::Renderer::init(
+        &mut *gui.borrow_mut(), &win.display).unwrap();
 
     let mut running = false;
     while win.is_up() {
+        let mut imgui = gui.borrow_mut();
+        let ui = win.get_ui(&mut *imgui);
         for &(key, down) in win.input.key_changes.iter() {
             if !down { continue; }
             match key {
@@ -228,7 +238,7 @@ fn main() -> Result<()> {
                 _ => {},
             }
         }
-
+        let mut targ_id = selected.as_ref().map(|rb| rb.borrow().id);
         let mouse_ray = (cam.orientation() * win.input.mouse.vec).must_norm();
         let targ_pos = if selected.is_none() {
             let mut picked = None;
@@ -239,6 +249,7 @@ fn main() -> Result<()> {
                     let dist = hit.impact.dist(cam.position);
                     if dist < best_dist {
                         rb_pos = obj.body.borrow().pose.inverse() * hit.impact;
+                        targ_id = Some(obj.body.borrow().id);
                         picked = Some((obj.body.clone(), hit));
                         best_dist = dist;
                     }
@@ -258,7 +269,6 @@ fn main() -> Result<()> {
         }
         cube_pos = cam.position + mouse_ray *
             (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
-
         if running {
             let dt = 1.0 / 60.0;
             let mut cs = phys::ConstraintSet::new(dt);
@@ -272,7 +282,6 @@ fn main() -> Result<()> {
             cs.nail(None, seesaw_start, Some(seesaw.clone()), V3::zero());
             cs.range(None, Some(seesaw.clone()), Quat::identity(),
                 vec3(0.0, -20.0, 0.0), vec3(0.0, 20.0, 0.0));
-
 
             let mut bodies = demo_objects.iter()
                 .map(|item| item.body.clone())
@@ -288,12 +297,16 @@ fn main() -> Result<()> {
 
         for obj in &demo_objects {
             let model_mat = obj.body.borrow().pose.to_mat4();
+            let is_hovered = Some(obj.body.borrow().id) == targ_id;
             for mesh in &obj.meshes {
                 win.draw_lit_mesh(model_mat, mesh)?;
+                if is_hovered {
+                    win.draw_wire_mesh(model_mat, mesh, vec4(1.0, 0.0, 0.0, 1.0))?;
+                }
             }
         }
 
-        win.ui(|ui| {
+        // win.ui(|ui| {
             let framerate = ui.framerate();
             ui.window(im_str!("test"))
             // .size((200.0, 300.0), imgui::ImGuiCond::Appearing)
@@ -301,21 +314,14 @@ fn main() -> Result<()> {
             // .size((300.0, 100.0), imgui::ImGuiCond::FirstUseEver)
             .build(|| {
                 ui.text(im_str!("fps: {:.3}", framerate));
-                if ui.small_button(im_str!("[R]eset")) {
-                    for &mut DemoObject{ body: ref b, .. } in demo_objects.iter_mut() {
-                        let mut body = b.borrow_mut();
-                        body.pose = body.start_pose;
-                        body.linear_momentum = V3::zero();
-                        body.angular_momentum = V3::zero();
-                    }
-                    seesaw.borrow_mut().pose.orientation = Quat::identity();
-                    jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
-                    jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
-                }
+                ui.separator();
+                ui.text(im_str!("Keys:"));
+                ui.text(im_str!("  reset: [R]"));
+                ui.text(im_str!("  pause/unpause: [Space]"));
             });
-            Ok(())
-        })?;
-        win.end_frame()?;
+            // Ok(())
+        // })?;
+        win.end_frame_and_ui(&mut gui_renderer, ui)?;
     }
     Ok(())
 }

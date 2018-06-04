@@ -271,6 +271,11 @@ impl M2x2 {
     pub fn from_rows(x: V2, y: V2) -> M2x2 {
         M2x2::new(x.x, y.x, x.y, y.y)
     }
+
+    #[inline]
+    pub fn to_arr(self) -> [[f32; 2]; 2] {
+        self.into()
+    }
 }
 
 impl M3x3 {
@@ -342,6 +347,12 @@ impl M3x3 {
             w: vec4(0.0, 0.0, 0.0, 1.0)
         }
     }
+
+    #[inline]
+    pub fn to_arr(self) -> [[f32; 3]; 3] {
+        self.into()
+    }
+
 }
 
 impl M4x4 {
@@ -369,6 +380,11 @@ impl M4x4 {
              x.y, y.y, z.y, w.y,
              x.z, y.z, z.z, w.z,
              x.w, y.w, z.w, w.w)
+    }
+
+    #[inline]
+    pub fn to_arr(self) -> [[f32; 4]; 4] {
+        self.into()
     }
 }
 

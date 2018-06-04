@@ -106,7 +106,7 @@ fn main() -> Result<()> {
         near_far: (0.01, 50.0),
         light_pos: vec3(1.4, 0.4, 0.7),
         .. Default::default()
-    })?;
+    }, Rc::new(RefCell::new(imgui::ImGui::init())))?;
 
     let mut test_state = GjkTestState::new();
     let mut show_mink = false;
@@ -134,13 +134,13 @@ fn main() -> Result<()> {
             }
         }
 
-        if win.input.mouse_down {
+        if win.input.mouse.down.0 {
             let q = model_orientation;
             model_orientation = Quat::virtual_track_ball(
                 vec3(0.0, 0.0, 2.0),
                 vec3(0.0, 0.0, 0.0),
-                win.input.mouse_vec_prev,
-                win.input.mouse_vec) * q;
+                win.input.mouse_prev.vec,
+                win.input.mouse.vec) * q;
         }
 
         let scene_matrix = pose::Pose::from_rotation(model_orientation).to_mat4();

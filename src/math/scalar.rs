@@ -65,3 +65,7 @@ pub fn round_to(a: f32, p: f32) -> f32 {
     (a / p).round() * p
 }
 
+#[inline]
+pub fn clamp01(a: f32) -> f32 {
+    a.clamp(0.0, 1.0)
+}

@@ -1,4 +1,4 @@
-#version 140
+
 in vec3 position;
 uniform mat4 perspective, view, model;
 void main() {

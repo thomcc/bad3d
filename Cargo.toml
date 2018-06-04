@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Thom Chiovoloni <tchiovoloni@mozilla.com>"]
 
 [dependencies]
+more-asserts = "0.2"
+log = "0.4"
 
 [dev-dependencies]
 rand = "0.4"

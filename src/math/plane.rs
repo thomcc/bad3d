@@ -16,12 +16,16 @@ pub struct Plane {
 }
 
 impl default::Default for Plane {
-    #[inline] fn default() -> Plane { plane(0.0, 0.0, 1.0, 0.0) }
+    #[inline]
+    fn default() -> Plane {
+        plane(0.0, 0.0, 1.0, 0.0)
+    }
 }
 
 impl fmt::Display for Plane {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "plane(({}, {}, {}), {})", self.normal.x, self.normal.y, self.normal.z, self.offset)
+        write!(f, "plane(({}, {}, {}), {})",
+               self.normal.x, self.normal.y, self.normal.z, self.offset)
     }
 }
 
@@ -72,7 +76,7 @@ impl Plane {
 
     #[inline]
     pub fn new(normal: V3, offset: f32) -> Plane {
-        Plane{ normal: normal, offset: offset }
+        Plane { normal, offset }
     }
 
     #[inline]
@@ -89,9 +93,19 @@ impl Plane {
     pub fn intersect_with_line(&self, line_p0: V3, line_p1: V3) -> V3 {
         let dif = line_p1 - line_p0;
         let dn = self.normal.dot(dif);
-        // debug_assert_ne!(dn, 0.0); // they're on the plane.
         let t = safe_div0(-(self.offset + dot(self.normal, line_p0)), dn);
-        line_p0 + dif*t
+        line_p0 + dif * t
+    }
+
+    pub fn try_intersect_with_line(&self, line_p0: V3, line_p1: V3) -> Option<V3> {
+        let dif = line_p1 - line_p0;
+        let dn = self.normal.dot(dif);
+        if dn != 0.0 {
+            let t = -(self.offset + dot(self.normal, line_p0)) / dn;
+            Some(line_p0 + dif * t)
+        } else {
+            None
+        }
     }
 
     #[inline]
@@ -113,8 +127,8 @@ impl Plane {
     pub fn scale3(&self, s: V3) -> Plane {
         let new_normal = self.normal / s;
         let len = new_normal.length();
-        debug_assert!(!len.approx_zero());
-        Plane::new(new_normal/len, self.offset/len)
+        let inv = safe_div0(1.0, len);
+        Plane::new(new_normal * inv, self.offset * inv)
     }
 
     #[inline]
@@ -144,13 +158,30 @@ impl Plane {
     #[inline]
     pub fn split_test_val_e(&self, verts: &[V3], e: f32) -> usize {
         let mut u = 0usize;
-        for &v in verts.iter() {
+        for &v in verts {
             u |= self.test_e(v, e) as usize;
             if u == PlaneTestResult::Split as usize {
                 break;
             }
         }
         u
+    }
+
+    #[inline]
+    pub fn split_line_e(&self, v0: V3, v1: V3, e: f32) -> Option<V3>  {
+        let t0 = self.test_e(v0, e) as usize;
+        let t1 = self.test_e(v1, e) as usize;
+
+        if (t0 | t1) == PlaneTestResult::Split as usize {
+            Some(self.intersect_with_line(v0, v1))
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn split_line(&self, v0: V3, v1: V3) -> Option<V3> {
+        self.split_line_e(v0, v1, DEFAULT_PLANE_WIDTH)
     }
 
     #[inline]

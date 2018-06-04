@@ -1,5 +1,39 @@
 use std::{cmp, fmt, slice};
 
+#[macro_export]
+macro_rules! warn_if {
+    ($expr:expr) => ({
+        if !($expr) {
+            warn!("warn_if!({}) failed!", stringify!($expr));
+        }
+    });
+    ($expr:expr, ) => ({
+        warn_if!($expr);
+    });
+    ($expr:expr, $($msg_args:tt)+) => ({
+        if !($expr) {
+            warn!("warn_if!({}) failed: {}", stringify!($expr), format_args!($($msg_args)+));
+        }
+    });
+}
+
+#[macro_export]
+macro_rules! debug_warn_if {
+    ($expr:expr) => ({
+        if cfg!(debug_assertions) && !($expr) {
+            warn!("debug_warn_if!({}) failed!", stringify!($expr));
+        }
+    });
+    ($expr:expr, ) => ({
+        debug_warn_if!($expr);
+    });
+    ($expr:expr, $($msg_args:tt)+) => ({
+        if cfg!(debug_assertions) && !($expr) {
+            warn!("debug_warn_if!({}) failed: {}", stringify!($expr), format_args!($($msg_args)+));
+        }
+    });
+}
+
 pub fn min_index<T: PartialOrd>(arr: &[T]) -> usize {
     assert!(arr.len() > 0);
     let mut min_idx = 0;
@@ -20,6 +54,15 @@ pub fn max_index<T: PartialOrd>(arr: &[T]) -> usize {
         }
     }
     max_idx
+}
+
+pub fn find_index<T>(arr: &[T], test: impl Fn(&T) -> bool) -> Option<usize> {
+    for i in 0..arr.len() {
+        if test(&arr[i]) {
+            return Some(i);
+        }
+    }
+    None
 }
 
 #[inline]

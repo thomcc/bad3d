@@ -20,6 +20,7 @@ use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh};
 
 use bad3d::{hull};
 use bad3d::math::*;
+use std::{rc::Rc, cell::RefCell};
 
 fn main() -> Result<()> {
     let mut win = DemoWindow::new(DemoOptions {
@@ -30,7 +31,7 @@ fn main() -> Result<()> {
         clear_color: vec4(0.5, 0.6, 1.0, 1.0),
         near_far: (0.01, 50.0),
         .. Default::default()
-    })?;
+    }, Rc::new(RefCell::new(imgui::ImGui::init())))?;
 
     let (vertices, triangles) = object::random_point_cloud(64);
     let mesh = DemoMesh::new(&win.display, vertices, triangles, object::random_color())?;

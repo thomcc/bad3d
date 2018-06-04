@@ -133,45 +133,53 @@ pub fn inertia<Tri: TriIndices>(verts: &[V3], tris: &[Tri], com: V3) -> M3x3 {
 
 #[derive(Copy, Clone, Default, Debug)]
 pub struct HitInfo {
-    pub did_hit: bool,
     pub impact: V3,
     pub normal: V3,
 }
 
 impl HitInfo {
-    pub fn new(did_hit: bool, impact: V3, normal: V3) -> HitInfo {
-        HitInfo {
-            did_hit: did_hit,
-            impact: impact,
-            normal: normal
+    #[inline]
+    pub fn new_opt(did_hit: bool, impact: V3, normal: V3) -> Option<Self> {
+        if did_hit {
+            Some(Self::new(impact, normal))
+        } else {
+            None
         }
+    }
+
+    #[inline]
+    pub fn new(impact: V3, normal: V3) -> Self {
+        Self { impact, normal }
     }
 }
 
-
-pub fn poly_hit_check_p(verts: &[V3], plane: Plane, v0: V3, v1: V3) -> HitInfo {
+pub fn poly_hit_check_p(verts: &[V3], plane: Plane, v0: V3, v1: V3) -> Option<HitInfo> {
     let d0 = dot(Plane::new(v0, 1.0), plane);
     let d1 = dot(Plane::new(v1, 1.0), plane);
-    let mut hit_info = HitInfo {
-        did_hit: d0 > 0.0 && d1 < 0.0,
-        normal: plane.normal,
-        impact: v0 + (v1 - v0) * safe_div0(d0,  d0 - d1)
-    };
+    let mut did_hit = d0 > 0.0 && d1 < 0.0;
+    if !did_hit {
+        return None;
+    }
+
+    let impact = v0 + (v1 - v0) * safe_div0(d0,  d0 - d1);
     for (i, &v) in verts.iter().enumerate() {
-        if !hit_info.did_hit {
+        if !did_hit {
             break;
         }
-        hit_info.did_hit = hit_info.did_hit &&
-            M3x3::from_cols(verts[(i+1)%verts.len()]-v0, v-v0, v1-v0).determinant() >= 0.0;
+        did_hit = M3x3::from_cols(
+            verts[(i + 1) % verts.len()] - v0,
+            v - v0,
+            v1 - v0
+        ).determinant() >= 0.0;
     }
-    hit_info
+    HitInfo::new_opt(did_hit, impact, plane.normal)
 }
 
-pub fn poly_hit_check(verts: &[V3], v0: V3, v1: V3) -> HitInfo {
+pub fn poly_hit_check(verts: &[V3], v0: V3, v1: V3) -> Option<HitInfo> {
     poly_hit_check_p(verts, Plane::from_points(verts), v0, v1)
 }
 
-pub fn convex_hit_check(planes: impl Iterator<Item = Plane>, p0: V3, p1: V3) -> HitInfo {
+pub fn convex_hit_check(planes: impl Iterator<Item = Plane>, p0: V3, p1: V3) -> Option<HitInfo> {
     let mut n = V3::zero();
     let mut v0 = p0;
     let mut v1 = p1;
@@ -179,7 +187,7 @@ pub fn convex_hit_check(planes: impl Iterator<Item = Plane>, p0: V3, p1: V3) -> 
         let d0 = dot(Plane::new(v0, 1.0), plane);
         let d1 = dot(Plane::new(v1, 1.0), plane);
         if d0 >= 0.0 && d1 >= 0.0 {
-            return HitInfo::new(false, p1, V3::zero());
+            return None
         }
         if d0 <= 0.0 && d1 <= 0.0 {
            continue;
@@ -192,7 +200,7 @@ pub fn convex_hit_check(planes: impl Iterator<Item = Plane>, p0: V3, p1: V3) -> 
             v1 = c;
         }
     }
-    HitInfo::new(true, v0, n)
+    Some(HitInfo::new(v0, n))
 }
 
 pub fn convex_hit_check_posed(
@@ -200,8 +208,44 @@ pub fn convex_hit_check_posed(
     pose: Pose,
     p0: V3,
     p1: V3
-) -> HitInfo {
+) -> Option<HitInfo> {
     let inv_pose = pose.inverse();
-    let hit = convex_hit_check(planes, inv_pose * p0, inv_pose * p1);
-    HitInfo::new(hit.did_hit, pose * hit.impact, pose.orientation * hit.normal)
+    convex_hit_check(planes, inv_pose * p0, inv_pose * p1).map(|hit|
+        HitInfo::new(pose * hit.impact, pose.orientation * hit.normal))
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct SegmentTestInfo {
+    pub w0: V3,
+    pub w1: V3,
+    pub nw0: V3,
+}
+
+pub fn segment_under(p: Plane, v0: V3, v1: V3, nv0: V3) -> Option<SegmentTestInfo> {
+    let d0 = p.normal.dot(v0) + p.offset;
+    let d1 = p.normal.dot(v1) + p.offset;
+    match (d0 > 0.0, d1 > 0.0) {
+        (true, true) => None,
+        (false, false) => Some(SegmentTestInfo { w0: v0, w1: v1, nw0: nv0 }),
+        (true, false) => {
+            let vmid = p.intersect_with_line(v0, v1);
+            Some(SegmentTestInfo { w0: vmid, w1: v1, nw0: p.normal })
+        }
+        (false, true) => {
+            let vmid = p.intersect_with_line(v0, v1);
+            Some(SegmentTestInfo { w0: v0, w1: vmid, nw0: nv0 })
+        }
+    }
+}
+
+pub fn segment_over(p: Plane, v0: V3, v1: V3, nv0: V3) -> Option<SegmentTestInfo> {
+    segment_under(-p, v0, v1, nv0)
+}
+
+pub fn tangent_point_on_cylinder(r: f32, h: f32, n: V3) -> V3 {
+    let xy_inv = safe_div1(1.0, (n.x * n.x + n.y * n.y).sqrt());
+    vec3(r * n.x * xy_inv,
+         r * n.y * xy_inv,
+         // Reference point is at cyl. base. use h/2 and -h/2 for midpt
+         if n.z > 0.0 { h } else { 0.0 })
 }

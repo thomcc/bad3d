@@ -1,5 +1,5 @@
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -7,6 +7,7 @@ use bad3d;
 use bad3d::math::*;
 
 use imgui::{ImGui, ImGuiKey, Ui};
+use shared::DemoWindow;
 
 use glium::glutin::{
     VirtualKeyCode,
@@ -19,6 +20,7 @@ use glium::glutin::{
     TouchPhase,
     MouseScrollDelta,
 };
+use glium::Display;
 
 #[derive(Debug, Copy, Clone, Default)]
 pub struct Mouse {
@@ -29,15 +31,22 @@ pub struct Mouse {
     pub total_scroll: f32,
 }
 
+#[derive(Debug, Copy, Clone, Default)]
+pub struct KeyState {
+    pub down: bool,
+    pub changed: bool,
+}
+
 pub struct InputState {
     pub view_angle: f32,
     pub size: (u32, u32),
     pub mouse: Mouse,
     pub mouse_prev: Mouse,
-    pub keys_down: HashSet<VirtualKeyCode>,
+    pub keys: HashMap<VirtualKeyCode, KeyState>,
     pub key_changes: Vec<(VirtualKeyCode, bool)>,
     pub closed: bool,
     pub gui: Rc<RefCell<ImGui>>,
+    pub mouse_grabbed: bool,
 }
 
 fn init_gui(gui: &mut ImGui) {
@@ -98,12 +107,13 @@ impl InputState {
         InputState {
             mouse: Default::default(),
             mouse_prev: Default::default(),
-            view_angle: view_angle,
+            view_angle,
             size,
-            keys_down: HashSet::new(),
+            keys: HashMap::new(),
             key_changes: Vec::new(),
             closed: false,
-            gui
+            gui,
+            mouse_grabbed: false,
         }
     }
 
@@ -123,15 +133,50 @@ impl InputState {
         vec2(self.size.0 as f32, self.size.1 as f32)
     }
 
-    // #[inline]
-    // pub fn scaled_mouse_delta(&self) -> V2 {
-    //     (self.mouse_pos - self.mouse_pos_prev) / self.dims() * 0.5
-    // }
+    #[inline]
+    pub fn scaled_mouse_delta(&self) -> V2 {
+        if self.mouse_grabbed {
+            self.mouse.pos / (self.dims() * 0.5)
+        } else {
+            (self.mouse.pos - self.mouse_prev.pos) / (self.dims() * 0.5)
+        }
+    }
+
+    #[inline]
+    pub fn key_state(&self, k: VirtualKeyCode) -> KeyState {
+        if let Some(k) = self.keys.get(&k) {
+            *k
+        } else {
+            KeyState { down: false, changed: false }
+        }
+    }
+
+    #[inline]
+    pub fn key_state_mut(&mut self, k: VirtualKeyCode) -> &mut KeyState {
+        self.keys.entry(k).or_insert_with(|| Default::default())
+    }
+
+    #[inline]
+    pub fn key_down(&self, k: VirtualKeyCode) -> bool {
+        self.key_state(k).down
+    }
+
+    #[inline]
+    pub fn key_pressed(&self, k: VirtualKeyCode) -> bool {
+        let s = self.key_state(k);
+        s.changed && s.down
+    }
+
+    #[inline]
+    pub fn key_released(&self, k: VirtualKeyCode) -> bool {
+        let s = self.key_state(k);
+        s.changed && !s.down
+    }
 
     #[inline]
     pub fn keys_dir(&self, k1: VirtualKeyCode, k2: VirtualKeyCode) -> f32 {
-        let v1 = if self.keys_down.contains(&k1) { 1 } else { 0 };
-        let v2 = if self.keys_down.contains(&k2) { 1 } else { 0 };
+        let v1 = if self.key_down(k1) { 1 } else { 0 };
+        let v2 = if self.key_down(k2) { 1 } else { 0 };
         (v2 - v1) as f32
     }
 
@@ -146,23 +191,29 @@ impl InputState {
     }
 
     pub fn shift_down(&self) -> bool {
-        self.keys_down.contains(&VirtualKeyCode::LShift) ||
-        self.keys_down.contains(&VirtualKeyCode::RShift)
+        self.key_down(VirtualKeyCode::LShift) ||
+        self.key_down(VirtualKeyCode::RShift)
     }
 
     pub fn ctrl_down(&self) -> bool {
-        self.keys_down.contains(&VirtualKeyCode::LControl) ||
-        self.keys_down.contains(&VirtualKeyCode::RControl)
+        self.key_down(VirtualKeyCode::LControl) ||
+        self.key_down(VirtualKeyCode::RControl)
     }
 
-    pub fn update(&mut self, events: &mut EventsLoop) -> bool {
+    pub fn update(&mut self, events: &mut EventsLoop, display: &mut Display) -> bool {
         if self.closed {
             return false;
         }
 
         self.key_changes.clear();
+        let last_pos = self.mouse_prev.pos;
         self.mouse_prev = self.mouse;
         self.mouse.wheel = 0.0;
+        let mut moved_mouse = false;
+
+        for (_, state) in self.keys.iter_mut() {
+            state.changed = false;
+        }
 
         events.poll_events(|ev| {
             if let Event::WindowEvent { event, .. } = ev {
@@ -174,27 +225,35 @@ impl InputState {
                         self.size = (w, h);
                     }
                     WindowEvent::Focused(true) => {
-                        self.keys_down.clear()
+                        self.keys.clear()
                     }
                     WindowEvent::KeyboardInput { input, .. } => {
-                        let vk = if let Some(kc) = input.virtual_keycode { kc } else {
-                            return;
-                        };
-                        let was_pressed = match input.state {
-                            ElementState::Pressed => {
-                                self.keys_down.insert(vk);
-                                true
-                            }
-                            ElementState::Released => {
-                                self.keys_down.remove(&vk);
-                                false
-                            }
-                        };
+                        let vk = if let Some(kc) = input.virtual_keycode { kc } else { return; };
+                        let was_pressed = input.state == ElementState::Pressed;
                         self.key_changes.push((vk, was_pressed));
                         update_keyboard(&mut self.gui.borrow_mut(), vk, was_pressed);
+                        let mut k = self.key_state_mut(vk);
+                        if !k.changed {
+                            k.changed = k.down == was_pressed;
+                        }
+                        k.down = was_pressed;
                     }
                     WindowEvent::CursorMoved { position, .. } => {
-                        self.mouse.pos = vec2(position.0 as f32, position.1 as f32);
+                        let pos = vec2(position.0 as f32, position.1 as f32);
+                        if self.mouse_grabbed {
+                            let gl_window = display.gl_window();
+                            let dpi = gl_window.hidpi_factor();
+                            let dims = self.dims();
+                            let dpi_dims = dims / dpi;
+                            gl_window.set_cursor_position((dpi_dims.x / 2.0).trunc() as i32,
+                                                          (dpi_dims.y / 2.0).trunc() as i32)
+                                .ok().expect("Could not set mouse cursor position");
+                            self.mouse.pos = pos - last_pos;
+                            self.mouse_prev.pos = dims / 2.0;
+                            moved_mouse = true;
+                        } else {
+                            self.mouse.pos = pos;
+                        }
                     }
                     WindowEvent::MouseInput { button, state, .. } => {
                         let pressed = state == ElementState::Pressed;
@@ -222,16 +281,31 @@ impl InputState {
                 }
             }
         });
+        if !moved_mouse && self.mouse_grabbed {
+            let gl_window = display.gl_window();
+            let dpi = gl_window.hidpi_factor();
+            let dims = self.dims() / dpi;
+            gl_window.set_cursor_position((dims.x / 2.0).trunc() as i32,
+                                          (dims.y / 2.0).trunc() as i32)
+                     .ok().expect("Could not set mouse cursor position");
+            self.mouse.pos = vec2(0.0, 0.0);
+            self.mouse_prev.pos = self.dims() / 2.0;
+        }
+
         self.mouse.vec = self.screen_pos_to_vec(self.mouse.pos);
         let mut gui = self.gui.borrow_mut();
         let scale = gui.display_framebuffer_scale();
+
         gui.set_mouse_pos(self.mouse.pos.x / scale.0,
                           self.mouse.pos.y / scale.1);
+
         gui.set_mouse_down(&[self.mouse.down.0,
                              self.mouse.down.1,
                              self.mouse.down.2,
                              false, false]);
+
         gui.set_mouse_wheel(self.mouse.wheel / scale.1);
+
         self.mouse.total_scroll += self.mouse.wheel / scale.1;
         !self.closed
     }

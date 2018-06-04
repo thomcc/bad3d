@@ -1,5 +1,5 @@
 use std::ops::*;
-use std::{mem, fmt};
+use std::{self, mem, fmt};
 
 use util::{min_index, max_index};
 use math::scalar::round_to;
@@ -309,7 +309,7 @@ macro_rules! do_vec_boilerplate {
             type Output = $Vn;
             #[inline]
             fn neg(self) -> $Vn {
-                $Vn{ $($field: -self.$field),+ }
+                $Vn { $($field: -self.$field),+ }
             }
         }
 
@@ -317,7 +317,7 @@ macro_rules! do_vec_boilerplate {
             type Output = $Vn;
             #[inline]
             fn add(self, o: $Vn) -> $Vn {
-                $Vn{ $($field: (self.$field + o.$field)),+ }
+                $Vn { $($field: (self.$field + o.$field)),+ }
             }
         }
 
@@ -325,7 +325,7 @@ macro_rules! do_vec_boilerplate {
             type Output = $Vn;
             #[inline]
             fn sub(self, o: $Vn) -> $Vn {
-                $Vn{ $($field: (self.$field - o.$field)),+ }
+                $Vn { $($field: (self.$field - o.$field)),+ }
             }
         }
 
@@ -333,7 +333,7 @@ macro_rules! do_vec_boilerplate {
             type Output = $Vn;
             #[inline]
             fn mul(self, o: $Vn) -> $Vn {
-                $Vn{ $($field: (self.$field * o.$field)),+ }
+                $Vn { $($field: (self.$field * o.$field)),+ }
             }
         }
 
@@ -342,7 +342,7 @@ macro_rules! do_vec_boilerplate {
             #[inline]
             fn div(self, o: $Vn) -> $Vn {
                 debug_assert!($(o.$field != 0.0) && +);
-                $Vn{ $($field: (self.$field / o.$field)),+ }
+                $Vn { $($field: (self.$field / o.$field)),+ }
             }
         }
 
@@ -416,7 +416,18 @@ macro_rules! do_vec_boilerplate {
         }
 
         impl $Vn {
-            #[inline] pub fn new($($field: f32),+) -> $Vn { $Vn{ $($field: $field),+ } }
+            #[inline]
+            pub fn new($($field: f32),+) -> Self {
+                Self { $($field: $field),+ }
+            }
+
+            #[inline]
+            pub fn unit_axis(axis: usize) -> $Vn {
+                assert_lt!(axis, $length, "Invalid axis");
+                let mut v = $Vn::zero();
+                v[axis] = 1.0;
+                v
+            }
 
             #[inline]
             pub fn angle(self, o: $Vn) -> f32 {
@@ -438,7 +449,10 @@ macro_rules! do_vec_boilerplate {
                 }
             }
 
-            #[inline] pub fn nlerp(self, o: $Vn, t: f32) -> $Vn { self.lerp(o, t).norm_or_v(o) }
+            #[inline]
+            pub fn nlerp(self, o: $Vn, t: f32) -> $Vn {
+                self.lerp(o, t).norm_or_v(o)
+            }
 
             #[inline]
             pub fn norm_or(self, $($field: f32),+) -> $Vn {
@@ -448,19 +462,24 @@ macro_rules! do_vec_boilerplate {
 
         impl Identity for $Vn {
             #[inline]
-            fn identity() -> Self { $Vn::zero() }
+            fn identity() -> Self {
+                $Vn::zero()
+            }
         }
 
         impl Map for $Vn {
             #[inline]
             fn map3<F: Fn(f32, f32, f32) -> f32>(self, a: Self, b: Self, f: F) -> Self {
-                $Vn{ $($field: f(self.$field, a.$field, b.$field)),+ }
+                Self { $($field: f(self.$field, a.$field, b.$field)),+ }
             }
         }
 
         impl VecType for $Vn {
             const SIZE: usize = $length;
-            #[inline] fn splat(v: f32) -> $Vn { $Vn{ $($field: v),+ } }
+            #[inline]
+            fn splat(v: f32) -> $Vn {
+                $Vn { $($field: v),+ }
+            }
         }
     }
 }
@@ -476,16 +495,27 @@ impl V2 {
     #[inline] pub fn outer_prod(self, o: V2) -> M2x2 { M2x2 { x: self * o.x, y: self * o.y } }
     #[inline] pub fn cross(self, o: V2) -> f32 { self.x * o.y - self.y * o.x }
     #[inline] pub fn norm_or_unit(self) -> V2 { self.norm_or(0.0, 1.0) }
+    #[inline] pub fn to_arr(self) -> [f32; 2] { [self.x, self.y] }
+
+    #[inline]
+    pub fn to_arr16(self) -> [u16; 2] {
+        debug_assert!(self.x >= 0.0 && self.x <= 1.0, "x out of range {}", self.x);
+        debug_assert!(self.y >= 0.0 && self.y <= 1.0, "y out of range {}", self.y);
+        [(self.x * (std::u16::MAX as f32)).trunc() as u16,
+         (self.y * (std::u16::MAX as f32)).trunc() as u16]
+    }
 }
 
 impl V3 {
+
     #[inline]
     pub fn expand(v: V2, z: f32) -> V3 {
-        V3 { x: v.x, y: v.y, z: z }
+        V3 { x: v.x, y: v.y, z }
     }
+
     #[inline]
     pub fn outer_prod(self, o: V3) -> M3x3 {
-        M3x3 { x: self*o.x, y: self*o.y, z: self*o.z }
+        M3x3 { x: self * o.x, y: self * o.y, z: self * o.z }
     }
 
     #[inline]
@@ -530,7 +560,15 @@ impl V3 {
         let c = a.cross(b);
         (a, b, c)
     }
-    #[inline] pub fn norm_or_unit(self) -> V3 { self.norm_or(0.0, 0.0, 1.0) }
+
+    #[inline]
+    pub fn norm_or_unit(self) -> V3 {
+        self.norm_or(0.0, 0.0, 1.0)
+    }
+    #[inline]
+    pub fn to_arr(self) -> [f32; 3] {
+        self.into()
+    }
 }
 
 impl V4 {
@@ -539,8 +577,14 @@ impl V4 {
     #[inline] pub fn max_index(&self) -> usize { max_index(&<[f32; 4]>::from(*self)) }
     #[inline] pub fn xyz(self) -> V3 { V3 { x: self.x, y: self.y, z: self.z } }
     #[inline] pub fn norm_or_unit(self) -> V4 { self.norm_or(0.0, 0.0, 0.0, 1.0) }
+    #[inline] pub fn to_arr(self) -> [f32; 4] { self.into() }
     #[inline] pub fn outer_prod(self, o: V4) -> M4x4 {
         M4x4 { x: self * o.x, y: self * o.y, z: self * o.z, w: self * o.w }
+    }
+    #[inline]
+    pub fn to_arr8(self) -> [u8; 4] {
+        [(self.x * 255.0).trunc() as u8, (self.y * 255.0).trunc() as u8,
+         (self.z * 255.0).trunc() as u8, (self.w * 255.0).trunc() as u8]
     }
 }
 

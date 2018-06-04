@@ -435,7 +435,6 @@ impl AngularConstraint {
 
         self.torque += delta_torque;
     }
-
 }
 
 pub struct LinearConstraint {
