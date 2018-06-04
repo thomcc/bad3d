@@ -342,7 +342,7 @@ impl BspNode {
                 }
             }
         }
-        // assert here is intentional, it's a bug if these are None
+
         self.under_mut().derive_convex(cu);
         self.over_mut().derive_convex(co);
     }

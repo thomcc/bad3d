@@ -156,7 +156,7 @@ impl BspScene {
                  CsgOp::Subtract),
                 (SceneObj::new(Shape::Octahedron(vec3(0.85, 0.85, 0.85)), vec3(0.8, 0.0, 0.45)),
                  CsgOp::Subtract),
-                (SceneObj::new(Shape::Cylinder { sides: 10, r: 0.3, h: 0.5 }, vec3(0.6, 0.8, 0.2)),
+                (SceneObj::new(Shape::Cylinder { sides: 10, r: 0.6, h: 1.0 }, vec3(0.6, 0.8, 0.2)),
                  CsgOp::Subtract),
             ],
             root_obj: SceneObj::new(Shape::Rect(V3::splat(2.0)), V3::zero()),

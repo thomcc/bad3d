@@ -344,6 +344,44 @@ fn bsp_meshes(f: &glium::Display, bsp: &mut BspNode, color: V4) -> Result<Vec<De
     Ok(ms)
 }
 
+fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<DemoMesh>> {
+
+    let mut vs = Vec::new();
+    let mut ts = Vec::new();
+    let mut ms = vec![];
+    let mut stack = vec![bsp];
+    while let Some(n) = stack.pop() {
+        if n.leaf_type == bsp::LeafType::Under {
+            let mut offset = vs.len();
+            let vertices = n.convex.verts.len();
+            if vertices == 0 {
+                continue;
+            }
+            if offset + vertices >= u16::MAX as usize {
+                ms.push(DemoMesh::new(f, vs.drain(..).collect(), ts.drain(..).collect(), color)?);
+                assert_eq!(vs.len(), 0);
+                assert_eq!(ts.len(), 0);
+                offset = 0;
+            }
+            vs.extend(&n.convex.verts);
+            let new_tris = n.convex.generate_tris();
+            ts.reserve(new_tris.len());
+            ts.extend(new_tris.into_iter().map(|t|
+                [t[0] + (offset as u16), t[1] + (offset as u16), t[2] + (offset as u16)]));
+        }
+        if let Some(ref r) = n.under {
+            stack.push(r.as_ref());
+        }
+        if let Some(ref r) = n.over {
+            stack.push(r.as_ref());
+        }
+    }
+    if vs.len() > 0 || ts.len() > 0 {
+        ms.push(DemoMesh::new(f, vs, ts, color)?);
+    }
+    Ok(ms)
+}
+
 fn main() -> Result<()> {
     let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
     gui.borrow_mut().set_ini_filename(None);
@@ -371,7 +409,7 @@ fn main() -> Result<()> {
 
     let scene_color = vec4(0.4, 0.4, 0.4, 1.0);
 
-    let mut scene_meshes = bsp_meshes(&win.display, &mut bsp_geom, scene_color)?;
+    let mut scene_meshes = bsp_cell_meshes(&win.display, &mut bsp_geom, scene_color)?;
 
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
@@ -421,7 +459,7 @@ fn main() -> Result<()> {
             }
             if let Some(impact) = do_blast {
                 bsp_geom = blaster.blast(bsp_geom, impact, blast_sz);
-                scene_meshes = bsp_meshes(&win.display, &mut bsp_geom, scene_color)?;
+                scene_meshes = bsp_cell_meshes(&win.display, &mut bsp_geom, scene_color)?;
             }
 
             let thrust = {
