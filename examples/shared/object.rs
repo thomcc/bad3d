@@ -1,5 +1,5 @@
 
-use bad3d::{hull, wingmesh, util::unpack_arr3, phys};
+use bad3d::{hull, wingmesh, phys};
 use bad3d::math::*;
 use glium::{self, backend::Facade};
 
@@ -40,6 +40,16 @@ pub struct DemoMesh {
     pub color: V4,
     pub ibo: glium::IndexBuffer<u16>,
     pub vbo: glium::VertexBuffer<Vertex>,
+}
+
+#[inline]
+pub fn unpack_arr3<'a, T: Copy>(arrays: &'a [[T; 3]]) -> &'a [T] {
+    unsafe { slice::from_raw_parts(arrays.as_ptr() as *const T, arrays.len() * 3) }
+}
+
+#[inline]
+pub fn unpack_arr3_mut<'a, T: Copy>(arrays: &'a mut [[T; 3]]) -> &'a mut [T] {
+    unsafe { slice::from_raw_parts_mut(arrays.as_ptr() as *mut T, arrays.len() * 3) }
 }
 
 impl DemoMesh {

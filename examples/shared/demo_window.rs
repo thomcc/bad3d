@@ -1,6 +1,6 @@
 
-use bad3d::{WingMesh, bsp::Face, util::unpack_arr3};
-use shared::{object::{DemoMesh, vertex_slice}, input::InputState};
+use bad3d::{WingMesh, bsp::Face};
+use shared::{object::{DemoMesh, vertex_slice, unpack_arr3}, input::InputState};
 use failure::Error;
 
 use std::time::Instant;

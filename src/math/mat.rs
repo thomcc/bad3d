@@ -1,9 +1,5 @@
-use math::vec::*;
-use math::quat::*;
-use math::traits::*;
-
-use std::ops::*;
-use std::mem;
+use math::*;
+use std::{ops::*, mem, fmt, f32};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(C)]
@@ -29,12 +25,81 @@ pub struct M4x4 {
     pub w: V4,
 }
 
+impl Identity for M2x2 {
+    const IDENTITY: M2x2 = M2x2 {
+        x: V2 { x: 1.0, y: 0.0 },
+        y: V2 { x: 0.0, y: 1.0 },
+    };
+}
+
+impl Identity for M3x3 {
+    const IDENTITY: M3x3 = M3x3 {
+        x: V3 { x: 1.0, y: 0.0, z: 0.0 },
+        y: V3 { x: 0.0, y: 1.0, z: 0.0 },
+        z: V3 { x: 0.0, y: 0.0, z: 1.0 },
+    };
+}
+
+impl Identity for M4x4 {
+    const IDENTITY: M4x4 = M4x4 {
+        x: V4 { x: 1.0, y: 0.0, z: 0.0, w: 0.0 },
+        y: V4 { x: 0.0, y: 1.0, z: 0.0, w: 0.0 },
+        z: V4 { x: 0.0, y: 0.0, z: 1.0, w: 0.0 },
+        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+    };
+}
+
+impl Zero for M2x2 {
+    const ZERO: M2x2 = M2x2 {
+        x: V2 { x: 0.0, y: 0.0 },
+        y: V2 { x: 0.0, y: 0.0 },
+    };
+}
+
+impl Zero for M3x3 {
+    const ZERO: M3x3 = M3x3 {
+        x: V3 { x: 0.0, y: 0.0, z: 0.0 },
+        y: V3 { x: 0.0, y: 0.0, z: 0.0 },
+        z: V3 { x: 0.0, y: 0.0, z: 0.0 },
+    };
+}
+
+impl Zero for M4x4 {
+    const ZERO: M4x4 = M4x4 {
+        x: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        y: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        z: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+    };
+}
+
+impl fmt::Display for M2x2 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "mat2({}, {})", self.x, self.y)
+    }
+}
+
+impl fmt::Display for M3x3 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "mat3({}, {}, {})", self.x, self.y, self.z)
+    }
+}
+
+impl fmt::Display for M4x4 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "mat4({}, {}, {}, {})", self.x, self.y, self.z, self.w)
+    }
+}
+
+
+impl Default for M2x2 { #[inline] fn default() -> Self { <Self as Identity>::IDENTITY } }
+impl Default for M3x3 { #[inline] fn default() -> Self { <Self as Identity>::IDENTITY } }
+impl Default for M4x4 { #[inline] fn default() -> Self { <Self as Identity>::IDENTITY } }
 
 #[inline]
 pub fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
     M2x2::new(m00, m01, m10, m11)
 }
-
 
 #[inline]
 pub fn mat3(m00: f32, m01: f32, m02: f32,
@@ -56,7 +121,7 @@ pub fn mat4(m00: f32, m01: f32, m02: f32, m03: f32,
               m30, m31, m32, m33)
 }
 
-impl Mul<V2> for M2x2 {
+impl<'a> Mul<V2> for &'a M2x2 {
     type Output = V2;
     #[inline]
     fn mul(self, v: V2) -> V2 {
@@ -64,7 +129,7 @@ impl Mul<V2> for M2x2 {
     }
 }
 
-impl Mul<V3> for M3x3 {
+impl<'a> Mul<V3> for &'a M3x3 {
     type Output = V3;
     #[inline]
     fn mul(self, v: V3) -> V3 {
@@ -72,7 +137,7 @@ impl Mul<V3> for M3x3 {
     }
 }
 
-impl Mul<V4> for M4x4 {
+impl<'a> Mul<V4> for &'a M4x4 {
     type Output = V4;
     #[inline]
     fn mul(self, v: V4) -> V4 {
@@ -80,7 +145,10 @@ impl Mul<V4> for M4x4 {
     }
 }
 
-// @@ partially duplicated in vec.rs...
+impl Mul<V2> for M2x2 { type Output = V2; #[inline] fn mul(self, v: V2) -> V2 { (&self) * v } }
+impl Mul<V3> for M3x3 { type Output = V3; #[inline] fn mul(self, v: V3) -> V3 { (&self) * v } }
+impl Mul<V4> for M4x4 { type Output = V4; #[inline] fn mul(self, v: V4) -> V4 { (&self) * v } }
+
 macro_rules! define_conversions {
     ($src_type: ty, $dst_type: ty) => {
         impl AsRef<$dst_type> for $src_type {
@@ -163,40 +231,71 @@ macro_rules! do_mat_boilerplate {
      $Vn: ident, $size: expr,
      $elems: expr) =>
     {
-
-        impl $Mn {
-            #[inline]
-            fn map<F: Fn($Vn) -> $Vn>(self, f: F) -> $Mn {
-                $Mn{$($field: f(self.$field)),+}
-            }
-
-            #[inline]
-            fn map2<F: Fn($Vn, $Vn) -> $Vn>(self, o: $Mn, f: F) -> $Mn {
-                $Mn{$($field: f(self.$field, o.$field)),+}
-            }
-        }
-
         // would be nice if we did this for tuples too...
         define_conversions!($Mn, [f32; $elems]);
         define_conversions!($Mn, [[f32; $size]; $size]);
         define_conversions!($Mn, [$Vn; $size]);
 
-
-        impl Index<usize> for $Mn {
-            type Output = $Vn;
+        impl AsRef<[f32]> for $Mn {
             #[inline]
-            fn index(&self, i: usize) -> &$Vn {
-                let v: &[$Vn; $size] = self.as_ref();
-                &v[i]
+            fn as_ref(&self) -> &[f32] {
+                let m: &[f32; $elems] = self.as_ref();
+                &m[..]
             }
         }
 
-        impl IndexMut<usize> for $Mn {
+        impl AsMut<[f32]> for $Mn {
             #[inline]
-            fn index_mut(&mut self, i: usize) -> &mut $Vn {
-                let v: &mut [$Vn; $size] = self.as_mut();
-                &mut v[i]
+            fn as_mut(&mut self) -> &mut [f32] {
+                let m: &mut[f32; $elems] = self.as_mut();
+                &mut m[..]
             }
+        }
+
+        impl AsRef<[$Vn]> for $Mn {
+            #[inline]
+            fn as_ref(&self) -> &[$Vn] {
+                let m: &[$Vn; $size] = self.as_ref();
+                &m[..]
+            }
+        }
+
+        impl AsMut<[$Vn]> for $Mn {
+            #[inline]
+            fn as_mut(&mut self) -> &mut [$Vn] {
+                let m: &mut[$Vn; $size] = self.as_mut();
+                &mut m[..]
+            }
+        }
+
+        impl $Mn {
+            #[inline] pub fn as_ptr(&self) -> *const f32 { (&self.x.x) as *const f32 }
+            #[inline] pub fn as_mut_ptr(&mut self) -> *mut f32 { (&mut self.x.x) as *mut f32 }
+
+            #[inline] pub fn as_f32_slice(&self) -> &[f32] { self.as_ref() }
+            #[inline] pub fn as_mut_f32_slice(&mut self) -> &mut [f32] { self.as_mut() }
+
+            #[inline] pub fn as_slice(&self) -> &[$Vn] { self.as_ref() }
+            #[inline] pub fn as_mut_slice(&mut self) -> &mut [$Vn] { self.as_mut() }
+
+            #[inline]
+            pub fn map<F: Fn($Vn) -> $Vn>(self, f: F) -> $Mn {
+                $Mn { $($field: f(self.$field)),+ }
+            }
+
+            #[inline]
+            pub fn map2<F: Fn($Vn, $Vn) -> $Vn>(self, o: $Mn, f: F) -> $Mn {
+                $Mn { $($field: f(self.$field, o.$field)),+ }
+            }
+        }
+
+        impl Index<usize> for $Mn {
+            type Output = $Vn;
+            #[inline] fn index(&self, i: usize) -> &$Vn { &self.as_slice()[i] }
+        }
+
+        impl IndexMut<usize> for $Mn {
+            #[inline] fn index_mut(&mut self, i: usize) -> &mut $Vn { &mut self.as_mut_slice()[i] }
         }
 
         impl Add for $Mn {
@@ -211,7 +310,7 @@ macro_rules! do_mat_boilerplate {
 
         impl Mul<$Mn> for $Mn {
             type Output = $Mn;
-            #[inline] fn mul(self, rhs: $Mn) -> $Mn { $Mn{$($field: self*rhs.$field),+} }
+            #[inline] fn mul(self, rhs: $Mn) -> $Mn { $Mn { $($field: self * rhs.$field),+ } }
         }
 
         impl Mul<f32> for $Mn {
@@ -230,16 +329,29 @@ macro_rules! do_mat_boilerplate {
         impl_ref_operators!(Mul::mul, $Mn, f32);
         impl_ref_operators!(Div::div, $Mn, f32);
 
+        // TODO: Does the optimizer do an ok job here?
+        impl<'a> MulAssign<&'a $Mn> for $Mn {
+            #[inline] fn mul_assign(&mut self, rhs: &'a $Mn) { let res = self.mul(rhs); *self = res; }
+        }
+
+        impl<'a> AddAssign<&'a $Mn> for $Mn {
+            #[inline] fn add_assign(&mut self, rhs: &'a $Mn) { let res = self.add(rhs); *self = res; }
+        }
+
+        impl<'a> SubAssign<&'a $Mn> for $Mn {
+            #[inline] fn sub_assign(&mut self, rhs: &'a $Mn) { let res = self.sub(rhs); *self = res; }
+        }
+
         impl AddAssign<$Mn> for $Mn {
-            #[inline] fn add_assign(&mut self, rhs: $Mn) { let res = self.add(rhs); *self = res; }
+            #[inline] fn add_assign(&mut self, rhs: $Mn) { self.add_assign(&rhs); }
         }
 
         impl SubAssign<$Mn> for $Mn {
-            #[inline] fn sub_assign(&mut self, rhs: $Mn) { let res = self.sub(rhs); *self = res; }
+            #[inline] fn sub_assign(&mut self, rhs: $Mn) { self.sub_assign(&rhs) }
         }
 
         impl MulAssign<$Mn> for $Mn {
-            #[inline] fn mul_assign(&mut self, rhs: $Mn) { let res = self.mul(rhs); *self = res; }
+            #[inline] fn mul_assign(&mut self, rhs: $Mn) { self.mul_assign(&rhs); }
         }
 
         impl MulAssign<f32> for $Mn {
@@ -252,19 +364,19 @@ macro_rules! do_mat_boilerplate {
     }
 }
 
-do_mat_boilerplate!(M2x2{x: 0, y: 1            }, V2, 2, 4);
-do_mat_boilerplate!(M3x3{x: 0, y: 1, z: 2      }, V3, 3, 9);
-do_mat_boilerplate!(M4x4{x: 0, y: 1, z: 2, w: 3}, V4, 4, 16);
+do_mat_boilerplate!(M2x2 { x: 0, y: 1             }, V2, 2, 4);
+do_mat_boilerplate!(M3x3 { x: 0, y: 1, z: 2       }, V3, 3, 9);
+do_mat_boilerplate!(M4x4 { x: 0, y: 1, z: 2, w: 3 }, V4, 4, 16);
 
 impl M2x2 {
     #[inline]
     pub fn new(xx: f32, xy: f32, yx: f32, yy: f32) -> M2x2 {
-        M2x2{x: V2::new(xx, xy), y: V2::new(yx, yy)}
+        M2x2 { x: V2 { x: xx, y: xy }, y: V2 { x: yx, y: yy } }
     }
 
     #[inline]
     pub fn from_cols(x: V2, y: V2) -> M2x2 {
-        M2x2{x: x, y: y}
+        M2x2 { x, y }
     }
 
     #[inline]
@@ -276,6 +388,54 @@ impl M2x2 {
     pub fn to_arr(self) -> [[f32; 2]; 2] {
         self.into()
     }
+
+    #[inline]
+    pub fn diagonal(&self) -> V2 {
+        vec2(self.x.x, self.y.y)
+    }
+    #[inline]
+    pub fn determinant(&self) -> f32 {
+        self.x.x * self.y.y - self.x.y * self.y.x
+    }
+    #[inline]
+    pub fn adjugate(&self) -> M2x2 {
+        M2x2::new(self.y.y, -self.x.y, -self.y.x, self.x.x)
+    }
+
+    #[inline]
+    pub fn transpose(&self) -> M2x2 {
+        M2x2::from_rows(self.x, self.y)
+    }
+
+    #[inline]
+    pub fn row(&self, i: usize) -> V2 {
+        V2::new(self.x[i], self.y[i])
+    }
+
+    #[inline]
+    pub fn col(&self, i: usize) -> V2 {
+        self[i]
+    }
+
+    #[inline]
+    pub fn inverse(&self) -> Option<Self> {
+        let d = self.determinant();
+        if d == 0.0 {
+            None
+        } else {
+            Some(self.adjugate() * (1.0 / d))
+        }
+    }
+
+    #[inline]
+    pub fn identity() -> Self {
+        mat2(1.0, 0.0, 0.0, 1.0)
+    }
+
+    #[inline]
+    pub fn zero() -> Self {
+        mat2(0.0, 0.0, 0.0, 0.0)
+    }
 }
 
 impl M3x3 {
@@ -283,17 +443,17 @@ impl M3x3 {
     #[inline]
     pub fn new(xx: f32, xy: f32, xz: f32,
                yx: f32, yy: f32, yz: f32,
-               zx: f32, zy: f32, zz: f32) -> M3x3 {
-        M3x3{
-            x: vec3(xx, xy, xz),
-            y: vec3(yx, yy, yz),
-            z: vec3(zx, zy, zz)
+               zx: f32, zy: f32, zz: f32) -> Self {
+        Self {
+            x: V3 { x: xx, y: xy, z: xz },
+            y: V3 { x: yx, y: yy, z: yz },
+            z: V3 { x: zx, y: zy, z: zz }
         }
     }
 
     #[inline]
     pub fn from_cols(x: V3, y: V3, z: V3) -> M3x3 {
-        M3x3{x: x, y: y, z: z}
+        M3x3 { x, y, z }
     }
 
     #[inline]
@@ -353,6 +513,164 @@ impl M3x3 {
         self.into()
     }
 
+    #[inline]
+    pub fn diagonal(&self) -> V3 {
+        vec3(self.x.x, self.y.y, self.z.z)
+    }
+
+    #[inline]
+    pub fn determinant(&self) -> f32 {
+        self.x.x * (self.y.y * self.z.z - self.z.y * self.y.z) +
+        self.x.y * (self.y.z * self.z.x - self.z.z * self.y.x) +
+        self.x.z * (self.y.x * self.z.y - self.z.x * self.y.y)
+    }
+
+    #[inline]
+    pub fn adjugate(&self) -> M3x3 {
+        M3x3 {
+            x: vec3(self.y.y*self.z.z - self.z.y*self.y.z,
+                    self.z.y*self.x.z - self.x.y*self.z.z,
+                    self.x.y*self.y.z - self.y.y*self.x.z),
+            y: vec3(self.y.z*self.z.x - self.z.z*self.y.x,
+                    self.z.z*self.x.x - self.x.z*self.z.x,
+                    self.x.z*self.y.x - self.y.z*self.x.x),
+            z: vec3(self.y.x*self.z.y - self.z.x*self.y.y,
+                    self.z.x*self.x.y - self.x.x*self.z.y,
+                    self.x.x*self.y.y - self.y.x*self.x.y),
+        }
+    }
+
+    #[inline]
+    pub fn transpose(&self) -> M3x3 {
+        M3x3::from_rows(self.x, self.y, self.z)
+    }
+
+    #[inline]
+    pub fn row(&self, i: usize) -> V3 {
+        vec3(self.x[i], self.y[i], self.z[i])
+    }
+
+    #[inline]
+    pub fn col(&self, i: usize) -> V3 {
+        self[i]
+    }
+
+    #[inline]
+    pub fn inverse(&self) -> Option<Self> {
+        let d = self.determinant();
+        if d == 0.0 {
+            None
+        } else {
+            Some(self.adjugate() * (1.0 / d))
+        }
+    }
+
+    #[inline]
+    pub fn identity() -> Self {
+        mat3(1.0, 0.0, 0.0,
+             0.0, 1.0, 0.0,
+             0.0, 0.0, 1.0)
+    }
+
+    #[inline]
+    pub fn zero() -> Self {
+        mat3(0.0, 0.0, 0.0,
+             0.0, 0.0, 0.0,
+             0.0, 0.0, 0.0)
+    }
+
+    #[inline]
+    pub fn is_symmetric(&self) -> bool {
+        // Should this be strict comparison?
+        self.x.y == self.y.x &&
+        self.x.z == self.z.x &&
+        self.y.z == self.z.y
+    }
+
+    #[inline]
+    pub fn is_approx_symmetric(&self) -> bool {
+        // Should this be strict comparison?
+        approx_eq(self.x.y, self.y.x) &&
+        approx_eq(self.x.z, self.z.x) &&
+        approx_eq(self.y.z, self.z.y)
+    }
+
+    /// Returns quat s.t. q.to_mat3() diagonalizes this matrix. Requires `self`
+    /// be symmetric.
+    ///
+    /// If you have
+    /// ```rust,no_run
+    /// q = some_mat3.diagonalizer().to_mat3();
+    /// d = q * some_mat3 * q.transpose();
+    /// ```
+    /// Then the rows of `q` are the eigenvectors, and `d`'s diagonal are the
+    /// eigenvalues.
+    pub fn diagonalizer(&self) -> Quat {
+        debug_assert!(self.is_approx_symmetric(),
+            "no diagonalizer for asymmetric matrix {:?}", self);
+        let max_steps = 24; // Defo won't need this many.
+        let mut q = Quat::IDENTITY;
+        for _ in 0..max_steps {
+            let qm = q.to_mat3();
+            let diag = qm.transpose() * self * qm;
+            let off_diag = vec3(diag.y.z, diag.x.z, diag.x.y);
+            let off_mag = off_diag.abs();
+            let k = off_mag.max_index();
+            // We shouldn't need epsilon here, we'll just do
+            // another iteration or so, and the precision is probably worth it.
+            // (TODO: is it?)
+            if off_diag[k] == 0.0 {
+                break;
+            }
+            let k1 = (k + 1) % 3;
+            let k2 = (k + 2) % 3;
+
+            let thet = (diag[k2][k2] - diag[k1][k1]) / (2.0 * off_diag[k]);
+
+            let sgn = thet.signum();// if thet_val > 0.0 { 1.0 } else { -1.0 };
+            let thet = thet * sgn;
+            // Use the more accurate formula if we're close.
+            let t2p1 = if thet < 1.0e-6 { (thet * thet + 1.0).sqrt() } else { thet };
+            // sign(t) / (abs(t) * sqrt(t^2 + 1))
+            let t = sgn / (thet + t2p1);
+
+            let cosine = 1.0 / (t * t + 1.0);
+            if cosine == 1.0 {
+                // Hit numeric precision limit.
+                break;
+            }
+            let mut jacobi_rot = Quat::zero();
+            // Use half angle identity: sin(a / 2) == sqrt((1 - cos(a))/2)
+            let axis_val = sgn * ((1.0 - cosine) * 0.5).sqrt();
+            // Negated to go from the matrix to the diagonal and not vice versa.
+            jacobi_rot[k] = -axis_val;
+            jacobi_rot.0.w = (1.0 - axis_val * axis_val).sqrt();
+            if jacobi_rot.0.w == 1.0 {
+                // Hit numeric precision limit.
+                break;
+            }
+            q = (q * jacobi_rot).normalize().unwrap();
+        }
+
+        // Not sure if fixing the eigenval order here is
+        // worth the trouble...
+        let h = f32::consts::FRAC_1_SQRT_2;
+        // should optimize...
+        let eigen_cmp = |q: Quat, a: usize, b: usize| -> bool {
+            let qm = q.to_mat3();
+            let es = (qm.transpose() * self * qm).diagonal();
+            es[a] < es[b]
+        };
+
+        if eigen_cmp(q, 0, 2) { q *= quat(0.0, h, 0.0, h); }
+        if eigen_cmp(q, 1, 2) { q *= quat(h, 0.0, 0.0, h); }
+        if eigen_cmp(q, 0, 1) { q *= quat(0.0, 0.0, h, h); }
+
+        if q.x_dir().z < 0.0 { q *= quat(1.0, 0.0, 0.0, 0.0); }
+        if q.y_dir().y < 0.0 { q *= quat(0.0, 0.0, 1.0, 0.0); }
+        if q.0.w < 0.0 { q = -q; }
+        q
+    }
 }
 
 impl M4x4 {
@@ -362,16 +680,16 @@ impl M4x4 {
                zx: f32, zy: f32, zz: f32, zw: f32,
                wx: f32, wy: f32, wz: f32, ww: f32) -> M4x4 {
         M4x4 {
-            x: vec4(xx, xy, xz, xw),
-            y: vec4(yx, yy, yz, yw),
-            z: vec4(zx, zy, zz, zw),
-            w: vec4(wx, wy, wz, ww)
+            x: V4 { x: xx, y: xy, z: xz, w: xw },
+            y: V4 { x: yx, y: yy, z: yz, w: yw },
+            z: V4 { x: zx, y: zy, z: zz, w: zw },
+            w: V4 { x: wx, y: wy, z: wz, w: ww }
         }
     }
 
     #[inline]
     pub fn from_cols(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
-        M4x4{x: x, y: y, z: z, w: w}
+        M4x4 { x, y, z, w }
     }
 
     #[inline]
@@ -386,117 +704,14 @@ impl M4x4 {
     pub fn to_arr(self) -> [[f32; 4]; 4] {
         self.into()
     }
-}
-
-impl Identity for M2x2 {
-    #[inline] fn identity() -> M2x2 { mat2(1.0, 0.0, 0.0, 1.0) }
-}
-
-impl Identity for M3x3 {
-    #[inline] fn identity() -> M3x3 { mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0) }
-}
-
-impl Identity for M4x4 {
-    #[inline]
-    fn identity() -> M4x4 {
-        mat4(1.0, 0.0, 0.0, 0.0,
-             0.0, 1.0, 0.0, 0.0,
-             0.0, 0.0, 1.0, 0.0,
-             0.0, 0.0, 0.0, 1.0)
-    }
-}
-
-pub trait MatType
-    : Copy
-    + Clone
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + Mul<Self, Output = Self>
-    + Mul<f32, Output = Self>
-    + Div<f32, Output = Self>
-    + Identity
-    // + Mul<Self::Vec, Output = Self::Vec>
-    // + Index<usize, Output = Self::Vec>
-    // + IndexMut<usize>
-{
-    type Vec: VecType;
-
-    fn determinant(&self) -> f32;
-    fn adjugate(&self) -> Self;
-    fn transpose(&self) -> Self;
-    fn row(&self, usize) -> Self::Vec;
-    fn col(&self, usize) -> Self::Vec;
 
     #[inline]
-    fn inverse(&self) -> Option<Self> {
-        let d = self.determinant();
-        if d == 0.0 {
-            None
-        } else {
-            Some(self.adjugate() * (1.0 / d))
-        }
+    pub fn diagonal(&self) -> V4 {
+        vec4(self.x.x, self.y.y, self.z.z, self.w.w)
     }
 
     #[inline]
-    fn inverse_or_id(&self) -> Self {
-        self.inverse().unwrap_or(Identity::identity())
-    }
-}
-
-impl MatType for M2x2 {
-    type Vec = V2;
-    #[inline] fn determinant(&self) -> f32 { self.x.x*self.y.y - self.x.y*self.y.x }
-    #[inline] fn adjugate(&self) -> M2x2 { M2x2::new(self.y.y, -self.x.y, -self.y.x, self.x.x) }
-    #[inline] fn transpose(&self) -> M2x2 { M2x2::from_rows(self.x, self.y) }
-    #[inline] fn row(&self, i: usize) -> V2 { V2::new(self.x[i], self.y[i]) }
-    #[inline] fn col(&self, i: usize) -> V2 { self[i] }
-}
-
-impl MatType for M3x3 {
-    type Vec = V3;
-
-    #[inline]
-    fn determinant(&self) -> f32 {
-        self.x.x*(self.y.y*self.z.z - self.z.y*self.y.z) +
-        self.x.y*(self.y.z*self.z.x - self.z.z*self.y.x) +
-        self.x.z*(self.y.x*self.z.y - self.z.x*self.y.y)
-    }
-
-    #[inline]
-    fn adjugate(&self) -> M3x3 {
-        return M3x3 {
-            x: vec3(self.y.y*self.z.z - self.z.y*self.y.z,
-                    self.z.y*self.x.z - self.x.y*self.z.z,
-                    self.x.y*self.y.z - self.y.y*self.x.z),
-            y: vec3(self.y.z*self.z.x - self.z.z*self.y.x,
-                    self.z.z*self.x.x - self.x.z*self.z.x,
-                    self.x.z*self.y.x - self.y.z*self.x.x),
-            z: vec3(self.y.x*self.z.y - self.z.x*self.y.y,
-                    self.z.x*self.x.y - self.x.x*self.z.y,
-                    self.x.x*self.y.y - self.y.x*self.x.y),
-        }
-    }
-
-    #[inline]
-    fn transpose(&self) -> M3x3 {
-        M3x3::from_rows(self.x, self.y, self.z)
-    }
-
-    #[inline]
-    fn row(&self, i: usize) -> V3 {
-        vec3(self.x[i], self.y[i], self.z[i])
-    }
-
-    #[inline]
-    fn col(&self, i: usize) -> V3 {
-        self[i]
-    }
-}
-
-impl MatType for M4x4 {
-    type Vec = V4;
-    #[inline]
-    fn determinant(&self) -> f32 {
+    pub fn determinant(&self) -> f32 {
         self.x.x*(self.y.y*self.z.z*self.w.w + self.w.y*self.y.z*self.z.w +
                   self.z.y*self.w.z*self.y.w - self.y.y*self.w.z*self.z.w -
                   self.z.y*self.y.z*self.w.w - self.w.y*self.z.z*self.y.w) +
@@ -515,7 +730,7 @@ impl MatType for M4x4 {
     }
 
     #[inline]
-    fn adjugate(&self) -> M4x4 {
+    pub fn adjugate(&self) -> M4x4 {
         let M4x4{x, y, z, w} = *self;
         return M4x4 {
             x: vec4(y.y*z.z*w.w + w.y*y.z*z.w + z.y*w.z*y.w - y.y*w.z*z.w - z.y*y.z*w.w - w.y*z.z*y.w,
@@ -538,22 +753,20 @@ impl MatType for M4x4 {
     }
 
     #[inline]
-    fn transpose(&self) -> M4x4 {
+    pub fn transpose(&self) -> M4x4 {
         M4x4::from_rows(self.x, self.y, self.z, self.w)
     }
 
     #[inline]
-    fn row(&self, i: usize) -> V4 {
+    pub fn row(&self, i: usize) -> V4 {
         vec4(self.x[i], self.y[i], self.z[i], self.w[i])
     }
 
     #[inline]
-    fn col(&self, i: usize) -> V4 {
+    pub fn col(&self, i: usize) -> V4 {
         self[i]
     }
-}
 
-impl M4x4 {
     #[inline]
     pub fn from_translation(v: V3) -> M4x4 {
         M4x4::new(1.0, 0.0, 0.0, 0.0,
@@ -619,6 +832,74 @@ impl M4x4 {
 
     #[inline]
     pub fn look_at(eye: V3, target: V3, up: V3) -> M4x4 {
-        M4x4::look_towards(target-eye, up) * M4x4::from_translation(-eye)
+        M4x4::look_towards(target - eye, up) * M4x4::from_translation(-eye)
     }
+
+    #[inline]
+    pub fn identity() -> Self {
+        mat4(1.0, 0.0, 0.0, 0.0,
+             0.0, 1.0, 0.0, 0.0,
+             0.0, 0.0, 1.0, 0.0,
+             0.0, 0.0, 0.0, 1.0)
+    }
+
+    #[inline]
+    pub fn zero() -> Self {
+        mat4(0.0, 0.0, 0.0, 0.0,
+             0.0, 0.0, 0.0, 0.0,
+             0.0, 0.0, 0.0, 0.0,
+             0.0, 0.0, 0.0, 0.0)
+    }
+
+    pub fn inverse(&self) -> Option<Self> {
+        let d = self.determinant();
+        if d == 0.0 {
+            None
+        } else {
+            Some(self.adjugate() * (1.0 / d))
+        }
+    }
+}
+
+pub trait MatType
+    : Copy
+    + Clone
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<Self, Output = Self>
+    + Mul<f32, Output = Self>
+    + Div<f32, Output = Self>
+    + Identity
+    + Zero
+    // + Mul<Self::Vec, Output = Self::Vec>
+    // + Index<usize, Output = Self::Vec>
+    // + IndexMut<usize>
+{
+    type Vec: VecType;
+
+    const ROWS: usize;
+    const COLS: usize;
+
+    const ELEMS: usize;
+}
+
+impl MatType for M2x2 {
+    type Vec = V2;
+    const ROWS: usize = 2;
+    const COLS: usize = 2;
+    const ELEMS: usize = 4;
+}
+
+impl MatType for M3x3 {
+    type Vec = V3;
+    const ROWS: usize = 3;
+    const COLS: usize = 3;
+    const ELEMS: usize = 9;
+}
+
+impl MatType for M4x4 {
+    type Vec = V4;
+    const ROWS: usize = 4;
+    const COLS: usize = 4;
+    const ELEMS: usize = 16;
 }

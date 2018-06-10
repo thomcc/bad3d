@@ -1,5 +1,4 @@
 use math::*;
-use math::geom::{Plane, tri_normal, tri_area};
 use std::ops::*;
 use std::{isize, i32, f32, usize};
 

@@ -1,5 +1,4 @@
 use std::ops::*;
-use std::default::Default;
 use math::*;
 
 
@@ -46,6 +45,40 @@ impl Pose {
     pub fn new_look_at(eye: V3, target: V3, up: V3) -> Pose {
         Pose::from_mat4(M4x4::look_at(eye, target, up))
     }
+
+    #[inline]
+    pub fn identity() -> Pose {
+        Pose::new(V3::ZERO, Quat::IDENTITY)
+    }
+
+    #[inline]
+    pub fn zero() -> Pose {
+        Pose::new(V3::ZERO, Quat::ZERO)
+    }
+
+    #[inline]
+    pub fn slerp(&self, o: Pose, t: f32) -> Pose {
+        Pose::new(self.position * (1.0 - t) + o.position * t,
+                  self.orientation.slerp(o.orientation, t))
+    }
+
+    #[inline]
+    pub fn lerp(&self, o: Pose, t: f32) -> Pose {
+        Pose::new(self.position * (1.0 - t) + o.position * t,
+                  self.orientation.nlerp(o.orientation, t))
+    }
+
+    #[inline]
+    pub fn from_blended(poses: impl Iterator<Item = (Pose, f32)>) -> Option<Pose> {
+        let mut pos = V3::zero();
+        let mut orient = Quat::zero();
+        for (pose, weight) in poses {
+            pos += pose.position * weight;
+            orient += pose.orientation * weight;
+        }
+        orient.normalize()
+              .map(|q| Pose::new(pos, q))
+    }
 }
 
 // Hrm... This won't always result in a sane pose...
@@ -58,7 +91,25 @@ impl From<Pose> for M4x4 {
 }
 
 impl Identity for Pose {
-    #[inline] fn identity() -> Pose { Pose::new(V3::zero(), Quat::identity()) }
+    const IDENTITY: Pose = Pose { position: V3::ZERO, orientation: Quat::IDENTITY, };
+}
+
+impl Zero for Pose {
+    const ZERO: Pose = Pose { position: V3::ZERO, orientation: Quat::ZERO, };
+}
+
+impl From<V3> for Pose {
+    #[inline]
+    fn from(position: V3) -> Pose {
+        Pose { position, orientation: Quat::identity() }
+    }
+}
+
+impl From<Quat> for Pose {
+    #[inline]
+    fn from(orientation: Quat) -> Pose {
+        Pose { position: V3::zero(), orientation }
+    }
 }
 
 impl Mul<V3> for Pose {
@@ -73,11 +124,10 @@ impl Mul<Pose> for Pose {
     type Output = Pose;
     #[inline]
     fn mul(self, pose: Pose) -> Pose {
-        Pose::new(self * pose.position, self.orientation * pose.orientation)
+        Pose::new(self * pose.position, (self.orientation * pose.orientation).norm_or_zero())
     }
 }
 
 impl Default for Pose {
-    #[inline] fn default() -> Pose { Pose::identity() }
+    #[inline] fn default() -> Pose { Pose::IDENTITY }
 }
-

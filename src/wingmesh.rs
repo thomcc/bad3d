@@ -1,5 +1,4 @@
 use math::*;
-use math::geom::{plane, Plane, PlaneTestResult};
 use std::{i32, u16};
 use std::f32;
 use support;
@@ -356,23 +355,20 @@ impl WingMesh {
         self.fback.clear();
         self.vback.resize(self.verts.len(), -1);
         self.fback.resize(self.faces.len(), -1);
-        for (i, edge) in self.edges.iter().enumerate().rev() {
         // for i in (0..self.edges.len()).rev() {
         // let mut i = self.edges.len();
         // while i != 0 {
             // i -= 1;
+        for (i, edge) in self.edges.iter().enumerate().rev() {
             if !self.is_packed && edge.v == -1 {
                 continue;
             }
-            let vi = edge.vert_idx();
-            let fi = edge.face_idx();
-            self.vback[vi] = int(i);
-            self.fback[fi] = int(i);
+            self.vback[edge.vert_idx()] = int(i);
+            self.fback[edge.face_idx()] = int(i);
         }
     }
 
     pub fn build_edge(&mut self, ea: usize, eb: usize) -> usize {
-
         debug_assert_ne!(self.edges[ea].next, int(eb), "already an edge (ea: {}, eb: {})", ea, eb);
         debug_assert_ne!(self.edges[eb].next, int(ea), "already an edge (ea: {}, eb: {})", ea, eb);
         debug_assert_eq!(self.edges[ea].face, self.edges[eb].face, "can't build edge to different face (ea: {}, eb: {})", ea, eb);

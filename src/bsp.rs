@@ -142,7 +142,7 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
         return Box::new(BspNode {
             convex: space,
             leaf_type: side,
-            .. BspNode::new(plane(0.0, 0.0, 0.0, 0.0))
+            .. BspNode::new(Plane::zero())
         });
     }
 
@@ -150,7 +150,7 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
 
     let mut min_val = f32::MAX;
 
-    let mut split = Plane::new(V3::zero(), 0.0);
+    let mut split = Plane::zero();
 
     for (i, face) in faces.iter().enumerate() {
         if i > FACE_TEST_LIMIT {
@@ -207,16 +207,17 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
     node
 }
 
-fn gen_faces_rev(wm: &WingMesh, mat: usize) -> Vec<Face> {
-    let mut r = Vec::with_capacity(wm.faces.len());
+fn gen_faces_rev(wm: &WingMesh, mat: usize, r: &mut Vec<Face>) {
+    r.reserve(wm.faces.len());
     for (i, &mf) in wm.faces.iter().enumerate() {
-        let mut f: Face = Default::default();
+        let mut f = Face::default();
         f.plane = -mf;
         f.mat_id = mat;
         let e0 = wm.fback[i] as usize;
         let mut e = e0;
         loop {
-            f.vertex.push(wm.verts[wm.edges[e].vert_idx()]);
+            let vert_idx = wm.edges[e].vert_idx();
+            f.vertex.push(wm.verts[vert_idx]);
             e = wm.edges[e].prev_idx();
             if e == e0 {
                 break;
@@ -225,28 +226,6 @@ fn gen_faces_rev(wm: &WingMesh, mat: usize) -> Vec<Face> {
         f.assign_tex();
         r.push(f);
     }
-    r
-}
-
-fn gen_faces_wm(wm: &WingMesh, mat: usize) -> Vec<Face> {
-    let mut r = Vec::with_capacity(wm.faces.len());
-    for (i, &mf) in wm.faces.iter().enumerate() {
-        let mut f: Face = Default::default();
-        f.plane = mf;
-        f.mat_id = mat;
-        let e0 = wm.fback[i] as usize;
-        let mut e = e0;
-        loop {
-            f.vertex.push(wm.verts[wm.edges[e].vert_idx()]);
-            e = wm.edges[e].next_idx();
-            if e == e0 {
-                break;
-            }
-        }
-        f.assign_tex();
-        r.push(f);
-    }
-    r
 }
 
 pub fn divide_polys(split: Plane, input: Vec<Face>) -> (Vec<Face>, Vec<Face>, Vec<Face>) {
@@ -583,7 +562,7 @@ impl BspNode {
         let mut to_embed = Vec::new();
         self.each_mut(|n| {
             if n.leaf_type == LeafType::Over {
-                to_embed.append(&mut gen_faces_rev(&n.convex, mat_id));
+                gen_faces_rev(&n.convex, mat_id, &mut to_embed);
             }
         });
         for face in to_embed {
@@ -774,7 +753,7 @@ fn hit_check_bevel_cylinder(
         let mut bev = Plane::from_norm_and_point(half_angle, convex.verts[edge_0.vert_idx()]);
         if cfg!(debug_assertions) {
             for &vert in &convex.verts {
-                debug_assert_ne!(bev.test_e(vert, geom::DEFAULT_PLANE_WIDTH * 10.0),
+                debug_assert_ne!(bev.test_e(vert, DEFAULT_PLANE_WIDTH * 10.0),
                                  PlaneTestResult::Over,
                                  "vert = {:?}, bev = {:?}", vert, bev);
             }
@@ -1280,7 +1259,7 @@ impl Face {
         if dot(self.plane.normal, face.plane.normal) < 0.95 {
             return;
         }
-        if self.split_test(face.plane, geom::DEFAULT_PLANE_WIDTH) != PlaneTestResult::Coplanar {
+        if self.split_test(face.plane, DEFAULT_PLANE_WIDTH) != PlaneTestResult::Coplanar {
             return;
         }
         let interior = face.center();

@@ -2,7 +2,6 @@
 pub trait ApproxEq {
     fn approx_zero_e(&self, e: f32) -> bool;
     fn approx_eq_e(&self, o: &Self, e: f32) -> bool;
-    // fn approx_eq_ra(&self, o: &Self, rel_tol: f32, abs_tol: f32) -> bool;
 
     #[inline]
     fn default_epsilon() -> f32 {
@@ -33,42 +32,52 @@ pub trait Clamp: Copy + Clone {
     fn clamp(self, min: Self, max: Self) -> Self;
 }
 
+pub trait Zero: Copy + Clone {
+    const ZERO: Self;
+    fn zero() -> Self { Self::ZERO }
+}
+
 pub trait Identity: Copy + Clone {
-    fn identity() -> Self;
+    const IDENTITY: Self;
+    fn identity() -> Self { Self::IDENTITY }
 }
 
 pub trait Fold: Copy + Clone {
-    fn fold<F>(self, f: F) -> f32
-            where F: Fn(f32, f32) -> f32;
-
-    fn fold2_init<T, F>(self, Self, init: T, f: F) -> T
-            where F: Fn(T, f32, f32) -> T;
+    fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32;
+    fn fold2_init<T>(self, Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T;
 
     #[inline]
-    fn fold_init<T, F>(self, init: T, f: F) -> T
-            where F: Fn(T, f32) -> T {
+    fn fold_init<T>(self, init: T, f: impl Fn(T, f32) -> T) -> T {
         self.fold2_init(self, init, |acc, v, _| f(acc, v))
     }
 }
 
 pub trait TriIndices: Copy {
+    type IndexT: Copy;
+
     fn tri_indices(self) -> (usize, usize, usize);
 
     #[inline]
-    fn tri_verts<V: Copy>(self, vs: &[V]) -> (V, V, V) {
+    fn tri_verts<V: Clone>(self, vs: &[V]) -> (V, V, V) {
         let (a, b, c) = self.tri_indices();
-        (vs[a], vs[b], vs[c])
+        (vs[a].clone(), vs[b].clone(), vs[c].clone())
     }
 
     #[inline]
-    fn tri_verts_opt<V: Copy>(self, vs: &[V]) -> Option<(V, V, V)> {
+    fn tri_verts_opt<V: Clone>(self, vs: &[V]) -> Option<(V, V, V)> {
         let (a, b, c) = self.tri_indices();
         // There's a clever way to optimize this: ((a-len)|(b-len)|(c-len)) >= 0
         if a < vs.len() && b < vs.len() && c < vs.len() {
-            Some((vs[a], vs[b], vs[c]))
+            Some((vs[a].clone(), vs[b].clone(), vs[c].clone()))
         } else {
             None
         }
+    }
+
+    #[inline]
+    fn tri_vert_ref<'a, V>(self, vs: &'a [V]) -> (&'a V, &'a V, &'a V) {
+        let (a, b, c) = self.tri_indices();
+        (&vs[a], &vs[b], &vs[c])
     }
 }
 
@@ -95,6 +104,7 @@ pub trait Map: Copy + Clone {
 }
 
 impl TriIndices for [u16; 3] {
+    type IndexT = u16;
     #[inline]
     fn tri_indices(self) -> (usize, usize, usize) {
         (self[0] as usize, self[1] as usize, self[2] as usize)
@@ -102,6 +112,7 @@ impl TriIndices for [u16; 3] {
 }
 
 impl TriIndices for (u16, u16, u16) {
+    type IndexT = u16;
     #[inline]
     fn tri_indices(self) -> (usize, usize, usize) {
         (self.0 as usize, self.1 as usize, self.2 as usize)
@@ -109,6 +120,7 @@ impl TriIndices for (u16, u16, u16) {
 }
 
 impl TriIndices for [u32; 3] {
+    type IndexT = u32;
     #[inline]
     fn tri_indices(self) -> (usize, usize, usize) {
         (self[0] as usize, self[1] as usize, self[2] as usize)
@@ -116,6 +128,7 @@ impl TriIndices for [u32; 3] {
 }
 
 impl TriIndices for (u32, u32, u32) {
+    type IndexT = u32;
     #[inline]
     fn tri_indices(self) -> (usize, usize, usize) {
         (self.0 as usize, self.1 as usize, self.2 as usize)
@@ -138,7 +151,6 @@ pub fn dot<T: Dot>(a: T, b: T) -> f32 {
 pub fn clamp<T: Clamp>(a: T, min: T, max: T) -> T {
     a.clamp(min, max)
 }
-
 
 #[inline]
 pub fn lerp<T: Lerp>(a: T, b: T, t: f32) -> T {

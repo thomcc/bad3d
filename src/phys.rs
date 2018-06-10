@@ -590,7 +590,7 @@ impl ConstraintSet {
     }
 
     #[inline]
-    pub fn under_plane(&mut self, rbr: RigidBodyRef, plane: geom::Plane, max_force: Option<f32>)
+    pub fn under_plane(&mut self, rbr: RigidBodyRef, plane: Plane, max_force: Option<f32>)
                        -> &mut ConstraintSet {
         // @@TODO: all vertices
         let pos = {

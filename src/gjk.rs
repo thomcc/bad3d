@@ -20,7 +20,7 @@ impl Default for ContactType {
 pub struct ContactInfo {
     pub ty: ContactType,
     pub simplex: [V3; 4],
-    pub plane: geom::Plane,
+    pub plane: Plane,
     pub impact: V3,
     pub separation: f32,
     pub points: (V3, V3),
@@ -242,7 +242,7 @@ impl Simplex {
             points: (pa, pb),
             impact: impact,
             separation: pa.dist(pb) + f32::MIN_POSITIVE,
-            plane: geom::Plane::from_norm_and_point(norm, impact),
+            plane: Plane::from_norm_and_point(norm, impact),
             .. Default::default()
         };
         hit_info.fill_simplex(self);
@@ -310,7 +310,7 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
             let p1 = (mb * b).xyz();
 
             let mut hit_info = ContactInfo {
-                plane: geom::Plane::from_v4(-min_penetration_plane.to_v4()), // ... flip?
+                plane: Plane::from_v4(-min_penetration_plane.to_v4()), // ... flip?
                 separation: min_penetration_plane.offset.min(0.0),
                 points: (p0, p1),
                 impact: (p0 + p1) * 0.5,

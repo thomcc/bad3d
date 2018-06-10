@@ -123,7 +123,7 @@ fn main() -> Result<()> {
             .collect::<Vec<phys::RigidBodyRef>>();
 
         for body in bodies[body_sizes.len()..].iter_mut() {
-            cs.under_plane(body.clone(), geom::Plane::from_norm_and_point(phys::GRAVITY.must_norm(), vec3(5.0, 5.0, -10.0)), None);
+            cs.under_plane(body.clone(), Plane::from_norm_and_point(phys::GRAVITY.must_norm(), vec3(5.0, 5.0, -10.0)), None);
         }
 
         phys::update_physics(&mut bodies[..],

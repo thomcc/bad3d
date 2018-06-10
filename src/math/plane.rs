@@ -1,10 +1,5 @@
-use math::vec::*;
-use math::scalar::*;
-use math::traits::*;
-use math::quat::*;
-use math::geom::*;
-use std::ops::Neg;
-use std::{default, fmt};
+use math::*;
+use std::{fmt, ops, mem};
 
 pub const DEFAULT_PLANE_WIDTH: f32 = 0.0008_f32;
 
@@ -15,11 +10,8 @@ pub struct Plane {
     pub offset: f32,
 }
 
-impl default::Default for Plane {
-    #[inline]
-    fn default() -> Plane {
-        plane(0.0, 0.0, 1.0, 0.0)
-    }
+impl Default for Plane {
+    #[inline] fn default() -> Plane { plane(0.0, 0.0, 1.0, 0.0) }
 }
 
 impl fmt::Display for Plane {
@@ -28,6 +20,15 @@ impl fmt::Display for Plane {
                self.normal.x, self.normal.y, self.normal.z, self.offset)
     }
 }
+
+impl AsRef<Plane> for V4 { #[inline] fn as_ref(&self) -> &Plane { unsafe { mem::transmute(self) } } }
+impl AsRef<V4> for Plane { #[inline] fn as_ref(&self) -> &V4    { unsafe { mem::transmute(self) } } }
+
+impl AsMut<Plane> for V4 { #[inline] fn as_mut(&mut self) -> &mut Plane { unsafe { mem::transmute(self) } } }
+impl AsMut<V4> for Plane { #[inline] fn as_mut(&mut self) -> &mut V4    { unsafe { mem::transmute(self) } } }
+
+impl From<Plane> for V4 { #[inline] fn from(p: Plane) -> Self { p.to_v4() } }
+impl From<V4> for Plane { #[inline] fn from(v: V4) -> Self { Plane::from_v4(v) } }
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]
@@ -38,7 +39,7 @@ pub enum PlaneTestResult {
     Split    = 0b11, // Under | Over, not possible for points
 }
 
-impl Neg for Plane {
+impl ops::Neg for Plane {
     type Output = Plane;
     #[inline]
     fn neg(self) -> Plane {
@@ -54,7 +55,12 @@ impl Plane {
 
     #[inline]
     pub fn to_v4(&self) -> V4 {
-        V4::expand(self.normal, self.offset)
+        V4 { x: self.normal.x, y: self.normal.y, z: self.normal.z, w: self.offset }
+    }
+
+    #[inline]
+    pub fn tup(&self) -> (f32, f32, f32, f32) {
+        (self.normal.x, self.normal.y, self.normal.z, self.offset)
     }
 
     #[inline]
@@ -97,12 +103,13 @@ impl Plane {
         line_p0 + dif * t
     }
 
-    pub fn try_intersect_with_line(&self, line_p0: V3, line_p1: V3) -> Option<V3> {
+    #[inline]
+    pub fn try_intersect_with_line(&self, line_p0: V3, line_p1: V3) -> Option<(V3, f32)> {
         let dif = line_p1 - line_p0;
         let dn = self.normal.dot(dif);
         if dn != 0.0 {
             let t = -(self.offset + dot(self.normal, line_p0)) / dn;
-            Some(line_p0 + dif * t)
+            Some((line_p0 + dif * t, t))
         } else {
             None
         }
@@ -203,6 +210,11 @@ impl Plane {
     pub fn test(&self, pos: V3) -> PlaneTestResult {
         self.test_e(pos, DEFAULT_PLANE_WIDTH)
     }
+
+}
+
+impl Zero for Plane {
+    const ZERO: Plane = Plane { normal: V3::ZERO, offset: 0.0 };
 }
 
 impl Dot for Plane {
