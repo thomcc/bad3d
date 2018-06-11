@@ -1,5 +1,10 @@
+
+use traits::*;
+use vec::*;
+use quat::*;
+use mat::*;
+
 use std::ops::*;
-use math::*;
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]

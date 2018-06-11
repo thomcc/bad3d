@@ -2,6 +2,7 @@
 pub mod input;
 pub mod demo_window;
 pub mod object;
+pub mod cam;
 
 pub use self::input::InputState;
 pub use self::demo_window::{DemoWindow, DemoOptions};

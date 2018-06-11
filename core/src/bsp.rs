@@ -2,7 +2,8 @@ use math::*;
 use wingmesh::WingMesh;
 use util::OrdFloat;
 use std::{f32, mem};
-
+use gjk;
+use support::Support;
 const Q_SNAP: f32 = 0.05;
 const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);
 const FUZZY_WIDTH: f32 = 100.0*DEFAULT_PLANE_WIDTH;
@@ -728,6 +729,66 @@ impl BspNode {
         }
         geom::HitInfo::new_opt(hit, v1, norm_hit)
     }
+
+    pub fn all_proximity_cells<'a, S: Support>(
+        &'a self,
+        collider: &S,
+        padding: f32
+    ) -> Vec<&'a WingMesh> {
+        let mut v = vec![];
+        self.proximity_cells(collider, padding, &mut v);
+        v
+    }
+
+    pub fn proximity_cells<'a, S: Support>(
+        &'a self,
+        collider: &S,
+        padding: f32,
+        res: &mut Vec<&'a WingMesh>
+    ) -> usize {
+        match self.leaf_type {
+            LeafType::Over => return 0,
+            LeafType::Under => { res.push(&self.convex); return 1; },
+            _ => {}
+        }
+        let start_len = res.len();
+        let u = collider.support(-self.plane.normal);
+        let o = collider.support( self.plane.normal);
+        let t = (self.plane.offset_by(-padding).test_e(u, 0.0) as usize)
+              | (self.plane.offset_by( padding).test_e(o, 0.0) as usize);
+        if (t & UNDER) != 0 {
+            self.under().proximity_cells(collider, padding, res);
+        }
+        if (t & OVER) != 0 {
+            self.over().proximity_cells(collider, padding, res);
+        }
+        res.len() - start_len
+    }
+
+    pub fn hit_check_convex_gjk<S: Support>(&self, collider: &S) -> Option<gjk::ContactInfo> {
+        match self.leaf_type {
+            LeafType::Over => return None,
+            LeafType::Under => {
+                let s = gjk::separated(collider, &self.convex, true);
+                return if s.separation <= 0.0 { Some(s) } else { None };
+            },
+            _ => {}
+        }
+        let t = (self.plane.test_e(collider.support(-self.plane.normal), 0.0) as usize)
+              | (self.plane.test_e(collider.support( self.plane.normal), 0.0) as usize);
+        if (t & UNDER) != 0 {
+            if let Some(hit) = self.under().hit_check_convex_gjk(collider) {
+                return Some(hit);
+            }
+        }
+        if (t & OVER) != 0 {
+            if let Some(hit) = self.over().hit_check_convex_gjk(collider) {
+                return Some(hit);
+            }
+        }
+        None
+    }
+
 }
 
 fn hit_check_bevel_cylinder(

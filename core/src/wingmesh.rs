@@ -32,6 +32,7 @@ impl HalfEdge {
             face: int(face),
         }
     }
+
     #[inline] pub fn idx(&self) -> usize { debug_assert!(self.id >= 0); self.id as usize }
     #[inline] pub fn adj_idx(&self) -> usize { debug_assert!(self.adj >= 0); self.adj as usize }
     #[inline] pub fn vert_idx(&self) -> usize { debug_assert!(self.v >= 0); self.v as usize }
@@ -107,11 +108,11 @@ impl WingMesh {
 
     #[inline]
     pub fn clear(&mut self) {
-        self.edges.truncate(0);
-        self.verts.truncate(0);
-        self.faces.truncate(0);
-        self.vback.truncate(0);
-        self.fback.truncate(0);
+        self.edges.clear();
+        self.verts.clear();
+        self.faces.clear();
+        self.vback.clear();
+        self.fback.clear();
         self.is_packed = true;
     }
 
@@ -132,7 +133,7 @@ impl WingMesh {
         }
 
         let vc = 1 + tris.iter().fold(0, |a, b| max!(a, b[0], b[1], b[2])) as usize;
-        assert_lt!(vc, verts.len());
+        assert_le!(vc, verts.len());
 
         m.verts = Vec::from(&verts[..vc]);
 
@@ -208,14 +209,14 @@ impl WingMesh {
 
         for i in 0..sides {
             let progress = (i as f32) / (sides as f32);
-            let a = 2.0*f32::consts::PI*progress;
-            mesh.verts.push(vec3(a.cos()*radius, a.sin()*radius, 0.0));
+            let a = 2.0 * f32::consts::PI * progress;
+            mesh.verts.push(vec3(a.cos() * radius, a.sin() * radius, 0.0));
         }
 
         mesh.verts.push(vec3(0.0, 0.0, height));
 
         for i in 0..sides {
-            let indices = [i, (i+1)%sides, sides];
+            let indices = [i, (i + 1) % sides, sides];
             mesh.add_face(&indices[..]);
         }
         let mut bottom = Vec::new();
@@ -227,6 +228,56 @@ impl WingMesh {
         mesh.finish();
         mesh
     }
+
+    // pub fn new_sphere(bands: (usize, usize), radius: f32) -> WingMesh {
+    //     let mut mesh = WingMesh::new();
+    //     let lat_step = f32::consts::PI / (bands.0 as f32);
+    //     let lng_step = f32::consts::PI * 2.0 / (bands.1 as f32);
+
+    //     for i in 0..bands.0 {
+    //         let lat_angle = (i as f32) * lat_step;
+    //         let (lat_sin, y1) = lat_angle.sin_cos();
+    //         let (lat_sin2, y2) = (lat_angle + lat_step).sin_cos();
+
+    //         for j in 0..bands.1 {
+    //             let lng_angle = (j as f32) * lng_step;
+    //             let (lng_sin, lng_cos) = lng_angle.sin_cos();
+    //             let (lng_sin2, lng_cos2) = (lng_angle + lng_step).sin_cos();
+
+    //             let x1 = lat_sin * lng_cos;
+    //             let x2 = lat_sin * lng_cos2;
+    //             let x3 = lat_sin2 * lng_cos;
+    //             let x4 = lat_sin2 * lng_cos2;
+
+    //             let z1 = lat_sin * lng_sin;
+    //             let z2 = lat_sin * lng_sin2;
+    //             let z3 = lat_sin2 * lng_sin;
+    //             let z4 = lat_sin2 * lng_sin2;
+
+    //             // texcoords
+    //             // let u1 = 1.0 - (j as f32) / (bands.1 as f32);
+    //             // let u2 = 1.0 - (j as f32 + 1.0) / (bands.1 as f32);
+
+    //             // let v1 = 1.0 - (i as f32) / (bands.0 as f32);
+    //             // let v2 = 1.0 - (i as f32 + 1.0) / (bands.0 as f32);
+
+    //             let k = mesh.verts.len();
+    //             // XXX is this planar? if so use one quad below and not two tris
+    //             mesh.verts.extend(&[
+    //                 // normals are same without * radius
+    //                 vec3(x1, y1, z1) * radius,
+    //                 vec3(x2, y1, z2) * radius,
+    //                 vec3(x3, y2, z3) * radius,
+    //                 vec3(x4, y2, z4) * radius,
+    //             ]);
+
+    //             mesh.add_face(&[k, k + 1, k + 2, k + 3]);
+    //             // mesh.add_face(&[k + 2, k + 1, k + 3]);
+    //         }
+    //     }
+    //     mesh.finish();
+    //     mesh
+    // }
 
     pub fn vertex_degree(&self, v: usize) -> i32 {
         let e0 = self.vback[v];

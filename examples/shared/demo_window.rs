@@ -54,6 +54,7 @@ pub struct DemoWindow {
     pub last_frame: Instant,
     pub last_frame_time: f32,
     pub grabbed_cursor: bool,
+    pub fog_amount: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -65,6 +66,7 @@ pub struct DemoOptions<'a> {
     pub light_pos: V3,
     pub fov: f32,
     pub view: M4x4,
+    pub fog_amount: f32,
 }
 
 impl<'a> Default for DemoOptions<'a> {
@@ -77,6 +79,7 @@ impl<'a> Default for DemoOptions<'a> {
             near_far: (0.01, 500.0),
             fov: 75.0,
             view: M4x4::identity(),
+            fog_amount: 0.0
         }
     }
 }
@@ -128,7 +131,8 @@ impl DemoWindow {
             targ: None,
             last_frame: Instant::now(),
             last_frame_time: 0.0,
-            grabbed_cursor: false
+            grabbed_cursor: false,
+            fog_amount: opts.fog_amount,
         })
     }
 
@@ -140,7 +144,7 @@ impl DemoWindow {
         self.last_frame = now;
         self.last_frame_time = delta_s;
         assert!(self.targ.is_none());
-        if !self.input.update(&mut self.events, &mut self.display) {
+        if !self.input.update(&mut self.events, &mut self.display, delta_s) {
             false
         } else {
             let mut targ = self.display.draw();
@@ -200,9 +204,11 @@ impl DemoWindow {
                 u_light: self.light_pos,
                 perspective: self.input.get_projection_matrix(
                     self.near_far.0, self.near_far.1).to_arr(),
+                u_fog: self.fog_amount,
             },
             &glium::DrawParameters {
                 blend: glium::Blend::alpha_blending(),
+                smooth: Some(glium::draw_parameters::Smooth::Nicest),
                 backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
                 depth: glium::Depth {
                     test: glium::draw_parameters::DepthTest::IfLess,
@@ -236,6 +242,7 @@ impl DemoWindow {
         let vbo = glium::VertexBuffer::new(&self.display, vertex_slice(verts))?;
         let params = glium::DrawParameters {
             point_size: if solid { Some(5.0) } else { None },
+            smooth: if solid { None } else { Some(glium::draw_parameters::Smooth::Nicest) },
 //            blend: glium::Blend::alpha_blending(),
             backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
             depth: glium::Depth {
@@ -252,6 +259,7 @@ impl DemoWindow {
             view: self.view.to_arr(),
             u_light: self.light_pos,
             perspective: self.input.get_projection_matrix(self.near_far.0, self.near_far.1).to_arr(),
+            u_fog: self.fog_amount,
         };
         let mut target = self.target_mut();
         if let Some(tris) = maybe_tris {

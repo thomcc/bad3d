@@ -6,6 +6,8 @@ authors = ["Thom Chiovoloni <tchiovoloni@mozilla.com>"]
 [dependencies]
 more-asserts = "0.2"
 log = "0.4"
+bad3d_math = { path = "math" }
+bad3d_core = { path = "core" }
 
 [dev-dependencies]
 rand = "0.4"

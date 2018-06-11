@@ -20,8 +20,9 @@ extern crate failure;
 mod shared;
 
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
+use shared::cam::*;
 
-use glium::glutin::VirtualKeyCode;
+use glium::glutin::{VirtualKeyCode as Key};
 use bad3d::{hull, gjk, wingmesh::WingMesh, phys::{self, Shape, RigidBody, RigidBodyRef}, bsp::{self, BspNode}};
 use bad3d::math::*;
 use std::rc::Rc;
@@ -49,6 +50,11 @@ struct Player {
     pub radius: f32,
     pub head_tilt: f32,
 
+    pub recoil: f32,
+
+    pub bob: f32,
+    pub bob_phase: f32,
+
     pub ground_norm: Option<V3>,
 }
 
@@ -62,13 +68,18 @@ impl Player {
             height: 1.2,
             radius: 0.2,
             head_tilt: 0.0,
+            recoil: 0.0,
+            bob: 0.0,
+            bob_phase: 0.0,
             ground_norm: None,
         }
     }
 
     pub fn eye_pose(&self) -> Pose {
         self.pose * Pose::new(
-            vec3(0.0, 0.0, self.height * 0.9),
+            vec3(0.0, 0.0, self.height * 0.8
+                + (self.bob_phase * 2.0).sin() * 0.05 + self.bob * 0.1
+            ),
             Quat::from_axis_angle(vec3(1.0, 0.0, 0.0),
                                   (90.0 + self.head_tilt).to_radians())
         )
@@ -128,7 +139,8 @@ impl Player {
                 hit += 1;
                 impact = hi.impact;
                 // slide along plane of impact
-                target_up = Plane::from_norm_and_point(hi.normal, impact).project(target_up) + hi.normal * 0.00001;
+                target_up = Plane::from_norm_and_point(
+                    hi.normal, impact).project(target_up) + hi.normal * 0.00001;
             }
 
             let mut pos_drop = target_up - (pos_up - self.pos_new);
@@ -148,6 +160,12 @@ impl Player {
 
     pub fn update(&mut self, mut mouse: V2, thrust: V3, bsp: &BspNode, dt: f32) {
         mouse.y *= -1.0;
+        self.bob *= 0.6;
+        self.head_tilt += self.recoil * (dt * 60.0);
+        self.recoil /= 2.0;
+        if self.recoil <= 0.001 {
+            self.recoil = 0.0;
+        }
         let (damp, thrust_dom) = if let Some(gnorm) = self.ground_norm {
             let dom = Quat::shortest_arc(vec3(0.0, 0.0, 1.0), gnorm) * self.pose.orientation;
             (DAMP_GROUND, dom)
@@ -157,7 +175,7 @@ impl Player {
         let contact_velocity = V3::zero(); // if ground is moving it goes here.
         let acc_damping = (self.vel - contact_velocity) * -damp;
         let mut micro_impulse = vec3(0.0, 0.0, 0.0);
-        if thrust.dot(thrust) == 0.0 {
+        if approx_zero(thrust.dot(thrust)) {
             if let Some(gnorm) = self.ground_norm {
                 micro_impulse = gnorm * (GRAVITY.z * gnorm.z) - vec3(0.0, 0.0, GRAVITY.z);
             }
@@ -175,7 +193,8 @@ impl Player {
             (thrust_dom.y_dir() * thrust.y + thrust_dom.x_dir() * thrust.x) * MAX_SPEED * damp;
 
         self.vel += accel * dt;
-        self.pos_new = self.pose.position + self.vel * dt;
+
+        self.pos_new = self.pose.position + (self.vel * dt);
         self.pose.orientation = (
             self.pose.orientation * Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), -mouse.x * MOUSE_SENSITIVITY)
         ).must_norm();
@@ -186,6 +205,7 @@ impl Player {
         self.pos_old = self.pose.position;
         self.ground_norm = None;
         self.area_check(bsp, dt);
+        self.bob_phase += (self.pos_new - self.pose.position).length();
         self.pose.position = self.pos_new;
     }
 }
@@ -246,9 +266,9 @@ impl Blaster {
             let mut mash_box = WingMesh::new_cube(0.5);
             for _ in 0..8 {
                 let rn = vec3(
-                    ((rng.gen_range(0, 9) as f32) - 4.0) / 4.0,
-                    ((rng.gen_range(0, 9) as f32) - 4.0) / 4.0,
-                    ((rng.gen_range(0, 9) as f32) - 4.0) / 4.0,
+                    (rng.gen::<f32>() * 9.0 - 4.0) / 4.0,
+                    (rng.gen::<f32>() * 9.0 - 4.0) / 4.0,
+                    (rng.gen::<f32>() * 9.0 - 4.0) / 4.0,
                 ).norm_or_v(vec3(0.0, 0.0, 1.0));
                 let rd = -(rng.gen::<f32>() * 0.5 + 0.125);
                 mash_box = mash_box.crop(quantized_p(Plane::new(rn, rd)));
@@ -268,9 +288,9 @@ fn make_bsp(wm0: &WingMesh, wm1: WingMesh) -> Box<BspNode> {
 }
 
 fn build_scene_bsp() -> Box<BspNode> {
-    let arena = WingMesh::new_box(vec3(-20.0, -20.0, -10.0), vec3(20.0, 20.0, 10.0));
+    let arena = WingMesh::new_box(vec3(-10.0, -10.0, -5.0), vec3(10.0, 10.0, 5.0));
 
-    let mut bsp_geom = bsp::compile(arena.faces(), WingMesh::new_cube(64.0));
+    let mut bsp_geom = bsp::compile(arena.faces(), WingMesh::new_cube(32.0));
     bsp_geom.negate();
 
     let boxes = [
@@ -285,24 +305,24 @@ fn build_scene_bsp() -> Box<BspNode> {
     for (min, max) in boxes.iter() {
         bsp_geom = bsp::union(
             bsp::compile(WingMesh::new_box(*min, *max).faces(),
-                         WingMesh::new_cube(32.0)),
+                         WingMesh::new_cube(16.0)),
             bsp_geom);
     }
 
     for door_x in &[-7.0f32, 0.0, 7.0] {
         let mut dx = bsp::compile(
-            WingMesh::new_box(vec3(door_x - 1.0, 9.0, 0.1),
-                              vec3(door_x + 1.0, 9.0, 2.5)).faces(),
-            WingMesh::new_cube(32.0));
+            WingMesh::new_box(vec3(door_x - 1.0, -9.0, 0.0),
+                              vec3(door_x + 1.0,  9.0, 2.5)).faces(),
+            WingMesh::new_cube(16.0));
         dx.negate();
         bsp_geom = bsp::intersect(dx, bsp_geom);
     }
 
     for y_door in &[-7.0f32, 7.0] {
         let mut dy = bsp::compile(
-            WingMesh::new_box(vec3(-9.0, y_door - 1.0, 0.1),
+            WingMesh::new_box(vec3(-9.0, y_door - 1.0, 0.0),
                               vec3( 9.0, y_door + 1.0, 2.5)).faces(),
-            WingMesh::new_cube(32.0));
+            WingMesh::new_cube(16.0));
         dy.negate();
         bsp_geom = bsp::intersect(dy, bsp_geom);
     }
@@ -392,6 +412,7 @@ fn main() -> Result<()> {
         near_far: (0.01, 100.0),
         light_pos: vec3(0.0, 1.2, 1.0),
         fov: 45.0,
+        fog_amount: 16.0,
         .. Default::default()
     }, gui.clone())?;
 
@@ -409,31 +430,45 @@ fn main() -> Result<()> {
 
     let scene_color = vec4(0.4, 0.4, 0.4, 1.0);
 
+    let mut fly_camera = FlyCam {
+        eye: camera.position,
+        look: vec3(0.0, 1.0, 0.0),
+        up: vec3(0.0, 0.0, 1.0),
+        view: M4x4::IDENTITY,
+        eye_speed: 10.0,
+        mouse_speed: 0.1,
+    };
+
     let mut scene_meshes = bsp_cell_meshes(&win.display, &mut bsp_geom, scene_color)?;
 
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
         let ui = win.get_ui(&mut *imgui);
-        let mut exit = false;
-        for &(key, down) in win.input.key_changes.iter() {
-            if !down { continue; }
-            match key {
-                glium::glutin::VirtualKeyCode::Escape => {
-                    exit = true;
-                }
-                glium::glutin::VirtualKeyCode::P => {
-                    paused = !paused;
-                }
-                glium::glutin::VirtualKeyCode::F => {
-                    fly_cam = !fly_cam;
-                }
-                _ => {}
-            }
-        }
-        if exit {
+        if win.input.key_hit(Key::Escape) {
             win.end_frame()?;
             return Ok(());
         }
+        if win.input.key_hit(Key::P) {
+            paused = !paused;
+        }
+        if win.input.key_hit(Key::F) {
+            fly_cam = !fly_cam;
+            if fly_cam {
+                let pose = player.eye_pose();
+                fly_camera.eye = pose.position;
+                fly_camera.up = vec3(0.0, 0.0, 1.0);
+                fly_camera.look = camera.orientation * vec3(1.0, 0.0, 0.0);
+            }
+        }
+
+        if win.input.key_hit(Key::O) {
+            if win.fog_amount > 0.0 {
+                win.fog_amount = 0.0;
+            } else {
+                win.fog_amount = 16.0;
+            }
+        }
+
         if paused {
              win.ungrab_cursor();
         } else {
@@ -460,6 +495,7 @@ fn main() -> Result<()> {
             if let Some(impact) = do_blast {
                 bsp_geom = blaster.blast(bsp_geom, impact, blast_sz);
                 scene_meshes = bsp_cell_meshes(&win.display, &mut bsp_geom, scene_color)?;
+                player.recoil += 5.0;
             }
 
             let thrust = {
@@ -472,23 +508,17 @@ fn main() -> Result<()> {
             player.update(win.input.scaled_mouse_delta(), thrust, &bsp_geom, 1.0 / 60.0);
             if !fly_cam {
                 camera = player.eye_pose();
+                win.view = camera.to_mat4().inverse().unwrap();
             } else {
-                use glium::glutin::VirtualKeyCode::*;
-                let fly_thrust = vec3(-win.input.keys_dir(A, D), win.input.keys_dir(E, Q), win.input.keys_dir(W, S));
-                let dmouse = win.input.scaled_mouse_delta();
-                camera.position += camera.orientation * fly_thrust;
-                camera.orientation = (camera.orientation *
-                    Quat::shortest_arc(vec3(0.0, 0.0, 1.0), vec3(dmouse.x, dmouse.y, 1.0).must_norm())).must_norm();
+                fly_camera.update(CamUpdate::from_input(&win.input));
+                win.view = fly_camera.view;
             }
         }
 
-        win.view = camera.to_mat4().inverse().unwrap();
         for m in &scene_meshes {
             win.draw_lit_mesh(M4x4::identity(), m)?;
         }
         let input_size = win.input.size;
-        let mouse_pos = win.input.mouse.pos;
-        let mdelta = win.input.scaled_mouse_delta();
         let framerate = ui.framerate();
         ui.window(im_str!("test"))
             .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
@@ -499,8 +529,10 @@ fn main() -> Result<()> {
                 ui.text(im_str!("pos: {}", player.pose.position));
                 ui.text(im_str!("rot: {}", player.pose.orientation));
                 ui.separator();
-                ui.text(im_str!("mouse: {}", mouse_pos));
-                ui.text(im_str!("mdelta: {}", mdelta));
+                ui.separator();
+                ui.text(im_str!("controls:"));
+                ui.text(im_str!("[f]ly camera"));
+                ui.text(im_str!("f[o]g toggle"));
             });
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
     }

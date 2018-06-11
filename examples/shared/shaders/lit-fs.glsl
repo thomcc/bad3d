@@ -6,6 +6,8 @@ out vec4 color;
 uniform vec3 u_light;
 uniform vec4 u_color;
 
+uniform float u_fog;
+
 const vec3 ambient_color = vec3(0.1, 0.1, 0.1);
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
@@ -24,5 +26,12 @@ void main() {
 
     vec3 c = ambient_color * u_color.rgb + diffuse * u_color.rgb + specular * specular_color;
     c += normal / 10.0;
+
+    if (u_fog > 0.0) {
+        float dist = gl_FragCoord.z / gl_FragCoord.w;// abs(v_viewpos.z);
+        float fog = saturate((u_fog - dist) / u_fog);
+        c = lerp(vec3(0.1, 0.1, 0.1), c, fog);
+    }
+
     color = vec4(max(min(c, vec3(1.0)), vec3(0.0)), u_color.a);
 }

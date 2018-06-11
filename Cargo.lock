@@ -28,6 +28,8 @@ dependencies = [
 name = "bad3d"
 version = "0.1.0"
 dependencies = [
+ "bad3d_core 0.1.0",
+ "bad3d_math 0.1.0",
  "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "glium 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui 0.0.18 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -35,6 +37,22 @@ dependencies = [
  "log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "more-asserts 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "bad3d_core"
+version = "0.1.0"
+dependencies = [
+ "bad3d_math 0.1.0",
+ "log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "more-asserts 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "bad3d_math"
+version = "0.1.0"
+dependencies = [
+ "more-asserts 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

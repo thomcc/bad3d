@@ -1,4 +1,11 @@
-use math::*;
+
+use traits::*;
+use scalar::*;
+use vec::*;
+use mat::*;
+use pose::*;
+use plane::*;
+
 use std::iter;
 
 #[inline]
@@ -125,6 +132,132 @@ pub fn inertia<Tri: TriIndices>(verts: &[V3], tris: &[Tri], com: V3) -> M3x3 {
     mat3(diag.y + diag.z, -offd.z,         -offd.y,
          -offd.z,         diag.x + diag.z, -offd.x,
          -offd.y,         -offd.x,          diag.x + diag.y)
+}
+
+/// returns (sq dist, (pt on line1, t for line1), (pt on line2, t for line2))
+pub fn closest_points_on_lines(line1: (V3, V3), line2: (V3, V3)) -> (f32, (V3, f32), (V3, f32)) {
+    let epsilon = 1.0e-6;
+    let d1 = line1.1 - line1.0;
+    let d2 = line2.1 - line2.0;
+    let r = line1.0 - line2.0;
+    let a = dot(d1, d1);
+    let e = dot(d2, d2);
+
+    if a <= epsilon && e <= epsilon {
+        return (line1.0.dist_sq(line2.0), (line1.0, 0.0), (line2.0, 0.0));
+    }
+    let f = dot(d2, r);
+    let (s, t) = if a <= epsilon {
+        (0.0, clamp01(f / e))
+    } else if e <= epsilon {
+        (clamp01(-dot(d1, r) / a), 0.0)
+    } else {
+        let b = dot(d1, d2);
+        let c = dot(d1, r);
+        let denom = a * e - b * b;
+
+        let s = safe_div(b * f - c * e, denom)
+            .map(clamp01).unwrap_or(0.0);
+
+        let t_nom = b * s + f;
+
+        if t_nom < 0.0 {
+            (clamp01(-c / a), 0.0)
+        } else if t_nom > e {
+            (clamp01((b - c) / a), 1.0)
+        } else {
+            (s, t_nom / e)
+        }
+    };
+    let c1 = line1.0 + d1 * s;
+    let c2 = line2.0 + d2 * t;
+
+    (c1.dist_sq(c2), (c1, s), (c2, t))
+}
+
+pub fn closest_point_on_triangle(p: V3, tri: (V3, V3, V3)) -> V3 {
+    let (a, b, c) = tri;
+    let ab = b - a;
+    let ac = c - a;
+    // Check closest to A
+    let ap = p - a;
+    let d1 = dot(ab, ap);
+    let d2 = dot(ac, ap);
+    if d1 <= 0.0 || d2 <= 0.0 {
+        return a; // bary (1, 0, 0)
+    }
+    // Check closest to B
+    let bp = p - b;
+    let d3 = dot(ab, bp);
+    let d4 = dot(ac, bp);
+    if d3 >= 0.0 && d4 <= d3 {
+        return b; // bary (0, 1, 0)
+    }
+    // Check AB edge
+    let vc = d1 * d4 - d3 * d2;
+    if vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0 {
+        let v = d1 / (d1 - d3);
+        return a + v * ab; // bary (1 - v, v, 0)
+    }
+    // Check closest to C
+    let cp = p - c;
+    let d5 = dot(ab, cp);
+    let d6 = dot(ac, cp);
+    if d6 >= 0.0 && d5 <= d6 {
+        return c; // bary (0, 0, 1)
+    }
+    // Check AC edge
+    let vb = d5 * d2 - d1 * d6;
+    if vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0 {
+        let w = d2 / (d2 - d6);
+        return a + w * ac; // bary (1-w, 0, w)
+    }
+    // Check BC edge
+    let va = d3 * d6 - d5 * d4;
+    let d43 = d4 - d3;
+    let d56 = d5 - d6;
+    if va <= 0.0 && d43 >= 0.0 && d56 >= 0.0 {
+        let w = d43 / (d43 + d56);
+        return b + w * (c - b); // bary (0, 1-w, w)
+    }
+
+    // Inside face
+    let denom = 1.0 / (va + vb + vc);
+    let v = vb * denom;
+    let w = vc * denom;
+    a + ab * v + ac * w
+}
+
+#[inline]
+pub fn sq_dist_pt_segment(p: V3, s: (V3, V3)) -> f32 {
+    let (a, b) = s;
+    let ab = b - a;
+    let ap = p - a;
+    let bp = p - b;
+    let e = dot(ap, ab);
+    if e <= 0.0 {
+        return dot(ap, ap);
+    }
+    let f = dot(ab, ab);
+    if e >= f {
+        dot(bp, bp)
+    } else {
+        dot(ap, ap) - e * e / f
+    }
+}
+
+#[inline]
+pub fn test_sphere_capsule(sphere: (V3, f32), capsule: (V3, V3, f32)) -> bool {
+    let dist2 = sq_dist_pt_segment(sphere.0, (capsule.0, capsule.1));
+    let rad = sphere.1 + capsule.2;
+    dist2 <= rad * rad
+}
+
+#[inline]
+pub fn test_capsule_capsule(c1: (V3, V3, f32), c2: (V3, V3, f32)) -> bool {
+    let (dist2, ..) = closest_points_on_lines((c1.0, c1.1), (c2.0, c2.1));
+    let radius = c1.2 + c2.2;
+    dist2 <= radius * radius
 }
 
 #[derive(Copy, Clone, Default, Debug)]

@@ -1,4 +1,10 @@
-use math::*;
+
+use traits::*;
+use scalar::*;
+use vec::*;
+use quat::*;
+use geom::*;
+
 use std::{fmt, ops, mem};
 
 pub const DEFAULT_PLANE_WIDTH: f32 = 0.0008_f32;
@@ -210,7 +216,6 @@ impl Plane {
     pub fn test(&self, pos: V3) -> PlaneTestResult {
         self.test_e(pos, DEFAULT_PLANE_WIDTH)
     }
-
 }
 
 impl Zero for Plane {

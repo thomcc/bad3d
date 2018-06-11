@@ -1,6 +1,8 @@
 use std::ops::*;
 use std::{self, iter, mem, fmt, slice};
-use math::*;
+use traits::*;
+use scalar::*;
+use mat::*;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]
@@ -320,13 +322,13 @@ impl<T: VecType> VecIter<T> {
         self.e.saturating_sub(self.p)
     }
 
-    #[inline]
-    fn remaining(&self, offset: isize) -> usize {
-        debug_assert_le!(self.e, <T as VecType>::SIZE);
-        let (p, e) = (self.p as isize, self.e as isize);
-        let l = e - (p + offset);
-        if l < 0 { 0 } else { l as usize }
-    }
+    // #[inline]
+    // fn remaining(&self, offset: isize) -> usize {
+    //     debug_assert_le!(self.e, <T as VecType>::SIZE);
+    //     let (p, e) = (self.p as isize, self.e as isize);
+    //     let l = e - (p + offset);
+    //     if l < 0 { 0 } else { l as usize }
+    // }
 
     #[inline]
     unsafe fn raw_get(&self, p: usize) -> f32 {
@@ -344,13 +346,13 @@ impl<T: VecType> VecIter<T> {
         else { self.p = p + post; Some(p) }
     }
 
-    #[inline]
-    fn do_iter_back(&mut self, pre: usize, post: usize) -> Option<usize> {
-        debug_assert_le!(self.e, <T as VecType>::SIZE);
-        let (p, e) = (pre, self.e);
-        if p >= e { self.p = self.e; None }
-        else { self.p = p + post; Some(p) }
-    }
+    // #[inline]
+    // fn do_iter_back(&mut self, pre: usize, post: usize) -> Option<usize> {
+    //     debug_assert_le!(self.e, <T as VecType>::SIZE);
+    //     let (p, e) = (pre, self.e);
+    //     if p >= e { self.p = self.e; None }
+    //     else { self.p = p + post; Some(p) }
+    // }
 }
 
 impl<T: VecType> Iterator for VecIter<T> {

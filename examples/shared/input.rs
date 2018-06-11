@@ -47,6 +47,7 @@ pub struct InputState {
     pub closed: bool,
     pub gui: Rc<RefCell<ImGui>>,
     pub mouse_grabbed: bool,
+    pub dt: f32,
 }
 
 fn init_gui(gui: &mut ImGui) {
@@ -114,6 +115,7 @@ impl InputState {
             closed: false,
             gui,
             mouse_grabbed: false,
+            dt: 1.0 / 60.0,
         }
     }
 
@@ -125,7 +127,11 @@ impl InputState {
 
     #[inline]
     pub fn mouse_delta(&self) -> V2 {
-        self.mouse.pos - self.mouse_prev.pos
+        if self.mouse_grabbed {
+            self.mouse.pos
+        } else {
+            self.mouse.pos - self.mouse_prev.pos
+        }
     }
 
     #[inline]
@@ -135,11 +141,12 @@ impl InputState {
 
     #[inline]
     pub fn scaled_mouse_delta(&self) -> V2 {
-        if self.mouse_grabbed {
-            self.mouse.pos / (self.dims() * 0.5)
-        } else {
-            (self.mouse.pos - self.mouse_prev.pos) / (self.dims() * 0.5)
-        }
+        self.mouse_delta() / (self.dims() * 0.5)
+        // if self.mouse_grabbed {
+        //     self.mouse.pos / (self.dims() * 0.5)
+        // } else {
+        //     (self.mouse.pos - self.mouse_prev.pos) / (self.dims() * 0.5)
+        // }
     }
 
     #[inline]
@@ -157,12 +164,12 @@ impl InputState {
     }
 
     #[inline]
-    pub fn key_down(&self, k: VirtualKeyCode) -> bool {
+    pub fn key_held(&self, k: VirtualKeyCode) -> bool {
         self.key_state(k).down
     }
 
     #[inline]
-    pub fn key_pressed(&self, k: VirtualKeyCode) -> bool {
+    pub fn key_hit(&self, k: VirtualKeyCode) -> bool {
         let s = self.key_state(k);
         s.changed && s.down
     }
@@ -175,8 +182,8 @@ impl InputState {
 
     #[inline]
     pub fn keys_dir(&self, k1: VirtualKeyCode, k2: VirtualKeyCode) -> f32 {
-        let v1 = if self.key_down(k1) { 1 } else { 0 };
-        let v2 = if self.key_down(k2) { 1 } else { 0 };
+        let v1 = if self.key_held(k1) { 1 } else { 0 };
+        let v2 = if self.key_held(k2) { 1 } else { 0 };
         (v2 - v1) as f32
     }
 
@@ -191,20 +198,21 @@ impl InputState {
     }
 
     pub fn shift_down(&self) -> bool {
-        self.key_down(VirtualKeyCode::LShift) ||
-        self.key_down(VirtualKeyCode::RShift)
+        self.key_held(VirtualKeyCode::LShift) ||
+        self.key_held(VirtualKeyCode::RShift)
     }
 
     pub fn ctrl_down(&self) -> bool {
-        self.key_down(VirtualKeyCode::LControl) ||
-        self.key_down(VirtualKeyCode::RControl)
+        self.key_held(VirtualKeyCode::LControl) ||
+        self.key_held(VirtualKeyCode::RControl)
     }
 
-    pub fn update(&mut self, events: &mut EventsLoop, display: &mut Display) -> bool {
+    pub fn update(&mut self, events: &mut EventsLoop, display: &mut Display, dt: f32) -> bool {
         if self.closed {
             return false;
         }
 
+        self.dt = dt;
         self.key_changes.clear();
         let last_pos = self.mouse_prev.pos;
         self.mouse_prev = self.mouse;
@@ -229,14 +237,14 @@ impl InputState {
                     }
                     WindowEvent::KeyboardInput { input, .. } => {
                         let vk = if let Some(kc) = input.virtual_keycode { kc } else { return; };
-                        let was_pressed = input.state == ElementState::Pressed;
-                        self.key_changes.push((vk, was_pressed));
-                        update_keyboard(&mut self.gui.borrow_mut(), vk, was_pressed);
+                        let was_hit = input.state == ElementState::Pressed;
+                        self.key_changes.push((vk, was_hit));
+                        update_keyboard(&mut self.gui.borrow_mut(), vk, was_hit);
                         let mut k = self.key_state_mut(vk);
                         if !k.changed {
-                            k.changed = k.down == was_pressed;
+                            k.changed = k.down != was_hit;
                         }
-                        k.down = was_pressed;
+                        k.down = was_hit;
                     }
                     WindowEvent::CursorMoved { position, .. } => {
                         let pos = vec2(position.0 as f32, position.1 as f32);

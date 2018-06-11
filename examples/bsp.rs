@@ -89,6 +89,7 @@ enum Shape {
     Octahedron(V3),
     Cylinder { sides: usize, r: f32, h: f32 },
     Cone { sides: usize, r: f32, h: f32 },
+    // Sphere { lat: usize, lng: usize, r: f32 },
 }
 
 #[derive(Copy, Debug, Clone)]
@@ -117,6 +118,7 @@ impl SceneObj {
             },
             Shape::Cylinder { sides, r, h } => WingMesh::new_cylinder(sides, r, h),
             Shape::Cone { sides, r, h } => WingMesh::new_cone(sides, r, h),
+            // Shape::Sphere { lat, lng, r } => bad3d::phys::Shape::new_sphere(r, (lat, lng)).into(),
         };
         let faces = mesh.faces();
         SceneObj { shape, pos, mesh, faces, color: object::random_color() }
@@ -154,10 +156,12 @@ impl BspScene {
             objects: vec![
                 (SceneObj::new(Shape::Rect(vec3(1.0, 1.0, 2.4)), vec3(0.0, 0.0, 0.5)),
                  CsgOp::Subtract),
+                (SceneObj::new(Shape::Cylinder { sides: 20, r: 0.6, h: 1.0 }, vec3(0.6, 0.8, 0.2)),
+                 CsgOp::Union),
                 (SceneObj::new(Shape::Octahedron(vec3(0.85, 0.85, 0.85)), vec3(0.8, 0.0, 0.45)),
                  CsgOp::Subtract),
-                (SceneObj::new(Shape::Cylinder { sides: 10, r: 0.6, h: 1.0 }, vec3(0.6, 0.8, 0.2)),
-                 CsgOp::Subtract),
+                // (SceneObj::new(Shape::Sphere { lat: 32, lng: 32, r: 1.0 }, vec3(0.2, 0.1, 0.2)),
+                 // CsgOp::Union),
             ],
             root_obj: SceneObj::new(Shape::Rect(V3::splat(2.0)), V3::zero()),
         }
@@ -266,7 +270,7 @@ pub fn main() -> Result<()> {
         let mut imgui = gui.borrow_mut();
         let mut ui = win.get_ui(&mut *imgui);
         use glium::glutin::{VirtualKeyCode as Key};
-        if win.input.key_pressed(Key::Q) {
+        if win.input.key_hit(Key::Q) {
             win.end_frame()?;
             break;
         }
