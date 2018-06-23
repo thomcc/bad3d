@@ -219,14 +219,15 @@ impl DemoWindow {
         Ok(())
     }
 
-    pub fn draw_wire_mesh(&self, mat: M4x4, mesh: &DemoMesh, color: V4) -> Result<(), Error> {
+    pub fn draw_wire_mesh(&self, mat: M4x4, mesh: &DemoMesh, color: V4, use_depth: bool) -> Result<(), Error> {
         let mut wire = Vec::with_capacity(mesh.tris.len() * 6);
         for tri in &mesh.tris {
             let (v0, v1, v2) = tri.tri_verts(&mesh.verts);
             wire.extend([v0,v1, v1,v2, v2,v0].iter().cloned())
         }
         self.draw_solid(mat, color, &wire,
-                        glium::index::PrimitiveType::LinesList)?;
+                        glium::index::PrimitiveType::LinesList,
+                        use_depth)?;
         Ok(())
     }
 
@@ -275,10 +276,19 @@ impl DemoWindow {
         Ok(())
     }
 
-    pub fn draw_solid(&self, mat: M4x4, color: V4, verts: &[V3], prim_type: glium::index::PrimitiveType) -> Result<(), Error> {
+    pub fn draw_solid(&self, mat: M4x4, color: V4, verts: &[V3], prim_type: glium::index::PrimitiveType, depth: bool) -> Result<(), Error> {
         let vbo = glium::VertexBuffer::new(&self.display, vertex_slice(verts)).unwrap();
         let ibo = glium::index::NoIndices(prim_type);
         let mut target = self.target_mut();
+        let depth_test = if depth {
+            glium::Depth {
+                test: glium::draw_parameters::DepthTest::IfLess,
+                write: true,
+                .. Default::default()
+            }
+        } else {
+            Default::default()
+        };
         target.draw((&vbo,), &ibo, &self.solid_shader,
                 &uniform! {
                     model: mat.to_arr(),
@@ -292,18 +302,19 @@ impl DemoWindow {
                     line_width: Some(2.0),
                     backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
                     blend: glium::Blend::alpha_blending(),
+                    depth: depth_test,
                     .. Default::default()
                 })?;
         Ok(())
     }
 
-    pub fn wm_draw_wireframe(&self, mat: M4x4, color: V4, wm: &WingMesh) -> Result<(), Error> {
+    pub fn wm_draw_wireframe(&self, mat: M4x4, color: V4, wm: &WingMesh, use_depth: bool) -> Result<(), Error> {
         let mut verts = Vec::with_capacity(wm.edges.len()*2);
         for e in &wm.edges {
             verts.push(wm.verts[e.vert_idx()]);
             verts.push(wm.verts[wm.edges[e.next_idx()].vert_idx()]);
         }
-        self.draw_solid(mat, color, &verts[..], glium::index::PrimitiveType::LinesList)?;
+        self.draw_solid(mat, color, &verts[..], glium::index::PrimitiveType::LinesList, use_depth)?;
         Ok(())
     }
 

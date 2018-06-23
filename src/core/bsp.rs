@@ -2,12 +2,12 @@ use math::prelude::*;
 use util::OrdFloat;
 use core::{wingmesh::WingMesh, gjk, support::Support};
 use std::{f32, mem};
-const Q_SNAP: f32 = 0.05;
+const Q_SNAP: f32 = 0.5;
 const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);
 const FUZZY_WIDTH: f32 = 100.0*DEFAULT_PLANE_WIDTH;
 
 // const SOLID_BIAS: bool = false;
-const ALLOW_AXIAL: u8 = 0b001;
+const ALLOW_AXIAL: u8 = 0b111;
 const FACE_TEST_LIMIT: usize = 50;
 
 const OVER: usize = PlaneTestResult::Over as usize;

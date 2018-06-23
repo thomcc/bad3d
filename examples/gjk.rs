@@ -168,18 +168,18 @@ fn main() -> Result<()> {
             }
             let mink_tris = hull::compute_hull(&mut mink_vertices[..]).unwrap().0;
             win.draw_tris(scene_matrix, vec4(1.0, 0.5, 0.5, 0.8), &mink_vertices, Some(&mink_tris), false)?;
-            win.draw_solid(scene_matrix, vec4(1.0, 1.0, 1.0, 1.0), &[V3::zero()], Points)?;
+            win.draw_solid(scene_matrix, vec4(1.0, 1.0, 1.0, 1.0), &[V3::zero()], Points, false)?;
 
             for i in 0..3 {
                 let mut v = V3::zero();
                 v[i] = 1.0;
-                win.draw_solid(scene_matrix, vec4(v[0], v[1], v[2], 1.0), &[-v, v], LinesList)?;
+                win.draw_solid(scene_matrix, vec4(v[0], v[1], v[2], 1.0), &[-v, v], LinesList, false)?;
             }
 
             win.draw_solid(scene_matrix,
                 vec4(1.0f32, 1.0, 1.0, 1.0),
                 &[V3::zero(), hit.plane.normal * hit.separation],
-                LinesList)?;
+                LinesList, false)?;
 
             hit.plane.normal * hit.separation
 
@@ -189,9 +189,9 @@ fn main() -> Result<()> {
 
             let points = [hit.points.0, hit.points.1];
 
-            win.draw_solid(scene_matrix, vec4(1.0, 0.5, 0.5, 1.0), &points, Points)?;
-            win.draw_solid(scene_matrix, vec4(0.5, 0.0, 0.0, 1.0), &hit.simplex, Points)?;
-            win.draw_solid(scene_matrix, vec4(1.0, 0.0, 0.0, 1.0), &points, LinesList)?;
+            win.draw_solid(scene_matrix, vec4(1.0, 0.5, 0.5, 1.0), &points, Points, false)?;
+            win.draw_solid(scene_matrix, vec4(0.5, 0.0, 0.0, 1.0), &hit.simplex, Points, false)?;
+            win.draw_solid(scene_matrix, vec4(1.0, 0.0, 0.0, 1.0), &points, LinesList, false)?;
             hit.impact
         };
 

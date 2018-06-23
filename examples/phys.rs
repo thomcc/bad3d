@@ -300,7 +300,7 @@ fn main() -> Result<()> {
             for mesh in &obj.meshes {
                 win.draw_lit_mesh(model_mat, mesh)?;
                 if is_hovered {
-                    win.draw_wire_mesh(model_mat, mesh, vec4(1.0, 0.0, 0.0, 1.0))?;
+                    win.draw_wire_mesh(model_mat, mesh, vec4(1.0, 0.0, 0.0, 1.0), false)?;
                 }
             }
         }

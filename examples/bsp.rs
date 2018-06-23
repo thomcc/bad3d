@@ -76,6 +76,7 @@ implement_pickable!(DrawMode { Faces, Cells });
 struct UiOptions {
     pub draw_mode: DrawMode,
     pub cell_wireframe: bool,
+    pub cell_wires_respect_depth: bool,
     pub cell_scale: f32,
 
     pub collider_solids: bool,
@@ -88,7 +89,7 @@ enum Shape {
     Octahedron(V3),
     Cylinder { sides: usize, r: f32, h: f32 },
     Cone { sides: usize, r: f32, h: f32 },
-    // Sphere { lat: usize, lng: usize, r: f32 },
+    Sphere { lat: usize, lng: usize, r: f32 },
 }
 
 #[derive(Copy, Debug, Clone)]
@@ -117,7 +118,7 @@ impl SceneObj {
             },
             Shape::Cylinder { sides, r, h } => WingMesh::new_cylinder(sides, r, h),
             Shape::Cone { sides, r, h } => WingMesh::new_cone(sides, r, h),
-            // Shape::Sphere { lat, lng, r } => bad3d::phys::Shape::new_sphere(r, (lat, lng)).into(),
+            Shape::Sphere { lat, lng, r } => WingMesh::new_sphere(r, (lat, lng)),
         };
         let faces = mesh.faces();
         SceneObj { shape, pos, mesh, faces, color: object::random_color() }
@@ -159,8 +160,8 @@ impl BspScene {
                  CsgOp::Union),
                 (SceneObj::new(Shape::Octahedron(vec3(0.85, 0.85, 0.85)), vec3(0.8, 0.0, 0.45)),
                  CsgOp::Subtract),
-                // (SceneObj::new(Shape::Sphere { lat: 32, lng: 32, r: 1.0 }, vec3(0.2, 0.1, 0.2)),
-                 // CsgOp::Union),
+                (SceneObj::new(Shape::Sphere { lat: 8, lng: 8, r: 1.0 }, vec3(0.2, 0.1, 0.2)),
+                 CsgOp::Subtract),
             ],
             root_obj: SceneObj::new(Shape::Rect(V3::splat(2.0)), V3::zero()),
         }
@@ -260,6 +261,7 @@ pub fn main() -> Result<()> {
     let mut ui_opts = UiOptions {
         draw_mode: DrawMode::Faces,
         cell_wireframe: false,
+        cell_wires_respect_depth: false,
         cell_scale: 0.95,
         collider_wires: true,
         collider_solids: false,
@@ -287,10 +289,10 @@ pub fn main() -> Result<()> {
         let render_start = Instant::now();
 
         if ui_opts.collider_wires {
-            win.wm_draw_wireframe(M4x4::identity(), vec4(0.0, 1.0, 0.5, 1.0), &scene.root_obj.mesh)?;
+            win.wm_draw_wireframe(M4x4::identity(), vec4(0.0, 1.0, 0.5, 1.0), &scene.root_obj.mesh, false)?;
             for (obj, _) in scene.objects.iter() {
                 win.wm_draw_wireframe(M4x4::from_translation(obj.pos),
-                                      obj.color, &obj.mesh)?;
+                                      obj.color, &obj.mesh, false)?;
             }
         }
 
@@ -320,7 +322,8 @@ pub fn main() -> Result<()> {
                                       false)?;
                         if ui_opts.cell_wireframe {
                             win.wm_draw_wireframe(M4x4::identity(),
-                                vec4(1.0, 0.0, 1.0, 1.0), &n.convex)?;
+                                vec4(1.0, 0.0, 1.0, 1.0), &n.convex,
+                                ui_opts.cell_wires_respect_depth)?;
                         }
                     }
                     if let Some(ref r) = n.under {
@@ -352,6 +355,9 @@ pub fn main() -> Result<()> {
                 }
                 DrawMode::Cells => {
                     ui.checkbox(im_str!("cell wireframe?"), &mut ui_opts.cell_wireframe);
+                    if ui_opts.cell_wireframe {
+                        ui.checkbox(im_str!("cell wires respect depth?"), &mut ui_opts.cell_wires_respect_depth);
+                    }
                     ui.slider_float(im_str!("cell scale"), &mut ui_opts.cell_scale, 0.1, 1.0).build();
                 }
             }

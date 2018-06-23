@@ -254,6 +254,62 @@ impl WingMesh {
         mesh
     }
 
+    pub fn new_sphere(radius: f32, bands: (usize, usize)) -> Self {
+        use std::f32;
+        assert_gt!(bands.0, 2);
+        assert_gt!(bands.1, 2);
+
+        let mut mesh = WingMesh::with_capacities(
+            bands.0 * bands.1 * 4, bands.0 * bands.1, None);
+
+        let lat_step = f32::consts::PI / (bands.0 as f32);
+        let lng_step = f32::consts::PI * 2.0 / (bands.1 as f32);
+
+
+        for j in 0..(bands.0 - 1) {
+            let polar = ((j + 1) as f32) * lat_step;
+            let (sp, cp) = polar.sin_cos();
+            for i in 0..bands.1 {
+                let az = lng_step * (i as f32);
+                let (sa, ca) = az.sin_cos();
+                mesh.verts.push(vec3(sp * ca, cp, sp * sa) * radius);
+            }
+        }
+
+        let top = mesh.verts.len();
+        mesh.verts.push(vec3(0.0, radius, 0.0));
+
+        let bottom = mesh.verts.len();
+        mesh.verts.push(vec3(0.0, -radius, 0.0));
+
+        for i in 0..bands.1 {
+            let a = i;
+            let b = (i + 1) % bands.1;
+            mesh.add_face(&[top, b, a]);
+        }
+        for j in 0..(bands.0 - 2) {
+            let a_start = j * bands.1;
+            let b_start = (j + 1) * bands.1;
+            for i in 0..bands.1 {
+                let a = a_start + i;
+                let a1 = a_start + ((i + 1) % bands.1);
+                let b = b_start + i;
+                let b1 = b_start + ((i + 1) % bands.1);
+                mesh.add_face(&[a, a1, b1, b]);
+            }
+        }
+
+        for i in 0..bands.1 {
+            let off = bands.1 * (bands.0 - 2);
+            let a = i + off;
+            let b = ((i + 1) % bands.1) + off;
+            mesh.add_face(&[bottom, a, b]);
+        }
+        mesh.finish();
+        mesh
+    }
+
+
     pub fn vertex_degree(&self, v: usize) -> i32 {
         let e0 = self.vback[v];
         let mut result = 0;
@@ -1098,7 +1154,7 @@ impl WingMesh {
             self.crop_to_loop(&l);
         }
         self.debug_assert_valid();
-        assert_gt!(dot(self.faces[0].normal, slice.normal), 0.99);
+        debug_assert_gt!(dot(self.faces[0].normal, slice.normal), 0.99);
         self.faces[0] = slice;
         self
     }

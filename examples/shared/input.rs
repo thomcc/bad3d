@@ -69,6 +69,58 @@ fn init_gui(gui: &mut ImGui) {
     gui.set_imgui_key(ImGuiKey::X, 16);
     gui.set_imgui_key(ImGuiKey::Y, 17);
     gui.set_imgui_key(ImGuiKey::Z, 18);
+    use imgui::{ImVec4, ImVec2, ImGuiCol};
+
+    let style = gui.style_mut();
+    style.child_window_rounding = 3.0;
+    style.window_rounding = 0.0;
+    style.grab_rounding = 0.0;
+    style.scrollbar_rounding = 3.0;
+    style.frame_rounding = 3.0;
+    style.window_title_align = ImVec2::new(0.5, 0.5);
+    style.colors[ImGuiCol::Text as usize]                 = ImVec4::new(0.73, 0.73, 0.73, 1.00);
+    style.colors[ImGuiCol::TextDisabled as usize]         = ImVec4::new(0.50, 0.50, 0.50, 1.00);
+    style.colors[ImGuiCol::WindowBg as usize]             = ImVec4::new(0.26, 0.26, 0.26, 0.95);
+    style.colors[ImGuiCol::ChildWindowBg as usize]        = ImVec4::new(0.28, 0.28, 0.28, 1.00);
+    style.colors[ImGuiCol::PopupBg as usize]              = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::Border as usize]               = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::BorderShadow as usize]         = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::FrameBg as usize]              = ImVec4::new(0.16, 0.16, 0.16, 1.00);
+    style.colors[ImGuiCol::FrameBgHovered as usize]       = ImVec4::new(0.16, 0.16, 0.16, 1.00);
+    style.colors[ImGuiCol::FrameBgActive as usize]        = ImVec4::new(0.16, 0.16, 0.16, 1.00);
+    style.colors[ImGuiCol::TitleBg as usize]              = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::TitleBgCollapsed as usize]     = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::TitleBgActive as usize]        = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::MenuBarBg as usize]            = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::ScrollbarBg as usize]          = ImVec4::new(0.21, 0.21, 0.21, 1.00);
+    style.colors[ImGuiCol::ScrollbarGrab as usize]        = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ScrollbarGrabHovered as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ScrollbarGrabActive as usize]  = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ComboBg as usize]              = ImVec4::new(0.32, 0.32, 0.32, 1.00);
+    style.colors[ImGuiCol::CheckMark as usize]            = ImVec4::new(0.78, 0.78, 0.78, 1.00);
+    style.colors[ImGuiCol::SliderGrab as usize]           = ImVec4::new(0.74, 0.74, 0.74, 1.00);
+    style.colors[ImGuiCol::SliderGrabActive as usize]     = ImVec4::new(0.74, 0.74, 0.74, 1.00);
+    style.colors[ImGuiCol::Button as usize]               = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ButtonHovered as usize]        = ImVec4::new(0.43, 0.43, 0.43, 1.00);
+    style.colors[ImGuiCol::ButtonActive as usize]         = ImVec4::new(0.11, 0.11, 0.11, 1.00);
+    style.colors[ImGuiCol::Header as usize]               = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::HeaderHovered as usize]        = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::HeaderActive as usize]         = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::Separator as usize]            = ImVec4::new(0.39, 0.39, 0.39, 1.00);
+    style.colors[ImGuiCol::SeparatorHovered as usize]     = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::SeparatorActive as usize]      = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::ResizeGrip as usize]           = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ResizeGripHovered as usize]    = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::ResizeGripActive as usize]     = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::CloseButton as usize]          = ImVec4::new(0.59, 0.59, 0.59, 1.00);
+    style.colors[ImGuiCol::CloseButtonHovered as usize]   = ImVec4::new(0.98, 0.39, 0.36, 1.00);
+    style.colors[ImGuiCol::CloseButtonActive as usize]    = ImVec4::new(0.98, 0.39, 0.36, 1.00);
+    style.colors[ImGuiCol::PlotLines as usize]            = ImVec4::new(0.39, 0.39, 0.39, 1.00);
+    style.colors[ImGuiCol::PlotLinesHovered as usize]     = ImVec4::new(1.00, 0.43, 0.35, 1.00);
+    style.colors[ImGuiCol::PlotHistogram as usize]        = ImVec4::new(0.90, 0.70, 0.00, 1.00);
+    style.colors[ImGuiCol::PlotHistogramHovered as usize] = ImVec4::new(1.00, 0.60, 0.00, 1.00);
+    style.colors[ImGuiCol::TextSelectedBg as usize]       = ImVec4::new(0.32, 0.52, 0.65, 1.00);
+    style.colors[ImGuiCol::ModalWindowDarkening as usize] = ImVec4::new(0.20, 0.20, 0.20, 0.50);
 }
 
 fn update_keyboard(imgui: &mut ImGui, vk: VirtualKeyCode, pressed: bool) {

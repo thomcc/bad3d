@@ -995,6 +995,11 @@ pub fn cross(a: V3, b: V3) -> V3 {
 }
 
 #[inline]
+pub fn scalar_triple(a: V3, b: V3, c: V3) -> f32 {
+    a.cross(b).dot(c)
+}
+
+#[inline]
 pub fn max_dir(arr: &[V3], dir: V3) -> Option<V3> {
     match max_dir_index(arr, dir) {
         Some(index) => Some(arr[index]),
