@@ -1,9 +1,9 @@
 
-use traits::*;
-use scalar::*;
-use vec::*;
-use quat::*;
-use geom::*;
+use math::traits::*;
+use math::scalar::*;
+use math::vec::*;
+use math::quat::*;
+use math::geom::*;
 
 use std::{fmt, ops, mem};
 

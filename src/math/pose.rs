@@ -1,8 +1,8 @@
 
-use traits::*;
-use vec::*;
-use quat::*;
-use mat::*;
+use math::traits::*;
+use math::vec::*;
+use math::quat::*;
+use math::mat::*;
 
 use std::ops::*;
 

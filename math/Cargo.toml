@@ -1,8 +1,0 @@
-[package]
-name = "bad3d_math"
-version = "0.1.0"
-authors = ["Thom Chiovoloni <tchiovoloni@mozilla.com>"]
-
-[dependencies]
-more-asserts = "0.2"
-

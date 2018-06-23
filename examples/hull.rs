@@ -18,8 +18,7 @@ mod shared;
 use failure::Error;
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh};
 
-use bad3d::{hull};
-use bad3d::math::*;
+use bad3d::prelude::*;
 use std::{rc::Rc, cell::RefCell};
 
 fn main() -> Result<()> {

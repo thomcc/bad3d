@@ -1,6 +1,6 @@
-use math::*;
-use wingmesh;
-use hull;
+use math::prelude::*;
+use core::wingmesh;
+use core::hull;
 
 #[derive(Debug, Clone, Default)]
 pub struct Shape {
@@ -56,7 +56,7 @@ impl Shape {
 
     pub fn new_sphere(radius: f32, bands: (usize, usize)) -> Self {
         use std::{f32, u16};
-        assert_le!(bands.0 * bands.1 * 4, u16::max_value() as usize);
+        assert_le!(bands.0 * bands.1 * 4, u16::MAX as usize);
         let mut vertices = Vec::with_capacity(bands.0 * bands.1 * 4);
         let mut tris = Vec::with_capacity(bands.0 * bands.1 * 2);
         let lat_step = f32::consts::PI / (bands.0 as f32);
@@ -149,7 +149,7 @@ impl From<wingmesh::WingMesh> for Shape {
 impl From<Shape> for wingmesh::WingMesh {
     #[inline]
     fn from(s: Shape) -> Self {
-        wingmesh::WingMesh::new_mesh(&s.vertices, &s.tris)
+        wingmesh::WingMesh::from_mesh(s.vertices, &s.tris)
     }
 }
 

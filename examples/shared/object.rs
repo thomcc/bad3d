@@ -1,6 +1,5 @@
 
-use bad3d::{hull, wingmesh, phys};
-use bad3d::math::*;
+use bad3d::prelude::*;
 use glium::{self, backend::Facade};
 
 use std::rc::Rc;
@@ -68,7 +67,7 @@ impl DemoMesh {
         Ok(DemoMesh { color, verts, tris, vbo, ibo })
     }
 
-    pub fn from_shape<F: Facade>(display: &F, s: &phys::Shape, color: Option<V4>) -> Result<DemoMesh> {
+    pub fn from_shape<F: Facade>(display: &F, s: &Shape, color: Option<V4>) -> Result<DemoMesh> {
         DemoMesh::new(display, s.vertices.clone(), s.tris.clone(), color.unwrap_or_else(random_color))
     }
 }
@@ -117,7 +116,7 @@ pub fn rand_v3() -> V3 {
 }
 
 pub struct DemoObject {
-    pub body: phys::RigidBodyRef,
+    pub body: RigidBodyRef,
     pub meshes: Vec<Box<DemoMesh>>
 }
 
@@ -126,9 +125,9 @@ pub fn convex_parts(mut v: Vec<V3>) -> (Vec<V3>, Vec<[u16; 3]>) {
     (v, tris)
 }
 
-pub fn convex_shape(v: Vec<V3>) -> phys::Shape {
+pub fn convex_shape(v: Vec<V3>) -> Shape {
     let (v, tris) = convex_parts(v);
-    phys::Shape::new(v, tris)
+    Shape::new(v, tris)
 }
 
 pub fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
@@ -148,20 +147,20 @@ pub fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
 
 impl DemoObject {
     pub fn new_box<F: Facade>(facade: &F, r: V3, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
-        DemoObject::from_shape(facade, phys::Shape::new_box(r), com, orient)
+        DemoObject::from_shape(facade, Shape::new_box(r), com, orient)
     }
 
     pub fn new_octa<F: Facade>(facade: &F, r: V3, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
-        DemoObject::from_shape(facade, phys::Shape::new_octa(r), com, orient)
+        DemoObject::from_shape(facade, Shape::new_octa(r), com, orient)
     }
 
     pub fn new_cloud<F: Facade>(facade: &F, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
         let (verts, tris) = random_point_cloud(15);
-        DemoObject::from_shape(facade, phys::Shape::new(verts, tris), com, orient)
+        DemoObject::from_shape(facade, Shape::new(verts, tris), com, orient)
     }
 
-    pub fn from_shape<F: Facade>(facade: &F, s: phys::Shape, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
-        let body = phys::RigidBody::new_ref(vec![s], com, 1.0);
+    pub fn from_shape<F: Facade>(facade: &F, s: Shape, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
+        let body = RigidBody::new_ref(vec![s], com, 1.0);
         if let Some(p) = orient {
             body.borrow_mut().pose.orientation = p;
             body.borrow_mut().start_pose.orientation = p;
@@ -169,7 +168,7 @@ impl DemoObject {
         DemoObject::from_body(facade, body)
     }
 
-    pub fn from_body<F: Facade>(facade: &F, body: phys::RigidBodyRef) -> Result<DemoObject> {
+    pub fn from_body<F: Facade>(facade: &F, body: RigidBodyRef) -> Result<DemoObject> {
         let color = random_color();
         let meshes = body.borrow().shapes.iter()
             .map(|s| DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), color).map(Box::new))
@@ -177,8 +176,8 @@ impl DemoObject {
         Ok(DemoObject { body, meshes })
     }
 
-    pub fn from_wingmesh<F: Facade>(facade: &F, m: wingmesh::WingMesh, com: V3) -> Result<DemoObject> {
-        let body = phys::RigidBody::new_ref(vec![m.into()], com, 1.0);
+    pub fn from_wingmesh<F: Facade>(facade: &F, m: WingMesh, com: V3) -> Result<DemoObject> {
+        let body = RigidBody::new_ref(vec![m.into()], com, 1.0);
         let meshes = body.borrow().shapes.iter()
             .map(|s| DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), random_color()).map(Box::new))
             .collect::<Result<Vec<_>>>()?;

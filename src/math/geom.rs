@@ -1,12 +1,11 @@
 
-use traits::*;
-use scalar::*;
-use vec::*;
-use mat::*;
-use pose::*;
-use plane::*;
+use math::traits::*;
+use math::scalar::*;
+use math::vec::*;
+use math::mat::*;
+use math::pose::*;
+use math::plane::*;
 
-use std::iter;
 
 #[inline]
 pub fn tri_face_dir(v0: V3, v1: V3, v2: V3) -> V3 {
@@ -89,13 +88,13 @@ fn tri_matrix<T: TriIndices>(tri: T, verts: &[V3]) -> M3x3 {
 }
 
 // does this belong here?
-pub fn volume<Tri: TriIndices>(verts: &[V3], tris: &[Tri]) -> f32 {
+pub fn volume<Idx: TriIndices>(verts: &[V3], tris: &[Idx]) -> f32 {
     (1.0 / 6.0) * tris.iter().fold(0.0, |acc, &tri| {
         acc + tri_matrix(tri, verts).determinant()
     })
 }
 
-pub fn center_of_mass<Tri: TriIndices>(verts: &[V3], tris: &[Tri]) -> V3 {
+pub fn center_of_mass<Idx: TriIndices>(verts: &[V3], tris: &[Idx]) -> V3 {
     let (com, vol) = tris.iter().fold((V3::zero(), 0.0), |(acom, avol), &tri| {
         let m = tri_matrix(tri, verts);
         let vol = m.determinant();
@@ -105,7 +104,7 @@ pub fn center_of_mass<Tri: TriIndices>(verts: &[V3], tris: &[Tri]) -> V3 {
     com / (vol * 4.0)
 }
 
-pub fn inertia<Tri: TriIndices>(verts: &[V3], tris: &[Tri], com: V3) -> M3x3 {
+pub fn inertia<Idx: TriIndices>(verts: &[V3], tris: &[Idx], com: V3) -> M3x3 {
     let mut volume = 0.0f32;
     let mut diag = V3::zero();
     let mut offd = V3::zero();
@@ -175,8 +174,7 @@ pub fn closest_points_on_lines(line1: (V3, V3), line2: (V3, V3)) -> (f32, (V3, f
     (c1.dist_sq(c2), (c1, s), (c2, t))
 }
 
-pub fn closest_point_on_triangle(p: V3, tri: (V3, V3, V3)) -> V3 {
-    let (a, b, c) = tri;
+pub fn closest_point_on_triangle(a: V3, b: V3, c: V3, p: V3) -> V3 {
     let ab = b - a;
     let ac = c - a;
     // Check closest to A
@@ -377,99 +375,4 @@ pub fn tangent_point_on_cylinder(r: f32, h: f32, n: V3) -> V3 {
          r * n.y * xy_inv,
          // Reference point is at cyl. base. use h/2 and -h/2 for midpt
          if n.z > 0.0 { h } else { 0.0 })
-}
-
-#[derive(Debug, Clone)]
-pub struct TriIter<'a, V: 'a, I> {
-    verts: &'a [V],
-    wrapped: I,
-}
-
-impl<'a, Tri: TriIndices, V, I: Iterator<Item = Tri>> TriIter<'a, V, I> {
-    #[inline]
-    pub fn new(vs: &'a [V], iter: I) -> Self {
-        Self { verts: vs, wrapped: iter }
-    }
-}
-
-impl<'a, Tri: TriIndices, V: Clone, I: Iterator<Item = Tri> + 'a> TriIter<'a, V, I> {
-    #[inline]
-    pub fn copied(self) -> impl Iterator<Item = (V, V, V)> + 'a {
-        self.map(|(a, b, c)| (a.clone(), b.clone(), c.clone()))
-    }
-}
-
-#[inline]
-pub fn de_index<V: Clone, I: TriIndices>(verts: &[V], tris: &[I]) -> Vec<(V, V, V)> {
-    tri_iter(verts, tris).collect()
-}
-
-#[inline]
-pub fn tri_ref_iter<'a, 'b, V, I: TriIndices>(verts: &'a [V], tris: &'b [I])
--> TriIter<'a, V, impl Iterator<Item = I> + 'b>
-{
-    TriIter::new(verts, tris.iter().cloned())
-}
-
-#[inline]
-pub fn tri_iter<'a, V: Clone, I: TriIndices>(verts: &'a [V], tris: &'a [I])
-    -> impl Iterator<Item = (V, V, V)> + 'a
-{
-    TriIter::new(verts, tris.iter().cloned()).copied()
-}
-
-impl<'a, Vert, Tri, Iter> Iterator for TriIter<'a, Vert, Iter>
-where
-    Tri: TriIndices,
-    Iter: Iterator<Item = Tri>
-{
-    type Item = (&'a Vert, &'a Vert, &'a Vert);
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.wrapped.next().map(|tri| tri.tri_vert_ref(self.verts))
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.wrapped.size_hint()
-    }
-
-    #[inline]
-    fn count(self) -> usize {
-        self.wrapped.count()
-    }
-
-    #[inline]
-    fn last(self) -> Option<Self::Item> {
-        let TriIter { wrapped, verts } = self;
-        wrapped.last().map(|tri| tri.tri_vert_ref(verts))
-    }
-
-    #[inline]
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.wrapped.nth(n).map(|tri| tri.tri_vert_ref(self.verts))
-    }
-}
-
-impl<'a, Vert, Tri, Iter> iter::ExactSizeIterator for TriIter<'a, Vert, Iter>
-where
-    Tri: TriIndices,
-    Iter: Iterator<Item = Tri> + iter::ExactSizeIterator
-{
-    #[inline]
-    fn len(&self) -> usize {
-        self.wrapped.len()
-    }
-}
-
-impl<'a, Vert, Tri, Iter> iter::DoubleEndedIterator for TriIter<'a, Vert, Iter>
-where
-    Tri: TriIndices,
-    Iter: Iterator<Item = Tri> + iter::DoubleEndedIterator
-{
-    #[inline]
-    fn next_back(&mut self) -> Option<<Self as Iterator>::Item> {
-        self.wrapped.next_back().map(|tri| tri.tri_vert_ref(self.verts))
-    }
 }

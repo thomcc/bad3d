@@ -1,7 +1,5 @@
-use math::*;
-use hull;
-use std::default::Default;
-use support::{TransformedSupport, Support};
+use math::prelude::*;
+use core::{hull, support::{TransformedSupport, Support}};
 use std::f32;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -355,12 +353,12 @@ impl ContactPatch {
         let roll_axes = [tan, bit, -tan, -bit];
         for &raxis in &roll_axes {
             let wiggle_angle = 4.0f32.to_radians();
-            let wiggle = Quat::from_axis_angle(raxis, wiggle_angle).must_norm(); //Quat(V4::expand(raxis * (wiggle_angle * 0.5).sin(), 1.0).must_norm());
+            let wiggle = Quat::from_axis_angle(raxis, wiggle_angle).must_norm();
             let pivot = result.hit_info[0].points.0;
-            let ar = pose::Pose::new(n * 0.2, quat(0.0, 0.0, 0.0, 1.0)) *
-                     pose::Pose::new(-pivot, quat(0.0, 0.0, 0.0, 1.0)) *
-                     pose::Pose::new(vec3(0.0, 0.0, 0.0), wiggle) *
-                     pose::Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
+            let ar = Pose::new(n * 0.2, quat(0.0, 0.0, 0.0, 1.0)) *
+                     Pose::new(-pivot, quat(0.0, 0.0, 0.0, 1.0)) *
+                     Pose::new(vec3(0.0, 0.0, 0.0), wiggle) *
+                     Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
 
             let mut next = separated(
                 &TransformedSupport { pose: ar, object: s0 },
@@ -396,5 +394,3 @@ impl ContactPatch {
         result
     }
 }
-
-

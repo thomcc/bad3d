@@ -1,9 +1,7 @@
-use math::*;
-use wingmesh::WingMesh;
+use math::prelude::*;
 use util::OrdFloat;
+use core::{wingmesh::WingMesh, gjk, support::Support};
 use std::{f32, mem};
-use gjk;
-use support::Support;
 const Q_SNAP: f32 = 0.05;
 const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);
 const FUZZY_WIDTH: f32 = 100.0*DEFAULT_PLANE_WIDTH;
@@ -833,7 +831,7 @@ fn hit_check_bevel_cylinder(
             return None;
         }
     }
-    Some(HitInfo::new(v0, nv0))
+    Some(geom::HitInfo::new(v0, nv0))
 }
 
 pub struct BspHitInfo<'tree> {
@@ -1182,7 +1180,7 @@ impl Face {
         for (i, &v0) in self.vertex.iter().enumerate() {
             let i1 = (i+1)% self.vertex.len();
             let v1 = self.vertex[i1];
-            let d = line_project(v0, v1, point).dist(point);
+            let d = geom::line_project(v0, v1, point).dist(point);
             if closest == -1 || d < min_d {
                 closest = i as isize;
                 min_d = d;

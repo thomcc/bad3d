@@ -1,15 +1,14 @@
-use math::*;
+use math::prelude::*;
 
-use gjk;
-use support::{TransformedSupport};
+use core::{gjk, shape, support::TransformedSupport};
+
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 use std::f32;
-use shape;
 
-pub use shape::Shape;
+pub use core::shape::Shape;
 
 pub const RESTITUTION: f32 = 0.4;
 pub const GRAVITY: V3 = V3 { x: 0.0, y: 0.0, z: -10.0 };

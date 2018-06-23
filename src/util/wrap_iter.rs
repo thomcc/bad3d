@@ -15,6 +15,7 @@ pub struct TripleIndices {
 impl PairIndices {
     #[inline] pub fn len(&self) -> usize { self.end.wrapping_sub(self.pos) }
 }
+
 impl TripleIndices {
     #[inline] pub fn len(&self) -> usize { self.end.wrapping_sub(self.pos) }
 }

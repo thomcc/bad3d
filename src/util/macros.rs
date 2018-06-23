@@ -1,4 +1,3 @@
-use std::{cmp, fmt};
 
 #[macro_export]
 macro_rules! warn_if {
@@ -48,24 +47,6 @@ macro_rules! min {
     ($a:expr, $b:expr, $($rest:expr),+) => (min!($a, min!($b, $($rest),+)))
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub struct OrdFloat(pub f32);
-// TODO Hash?
-impl cmp::Eq for OrdFloat {}
-impl cmp::Ord for OrdFloat {
-    #[inline]
-    fn cmp(&self, o: &Self) -> cmp::Ordering {
-        self.partial_cmp(o).unwrap_or(cmp::Ordering::Equal)
-    }
-}
-
-impl fmt::Display for OrdFloat {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     #[test]
@@ -80,5 +61,4 @@ mod tests {
         assert_eq!(max!(4.0, -1.0, 52.0, 5.0), 52.0);
         assert_eq!(max!(-0.4, -1.0, -2.0, -5.0), -0.4);
     }
-
 }

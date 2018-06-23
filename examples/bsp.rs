@@ -21,14 +21,13 @@ mod shared;
 
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
 
-use bad3d::{hull, bsp, gjk, wingmesh::WingMesh, phys::{self, RigidBody, RigidBodyRef}};
-use bad3d::math::*;
+use bad3d::prelude::*;//{hull, bsp, gjk, wingmesh::WingMesh, phys::{self, RigidBody, RigidBodyRef}};
+// use bad3d::math::*;
 use std::rc::Rc;
 use std::f32;
 use std::fmt::Debug;
 use std::cell::RefCell;
 use std::time::{Instant, Duration};
-use bsp::BspNode;
 
 pub trait PickableEnum: Debug + Clone + PartialEq {
     fn variants() -> Vec<Self>;

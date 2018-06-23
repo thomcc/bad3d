@@ -23,8 +23,7 @@ use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, inpu
 use shared::cam::*;
 
 use glium::glutin::{VirtualKeyCode as Key};
-use bad3d::{hull, gjk, wingmesh::WingMesh, phys::{self, Shape, RigidBody, RigidBodyRef}, bsp::{self, BspNode}};
-use bad3d::math::*;
+use bad3d::prelude::*;
 use std::rc::Rc;
 use std::{f32, u16};
 use std::time::Instant;

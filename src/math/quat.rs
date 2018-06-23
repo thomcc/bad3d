@@ -1,7 +1,7 @@
-use vec::*;
-use mat::*;
-use traits::*;
-use plane::*;
+use math::vec::*;
+use math::mat::*;
+use math::traits::*;
+use math::plane::*;
 
 use std::ops::*;
 use std::{mem, fmt, f32};

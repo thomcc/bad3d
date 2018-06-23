@@ -1,4 +1,4 @@
-use traits::*;
+use math::traits::*;
 
 impl ApproxEq for f32 {
     #[inline]

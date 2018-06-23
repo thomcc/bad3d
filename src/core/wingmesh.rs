@@ -1,8 +1,8 @@
-use math::*;
+use math::prelude::*;
 use std::{i32, u16};
 use std::f32;
-use support;
-use bsp;
+use core::support;
+use core::bsp;
 // TODO: this is a gnarly mess
 
 #[derive(Copy, Clone, Debug)]
@@ -95,6 +95,15 @@ impl<'a> Iterator for FaceViewIterator<'a> {
 impl WingMesh {
 
     #[inline]
+    pub fn with_capacities(verts: impl Into<Option<usize>>,
+                           faces: impl Into<Option<usize>>,
+                           edges: impl Into<Option<usize>>) -> Self {
+        let mut wm = WingMesh::new();
+        wm.reserve(verts, faces, edges);
+        wm
+    }
+
+    #[inline]
     pub fn new() -> WingMesh {
         WingMesh {
             edges: Vec::new(),
@@ -104,6 +113,16 @@ impl WingMesh {
             fback: Vec::new(),
             is_packed: true,
         }
+    }
+
+    #[inline]
+    pub fn reserve(&mut self,
+                   verts: impl Into<Option<usize>>,
+                   faces: impl Into<Option<usize>>,
+                   edges: impl Into<Option<usize>>) {
+        if let Some(vs) = verts.into() { self.verts.reserve(vs); self.vback.reserve(vs); }
+        if let Some(fs) = faces.into() { self.faces.reserve(fs); self.fback.reserve(fs); }
+        if let Some(es) = edges.into() { self.edges.reserve(es); }
     }
 
     #[inline]
@@ -127,6 +146,10 @@ impl WingMesh {
     }
 
     pub fn new_mesh(verts: &[V3], tris: &[[u16; 3]]) -> WingMesh {
+        WingMesh::from_mesh(verts.into(), tris)
+    }
+
+    pub fn from_mesh(verts: Vec<V3>, tris: &[[u16; 3]]) -> WingMesh {
         let mut m = WingMesh::new();
         if tris.is_empty() {
             return m;
@@ -135,14 +158,18 @@ impl WingMesh {
         let vc = 1 + tris.iter().fold(0, |a, b| max!(a, b[0], b[1], b[2])) as usize;
         assert_le!(vc, verts.len());
 
-        m.verts = Vec::from(&verts[..vc]);
+        m.verts = verts;
+        m.verts.truncate(vc);
+        m.vback.reserve(m.verts.len());
 
         m.faces.reserve(tris.len());
+        m.fback.reserve(tris.len());
+        m.edges.reserve(tris.len() * 3);
 
         for (i, t) in tris.iter().enumerate() {
-            let mut e0: HalfEdge = Default::default();
-            let mut e1: HalfEdge = Default::default();
-            let mut e2: HalfEdge = Default::default();
+            let mut e0 = HalfEdge::default();
+            let mut e1 = HalfEdge::default();
+            let mut e2 = HalfEdge::default();
             let f = int(i);
 
             e0.face = f;
@@ -162,13 +189,11 @@ impl WingMesh {
             e1.id = k1; e2.prev = k1; e0.next = k1;
             e2.id = k2; e0.prev = k2; e1.next = k2;
 
-            m.edges.push(e0);
-            m.edges.push(e1);
-            m.edges.push(e2);
+            m.edges.extend(&[e0, e1, e2]);
 
-            m.faces.push(Plane::from_tri(verts[t[0] as usize],
-                                         verts[t[1] as usize],
-                                         verts[t[2] as usize]));
+            m.faces.push(Plane::from_tri(m.verts[t[0] as usize],
+                                         m.verts[t[1] as usize],
+                                         m.verts[t[2] as usize]));
         }
 
         m.finish();
@@ -180,10 +205,10 @@ impl WingMesh {
 
         for i in 0..sides {
             let progress = (i as f32) / (sides as f32);
-            let a = 2.0*f32::consts::PI*progress;
+            let a = 2.0 * f32::consts::PI * progress;
             let (s, c) = (a.sin(), a.cos());
-            mesh.verts.push(vec3(c*radius, s*radius, 0.0));
-            mesh.verts.push(vec3(c*radius, s*radius, height));
+            mesh.verts.push(vec3(c * radius, s * radius, 0.0));
+            mesh.verts.push(vec3(c * radius, s * radius, height));
         }
 
         for i in 0..sides {
@@ -228,56 +253,6 @@ impl WingMesh {
         mesh.finish();
         mesh
     }
-
-    // pub fn new_sphere(bands: (usize, usize), radius: f32) -> WingMesh {
-    //     let mut mesh = WingMesh::new();
-    //     let lat_step = f32::consts::PI / (bands.0 as f32);
-    //     let lng_step = f32::consts::PI * 2.0 / (bands.1 as f32);
-
-    //     for i in 0..bands.0 {
-    //         let lat_angle = (i as f32) * lat_step;
-    //         let (lat_sin, y1) = lat_angle.sin_cos();
-    //         let (lat_sin2, y2) = (lat_angle + lat_step).sin_cos();
-
-    //         for j in 0..bands.1 {
-    //             let lng_angle = (j as f32) * lng_step;
-    //             let (lng_sin, lng_cos) = lng_angle.sin_cos();
-    //             let (lng_sin2, lng_cos2) = (lng_angle + lng_step).sin_cos();
-
-    //             let x1 = lat_sin * lng_cos;
-    //             let x2 = lat_sin * lng_cos2;
-    //             let x3 = lat_sin2 * lng_cos;
-    //             let x4 = lat_sin2 * lng_cos2;
-
-    //             let z1 = lat_sin * lng_sin;
-    //             let z2 = lat_sin * lng_sin2;
-    //             let z3 = lat_sin2 * lng_sin;
-    //             let z4 = lat_sin2 * lng_sin2;
-
-    //             // texcoords
-    //             // let u1 = 1.0 - (j as f32) / (bands.1 as f32);
-    //             // let u2 = 1.0 - (j as f32 + 1.0) / (bands.1 as f32);
-
-    //             // let v1 = 1.0 - (i as f32) / (bands.0 as f32);
-    //             // let v2 = 1.0 - (i as f32 + 1.0) / (bands.0 as f32);
-
-    //             let k = mesh.verts.len();
-    //             // XXX is this planar? if so use one quad below and not two tris
-    //             mesh.verts.extend(&[
-    //                 // normals are same without * radius
-    //                 vec3(x1, y1, z1) * radius,
-    //                 vec3(x2, y1, z2) * radius,
-    //                 vec3(x3, y2, z3) * radius,
-    //                 vec3(x4, y2, z4) * radius,
-    //             ]);
-
-    //             mesh.add_face(&[k, k + 1, k + 2, k + 3]);
-    //             // mesh.add_face(&[k + 2, k + 1, k + 3]);
-    //         }
-    //     }
-    //     mesh.finish();
-    //     mesh
-    // }
 
     pub fn vertex_degree(&self, v: usize) -> i32 {
         let e0 = self.vback[v];

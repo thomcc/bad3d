@@ -3,8 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use bad3d;
-use bad3d::math::*;
+use bad3d::{self, prelude::*};
 
 use imgui::{ImGui, ImGuiKey, Ui};
 use shared::DemoWindow;

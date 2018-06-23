@@ -1,4 +1,4 @@
-use math::*;
+use math::prelude::*;
 
 pub trait Support {
     fn support(&self, V3) -> V3;
@@ -11,7 +11,7 @@ pub struct TransformedSupport<'a, T: 'a + Support + ?Sized> {
 
 impl<'a, T: Support> TransformedSupport<'a, T> {
     #[inline]
-    pub fn new(pose: pose::Pose, object: &'a T) -> TransformedSupport<'a, T> {
+    pub fn new(pose: Pose, object: &'a T) -> TransformedSupport<'a, T> {
         TransformedSupport { pose, object }
     }
 }

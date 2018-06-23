@@ -16,8 +16,7 @@ extern crate imgui_glium_renderer;
 mod shared;
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject};
 
-use bad3d::{hull, gjk};
-use bad3d::math::*;
+use bad3d::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -143,7 +142,7 @@ fn main() -> Result<()> {
                 win.input.mouse.vec) * q;
         }
 
-        let scene_matrix = pose::Pose::from_rotation(model_orientation).to_mat4();
+        let scene_matrix = Pose::from_rotation(model_orientation).to_mat4();
 
         test_state.regen();
         let hit = gjk::separated(&&test_state.a_verts[..],

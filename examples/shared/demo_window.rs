@@ -1,5 +1,4 @@
 
-use bad3d::{WingMesh, bsp::Face};
 use shared::{object::{DemoMesh, vertex_slice, unpack_arr3}, input::InputState};
 use failure::Error;
 
@@ -8,7 +7,7 @@ use std::rc::Rc;
 use std::cell::{RefCell, Ref, RefMut};
 use imgui_glium_renderer::Renderer;
 
-use bad3d::math::*;
+use bad3d::{prelude::*, bsp::Face};
 use imgui::{self, Ui};
 use std::fmt::Write;
 

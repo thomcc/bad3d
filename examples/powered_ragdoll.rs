@@ -16,8 +16,7 @@ extern crate imgui_glium_renderer;
 mod shared;
 use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject};
 
-use bad3d::phys;
-use bad3d::math::*;
+use bad3d::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -63,8 +62,8 @@ fn main() -> Result<()> {
         clear_color: vec4(0.5, 0.6, 1.0, 1.0),
         .. Default::default()
     }, Rc::new(RefCell::new(imgui::ImGui::init())))?;
-    let phys::Shape { vertices: ground_verts, tris: ground_tris } =
-        phys::Shape::new_aabb(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
+    let Shape { vertices: ground_verts, tris: ground_tris } =
+        Shape::new_aabb(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
 
     let ground_mesh = Box::new(DemoMesh::new(&window.display,
         ground_verts.clone(), ground_tris, vec4(0.25, 0.75, 0.25, 1.0))?);

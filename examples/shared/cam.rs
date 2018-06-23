@@ -1,5 +1,5 @@
 
-use bad3d::{self, math::*};
+use bad3d::{self, prelude::*};
 use shared::input;
 use glium::glutin::{VirtualKeyCode as Key};
 
