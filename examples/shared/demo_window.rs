@@ -103,7 +103,10 @@ impl DemoWindow {
 
         let window = WindowBuilder::new()
             .with_title(opts.title)
-            .with_min_dimensions(opts.window_size.0, opts.window_size.1);
+            .with_min_dimensions(glium::glutin::dpi::LogicalSize {
+                width: opts.window_size.0 as f64,
+                height: opts.window_size.1 as f64
+            });
 
         let events = EventsLoop::new();
 
@@ -154,20 +157,19 @@ impl DemoWindow {
     }
 
     pub fn grab_cursor(&mut self) {
-        use glium::glutin::CursorState;
+        // use glium::glutin::CursorState;
         let gl_window = self.display.gl_window();
         if !self.grabbed_cursor {
             self.grabbed_cursor = true;
             self.input.mouse_grabbed = true;
-
-            gl_window.set_cursor_state(CursorState::Hide)
-                     .ok().expect("Could not grab mouse cursor");
+            gl_window.hide_cursor(true);//.ok().expect("Could not grab mouse cursor");
         }
-        let dpi = gl_window.hidpi_factor();
-        let dims = self.input.dims() / dpi;
-        gl_window.set_cursor_position((dims.x / 2.0).trunc() as i32,
-                                      (dims.y / 2.0).trunc() as i32)
-            .ok().expect("Could not set mouse cursor position");
+        // let dpi = gl_window.hidpi_factor();
+        let dims = self.input.dims();// / dpi;
+        gl_window.set_cursor_position(glium::glutin::dpi::LogicalPosition {
+            x: (dims.x / 2.0).trunc() as f64,
+            y: (dims.y / 2.0).trunc() as f64,
+        }).ok().expect("Could not set mouse cursor position");
 
     }
 
@@ -182,12 +184,10 @@ impl DemoWindow {
     }
 
     pub fn ungrab_cursor(&mut self) {
-        use glium::glutin::CursorState;
+        // use glium::glutin::CursorState;
         self.grabbed_cursor = false;
         self.input.mouse_grabbed = false;
-        self.display.gl_window()
-                    .set_cursor_state(CursorState::Normal)
-                    .ok().expect("Could not ungrab mouse cursor");
+        self.display.gl_window().hide_cursor(false);
     }
 
     pub fn draw_lit_mesh(&self, mat: M4x4, mesh: &DemoMesh) -> Result<(), Error> {
@@ -361,11 +361,17 @@ impl DemoWindow {
         let gl_window = self.display.gl_window();
         // let size_points = gl_window.get_inner_size_points().unwrap();
         // let size_pixels = gl_window.get_inner_size_pixels().unwrap();
-        let dpi = gl_window.hidpi_factor();
+        // let dpi = gl_window.hidpi_factor();
+        // let size = gl_window.get_inner_size().unwrap();
+        // let size_points = ((size.width as f32) as u32,
+                           // (size.height as f32) as u32);
         let size = gl_window.get_inner_size().unwrap();
-        let size_points = ((size.0 as f32 * dpi) as u32,
-                           (size.1 as f32 * dpi) as u32);
-        gui.frame(size, size_points, self.last_frame_time)
+        let hidpi_factor = gl_window.get_hidpi_factor();
+        let frame_size = imgui::FrameSize {
+            logical_size: (size.width, size.height),
+            hidpi_factor
+        };
+        gui.frame(frame_size, self.last_frame_time)
     }
 
     // pub fn ui<F: FnMut(&Ui) -> Result<(), Error>>(&self, mut ui_callback: F) -> Result<(), Error> {

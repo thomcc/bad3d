@@ -72,7 +72,7 @@ fn init_gui(gui: &mut ImGui) {
     use imgui::{ImVec4, ImVec2, ImGuiCol};
 
     let style = gui.style_mut();
-    style.child_window_rounding = 3.0;
+    // style.child_window_rounding = 3.0;
     style.window_rounding = 0.0;
     style.grab_rounding = 0.0;
     style.scrollbar_rounding = 3.0;
@@ -81,7 +81,7 @@ fn init_gui(gui: &mut ImGui) {
     style.colors[ImGuiCol::Text as usize]                 = ImVec4::new(0.73, 0.73, 0.73, 1.00);
     style.colors[ImGuiCol::TextDisabled as usize]         = ImVec4::new(0.50, 0.50, 0.50, 1.00);
     style.colors[ImGuiCol::WindowBg as usize]             = ImVec4::new(0.26, 0.26, 0.26, 0.95);
-    style.colors[ImGuiCol::ChildWindowBg as usize]        = ImVec4::new(0.28, 0.28, 0.28, 1.00);
+    // style.colors[ImGuiCol::ChildWindowBg as usize]        = ImVec4::new(0.28, 0.28, 0.28, 1.00);
     style.colors[ImGuiCol::PopupBg as usize]              = ImVec4::new(0.26, 0.26, 0.26, 1.00);
     style.colors[ImGuiCol::Border as usize]               = ImVec4::new(0.26, 0.26, 0.26, 1.00);
     style.colors[ImGuiCol::BorderShadow as usize]         = ImVec4::new(0.26, 0.26, 0.26, 1.00);
@@ -96,7 +96,7 @@ fn init_gui(gui: &mut ImGui) {
     style.colors[ImGuiCol::ScrollbarGrab as usize]        = ImVec4::new(0.36, 0.36, 0.36, 1.00);
     style.colors[ImGuiCol::ScrollbarGrabHovered as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
     style.colors[ImGuiCol::ScrollbarGrabActive as usize]  = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ComboBg as usize]              = ImVec4::new(0.32, 0.32, 0.32, 1.00);
+    // style.colors[ImGuiCol::ComboBg as usize]              = ImVec4::new(0.32, 0.32, 0.32, 1.00);
     style.colors[ImGuiCol::CheckMark as usize]            = ImVec4::new(0.78, 0.78, 0.78, 1.00);
     style.colors[ImGuiCol::SliderGrab as usize]           = ImVec4::new(0.74, 0.74, 0.74, 1.00);
     style.colors[ImGuiCol::SliderGrabActive as usize]     = ImVec4::new(0.74, 0.74, 0.74, 1.00);
@@ -277,11 +277,11 @@ impl InputState {
         events.poll_events(|ev| {
             if let Event::WindowEvent { event, .. } = ev {
                 match event {
-                    WindowEvent::Closed => {
+                    WindowEvent::CloseRequested => {
                         self.closed = true;
                     }
-                    WindowEvent::Resized(w, h) => {
-                        self.size = (w, h);
+                    WindowEvent::Resized(glium::glutin::dpi::LogicalSize { width, height }) => {
+                        self.size = (width as u32, height as u32);
                     }
                     WindowEvent::Focused(true) => {
                         self.keys.clear()
@@ -298,14 +298,17 @@ impl InputState {
                         k.down = was_hit;
                     }
                     WindowEvent::CursorMoved { position, .. } => {
-                        let pos = vec2(position.0 as f32, position.1 as f32);
+                        let pos = vec2(position.x as f32, position.y as f32);
                         if self.mouse_grabbed {
                             let gl_window = display.gl_window();
-                            let dpi = gl_window.hidpi_factor();
+                            // let dpi = gl_window.get_hidpi_factor();
                             let dims = self.dims();
-                            let dpi_dims = dims / dpi;
-                            gl_window.set_cursor_position((dpi_dims.x / 2.0).trunc() as i32,
-                                                          (dpi_dims.y / 2.0).trunc() as i32)
+                            // let dpi_dims = dims / dpi;
+                            gl_window.set_cursor_position(
+                                glium::glutin::dpi::LogicalPosition {
+                                    x: (dims.x / 2.0).trunc() as f64,
+                                    y: (dims.y / 2.0).trunc() as f64,
+                                })
                                 .ok().expect("Could not set mouse cursor position");
                             self.mouse.pos = pos - last_pos;
                             self.mouse_prev.pos = dims / 2.0;
@@ -331,8 +334,8 @@ impl InputState {
                             MouseScrollDelta::LineDelta(_, y) => {
                                 self.mouse.wheel = y * 10.0;
                             }
-                            MouseScrollDelta::PixelDelta(_, y) => {
-                                self.mouse.wheel = y;
+                            MouseScrollDelta::PixelDelta(pos) => {
+                                self.mouse.wheel = pos.y as f32;
                             }
                         }
                     }
@@ -342,11 +345,12 @@ impl InputState {
         });
         if !moved_mouse && self.mouse_grabbed {
             let gl_window = display.gl_window();
-            let dpi = gl_window.hidpi_factor();
-            let dims = self.dims() / dpi;
-            gl_window.set_cursor_position((dims.x / 2.0).trunc() as i32,
-                                          (dims.y / 2.0).trunc() as i32)
-                     .ok().expect("Could not set mouse cursor position");
+            // let dpi = gl_window.get_hidpi_factor();
+            let dims = self.dims();// / dpi;
+            gl_window.set_cursor_position(glium::glutin::dpi::LogicalPosition {
+                x: (dims.x / 2.0).trunc() as f64,
+                y: (dims.y / 2.0).trunc() as f64
+            }).ok().expect("Could not set mouse cursor position");
             self.mouse.pos = vec2(0.0, 0.0);
             self.mouse_prev.pos = self.dims() / 2.0;
         }
@@ -358,10 +362,10 @@ impl InputState {
         gui.set_mouse_pos(self.mouse.pos.x / scale.0,
                           self.mouse.pos.y / scale.1);
 
-        gui.set_mouse_down(&[self.mouse.down.0,
-                             self.mouse.down.1,
-                             self.mouse.down.2,
-                             false, false]);
+        gui.set_mouse_down([self.mouse.down.0,
+                            self.mouse.down.1,
+                            self.mouse.down.2,
+                            false, false]);
 
         gui.set_mouse_wheel(self.mouse.wheel / scale.1);
 
