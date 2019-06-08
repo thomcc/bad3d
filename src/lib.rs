@@ -1,4 +1,4 @@
-#![allow(dead_code, unstable_name_collision)]
+#![allow(dead_code, unstable_name_collisions)]
 // XXX unstable_name_collision is for `clamp` :(
 
 #[macro_use]
@@ -13,4 +13,4 @@ mod core;
 pub mod math;
 pub mod prelude;
 
-pub use core::*;
+pub use crate::core::*;

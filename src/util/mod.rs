@@ -5,7 +5,7 @@ mod macros;
 
 mod wrap_iter;
 
-pub use util::wrap_iter::*;
+pub use crate::util::wrap_iter::*;
 
 #[inline]
 pub fn some_if<T>(cond: bool, val: T) -> Option<T> {

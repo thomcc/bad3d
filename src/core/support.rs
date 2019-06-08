@@ -1,7 +1,7 @@
-use math::prelude::*;
+use crate::math::prelude::*;
 
 pub trait Support {
-    fn support(&self, V3) -> V3;
+    fn support(&self, _: V3) -> V3;
 }
 
 pub struct TransformedSupport<'a, T: 'a + Support + ?Sized> {

@@ -1,6 +1,6 @@
-use math::vec::*;
-use math::traits::*;
-use math::quat::*;
+use crate::math::vec::*;
+use crate::math::traits::*;
+use crate::math::quat::*;
 use std::{ops::*, mem, fmt, f32};
 
 #[derive(Copy, Clone, Debug, PartialEq)]

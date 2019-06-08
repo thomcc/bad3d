@@ -1,8 +1,8 @@
 
-use math::traits::*;
-use math::vec::*;
-use math::quat::*;
-use math::mat::*;
+use crate::math::traits::*;
+use crate::math::vec::*;
+use crate::math::quat::*;
+use crate::math::mat::*;
 
 use std::ops::*;
 

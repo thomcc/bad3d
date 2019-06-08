@@ -1,6 +1,6 @@
-use math::prelude::*;
-use util::OrdFloat;
-use core::{wingmesh::WingMesh, gjk, support::Support};
+use crate::math::prelude::*;
+use crate::util::OrdFloat;
+use crate::core::{wingmesh::WingMesh, gjk, support::Support};
 use std::{f32, mem};
 const Q_SNAP: f32 = 0.5;
 const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);

@@ -1,5 +1,5 @@
 
-use shared::{object::{DemoMesh, vertex_slice, unpack_arr3}, input::InputState};
+use crate::shared::{object::{DemoMesh, vertex_slice, unpack_arr3}, input::InputState};
 use failure::Error;
 
 use std::time::Instant;

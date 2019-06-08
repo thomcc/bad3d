@@ -1,10 +1,10 @@
 
-use math::traits::*;
-use math::scalar::*;
-use math::vec::*;
-use math::mat::*;
-use math::pose::*;
-use math::plane::*;
+use crate::math::traits::*;
+use crate::math::scalar::*;
+use crate::math::vec::*;
+use crate::math::mat::*;
+use crate::math::pose::*;
+use crate::math::plane::*;
 
 
 #[inline]

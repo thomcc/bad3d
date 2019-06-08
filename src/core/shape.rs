@@ -1,6 +1,6 @@
-use math::prelude::*;
-use core::wingmesh;
-use core::hull;
+use crate::math::prelude::*;
+use crate::core::wingmesh;
+use crate::core::hull;
 
 #[derive(Debug, Clone, Default)]
 pub struct Shape {

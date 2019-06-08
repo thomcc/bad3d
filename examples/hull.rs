@@ -16,7 +16,7 @@ extern crate imgui_glium_renderer;
 
 mod shared;
 use failure::Error;
-use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh};
+use crate::shared::{DemoWindow, DemoOptions, Result, object, DemoMesh};
 
 use bad3d::prelude::*;
 use std::{rc::Rc, cell::RefCell};

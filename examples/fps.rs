@@ -19,8 +19,8 @@ extern crate failure;
 
 mod shared;
 
-use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
-use shared::cam::*;
+use crate::shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
+use crate::shared::cam::*;
 
 use glium::glutin::{VirtualKeyCode as Key};
 use bad3d::prelude::*;

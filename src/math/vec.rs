@@ -1,8 +1,8 @@
 use std::ops::*;
 use std::{self, iter, mem, fmt, slice};
-use math::traits::*;
-use math::scalar::*;
-use math::mat::*;
+use crate::math::traits::*;
+use crate::math::scalar::*;
+use crate::math::mat::*;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]

@@ -1,8 +1,8 @@
-use math::vec::*;
-use math::mat::*;
-use math::plane::*;
-use math::traits::*;
-use math::geom;
+use crate::math::vec::*;
+use crate::math::mat::*;
+use crate::math::plane::*;
+use crate::math::traits::*;
+use crate::math::geom;
 
 use std::iter;
 

@@ -1,5 +1,5 @@
-use math::prelude::*;
-use core::{hull, support::{TransformedSupport, Support}};
+use crate::math::prelude::*;
+use crate::core::{hull, support::{TransformedSupport, Support}};
 use std::f32;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]

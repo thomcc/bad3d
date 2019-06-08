@@ -1,8 +1,7 @@
-use math::prelude::*;
-use std::{i32, u16};
-use std::f32;
-use core::support;
-use core::bsp;
+use crate::math::prelude::*;
+use std::{i32, u16, f32};
+use crate::core::support;
+use crate::core::bsp;
 // TODO: this is a gnarly mess
 
 #[derive(Copy, Clone, Debug)]
@@ -255,7 +254,6 @@ impl WingMesh {
     }
 
     pub fn new_sphere(radius: f32, bands: (usize, usize)) -> Self {
-        use std::f32;
         assert_gt!(bands.0, 2);
         assert_gt!(bands.1, 2);
 

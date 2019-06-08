@@ -1,9 +1,9 @@
 
-pub use math::prelude::*;
+pub use crate::math::prelude::*;
 
-pub use util::*;
+pub use crate::util::*;
 
-pub use core::{
+pub use crate::core::{
     wingmesh::WingMesh,
     shape::Shape,
     hull,

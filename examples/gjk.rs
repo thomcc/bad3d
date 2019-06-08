@@ -14,7 +14,7 @@ extern crate imgui;
 extern crate imgui_glium_renderer;
 
 mod shared;
-use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject};
+use crate::shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject};
 
 use bad3d::prelude::*;
 use std::rc::Rc;

@@ -1,9 +1,9 @@
 
-use math::traits::*;
-use math::scalar::*;
-use math::vec::*;
-use math::quat::*;
-use math::geom::*;
+use crate::math::traits::*;
+use crate::math::scalar::*;
+use crate::math::vec::*;
+use crate::math::quat::*;
+use crate::math::geom::*;
 
 use std::{fmt, ops, mem};
 

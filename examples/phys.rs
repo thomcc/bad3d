@@ -15,7 +15,7 @@ extern crate imgui_glium_renderer;
 extern crate failure;
 
 mod shared;
-use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
+use crate::shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
 use glium::glutin::VirtualKeyCode;
 use bad3d::prelude::*;
 use std::rc::Rc;
@@ -62,7 +62,7 @@ impl DemoCamera {
 
     pub fn handle_input(&mut self, is: &InputState) {
         let impulse = {
-            use VirtualKeyCode::*;
+            use crate::VirtualKeyCode::*;
             vec3(is.keys_dir(A, D), is.keys_dir(Q, E), is.keys_dir(W, S))
         };
         let mut move_turn = 0.0;
@@ -76,7 +76,7 @@ impl DemoCamera {
         self.head_turn += move_turn;
         self.head_tilt += move_tilt;
 
-        let ht = self.head_tilt.clamp(-f32::consts::PI, f32::consts::PI);
+        let ht = clamp(self.head_tilt, -f32::consts::PI, f32::consts::PI);
         self.head_tilt = ht;
 
         self.position += self.orientation() * impulse * self.movement_speed;

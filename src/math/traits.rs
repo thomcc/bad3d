@@ -25,7 +25,7 @@ pub trait ApproxEq {
 #[inline] pub fn approx_eq_e<T: ApproxEq>(a: T, b: T, e: f32) -> bool { a.approx_eq_e(&b, e) }
 
 pub trait Lerp: Copy + Clone {
-    fn lerp(self, Self, f32) -> Self;
+    fn lerp(self, _: Self, _: f32) -> Self;
 }
 
 pub trait Clamp: Copy + Clone {
@@ -44,7 +44,7 @@ pub trait Identity: Copy + Clone {
 
 pub trait Fold: Copy + Clone {
     fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32;
-    fn fold2_init<T>(self, Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T;
+    fn fold2_init<T>(self, _: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T;
 
     #[inline]
     fn fold_init<T>(self, init: T, f: impl Fn(T, f32) -> T) -> T {

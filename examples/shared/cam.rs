@@ -1,6 +1,6 @@
 
 use bad3d::{self, prelude::*};
-use shared::input;
+use crate::shared::input;
 use glium::glutin::{VirtualKeyCode as Key};
 
 #[derive(Clone, Debug, Copy)]

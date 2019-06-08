@@ -1,5 +1,5 @@
-use math::prelude::*;
-use util;
+use crate::math::prelude::*;
+use crate::util;
 use std::{ops::*, isize, i32, f32, usize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

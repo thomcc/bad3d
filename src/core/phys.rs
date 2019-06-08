@@ -1,14 +1,14 @@
-use math::prelude::*;
+use crate::math::prelude::*;
 
-use core::{gjk, shape, support::TransformedSupport};
+use crate::core::{gjk, shape, support::TransformedSupport};
 
-use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
 use std::f32;
 
-pub use core::shape::Shape;
+pub use crate::core::shape::Shape;
 
 pub const RESTITUTION: f32 = 0.4;
 pub const GRAVITY: V3 = V3 { x: 0.0, y: 0.0, z: -10.0 };
@@ -69,7 +69,7 @@ pub struct RigidBody {
 
 pub type RigidBodyRef = Rc<RefCell<RigidBody>>;
 
-static RIGIDBODY_ID_COUNTER: AtomicUsize = ATOMIC_USIZE_INIT;
+static RIGIDBODY_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl RigidBody {
     #[inline]

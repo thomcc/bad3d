@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use bad3d::{self, prelude::*};
 
 use imgui::{ImGui, ImGuiKey, Ui};
-use shared::DemoWindow;
+use crate::shared::DemoWindow;
 
 use glium::glutin::{
     VirtualKeyCode,
