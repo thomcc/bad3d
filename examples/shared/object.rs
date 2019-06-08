@@ -1,10 +1,9 @@
-
 use bad3d::prelude::*;
 use glium::{self, backend::Facade};
 
-use std::rc::Rc;
-use std::cell::RefCell;
 use rand;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use failure::Error;
 use std::{result, slice};
@@ -14,7 +13,7 @@ type Result<T> = result::Result<T, Error>;
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Vertex {
-    pub position: [f32; 3]
+    pub position: [f32; 3],
 }
 
 implement_vertex!(Vertex, position);
@@ -56,19 +55,30 @@ impl DemoMesh {
         display: &F,
         verts: Vec<V3>,
         tris: Vec<[u16; 3]>,
-        color: V4
+        color: V4,
     ) -> Result<DemoMesh> {
         let vbo = glium::VertexBuffer::new(display, vertex_slice(&verts[..]))?;
         let ibo = glium::IndexBuffer::new(
             display,
             glium::index::PrimitiveType::TrianglesList,
-            unpack_arr3(&tris[..])
+            unpack_arr3(&tris[..]),
         )?;
-        Ok(DemoMesh { color, verts, tris, vbo, ibo })
+        Ok(DemoMesh {
+            color,
+            verts,
+            tris,
+            vbo,
+            ibo,
+        })
     }
 
     pub fn from_shape<F: Facade>(display: &F, s: &Shape, color: Option<V4>) -> Result<DemoMesh> {
-        DemoMesh::new(display, s.vertices.clone(), s.tris.clone(), color.unwrap_or_else(random_color))
+        DemoMesh::new(
+            display,
+            s.vertices.clone(),
+            s.tris.clone(),
+            color.unwrap_or_else(random_color),
+        )
     }
 }
 
@@ -104,20 +114,27 @@ pub struct TDemoMesh {
 }
 */
 pub fn random_color() -> V4 {
-    let mut c = vec4(rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>(), 1.0);
-    c[rand::random::<usize>() % 3] = rand::random::<f32>()*0.5;
+    let mut c = vec4(
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+        1.0,
+    );
+    c[rand::random::<usize>() % 3] = rand::random::<f32>() * 0.5;
     c
 }
 
 pub fn rand_v3() -> V3 {
-    vec3(rand::random::<f32>(),
-         rand::random::<f32>(),
-         rand::random::<f32>())
+    vec3(
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+    )
 }
 
 pub struct DemoObject {
     pub body: RigidBodyRef,
-    pub meshes: Vec<Box<DemoMesh>>
+    pub meshes: Vec<Box<DemoMesh>>,
 }
 
 pub fn convex_parts(mut v: Vec<V3>) -> (Vec<V3>, Vec<[u16; 3]>) {
@@ -138,7 +155,7 @@ pub fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
             *item = rand_v3() + V3::splat(-0.5);
         }
         if let Some((indices, _)) = hull::compute_hull(&mut vs[..]) {
-            return (vs, indices)
+            return (vs, indices);
         } else {
             vs.push(V3::zero());
         }
@@ -146,11 +163,21 @@ pub fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
 }
 
 impl DemoObject {
-    pub fn new_box<F: Facade>(facade: &F, r: V3, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
+    pub fn new_box<F: Facade>(
+        facade: &F,
+        r: V3,
+        com: V3,
+        orient: Option<Quat>,
+    ) -> Result<DemoObject> {
         DemoObject::from_shape(facade, Shape::new_box(r), com, orient)
     }
 
-    pub fn new_octa<F: Facade>(facade: &F, r: V3, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
+    pub fn new_octa<F: Facade>(
+        facade: &F,
+        r: V3,
+        com: V3,
+        orient: Option<Quat>,
+    ) -> Result<DemoObject> {
         DemoObject::from_shape(facade, Shape::new_octa(r), com, orient)
     }
 
@@ -159,7 +186,12 @@ impl DemoObject {
         DemoObject::from_shape(facade, Shape::new(verts, tris), com, orient)
     }
 
-    pub fn from_shape<F: Facade>(facade: &F, s: Shape, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
+    pub fn from_shape<F: Facade>(
+        facade: &F,
+        s: Shape,
+        com: V3,
+        orient: Option<Quat>,
+    ) -> Result<DemoObject> {
         let body = RigidBody::new_ref(vec![s], com, 1.0);
         if let Some(p) = orient {
             body.borrow_mut().pose.orientation = p;
@@ -170,7 +202,10 @@ impl DemoObject {
 
     pub fn from_body<F: Facade>(facade: &F, body: RigidBodyRef) -> Result<DemoObject> {
         let color = random_color();
-        let meshes = body.borrow().shapes.iter()
+        let meshes = body
+            .borrow()
+            .shapes
+            .iter()
             .map(|s| DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), color).map(Box::new))
             .collect::<Result<Vec<_>>>()?;
         Ok(DemoObject { body, meshes })
@@ -178,8 +213,14 @@ impl DemoObject {
 
     pub fn from_wingmesh<F: Facade>(facade: &F, m: WingMesh, com: V3) -> Result<DemoObject> {
         let body = RigidBody::new_ref(vec![m.into()], com, 1.0);
-        let meshes = body.borrow().shapes.iter()
-            .map(|s| DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), random_color()).map(Box::new))
+        let meshes = body
+            .borrow()
+            .shapes
+            .iter()
+            .map(|s| {
+                DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), random_color())
+                    .map(Box::new)
+            })
             .collect::<Result<Vec<_>>>()?;
         Ok(DemoObject { body, meshes })
     }

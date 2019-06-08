@@ -1,23 +1,15 @@
-
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::RefCell;
 
 use bad3d::{self, prelude::*};
 
-use imgui::{ImGui, ImGuiKey, Ui};
 use crate::shared::DemoWindow;
+use imgui::{ImGui, ImGuiKey, Ui};
 
 use glium::glutin::{
-    VirtualKeyCode,
-    EventsLoop,
-    Event,
-    ElementState,
-    KeyboardInput,
-    MouseButton,
-    WindowEvent,
-    TouchPhase,
-    MouseScrollDelta,
+    ElementState, Event, EventsLoop, KeyboardInput, MouseButton, MouseScrollDelta, TouchPhase,
+    VirtualKeyCode, WindowEvent,
 };
 use glium::Display;
 
@@ -69,7 +61,7 @@ fn init_gui(gui: &mut ImGui) {
     gui.set_imgui_key(ImGuiKey::X, 16);
     gui.set_imgui_key(ImGuiKey::Y, 17);
     gui.set_imgui_key(ImGuiKey::Z, 18);
-    use imgui::{ImVec4, ImVec2, ImGuiCol};
+    use imgui::{ImGuiCol, ImVec2, ImVec4};
 
     let style = gui.style_mut();
     // style.child_window_rounding = 3.0;
@@ -78,48 +70,48 @@ fn init_gui(gui: &mut ImGui) {
     style.scrollbar_rounding = 3.0;
     style.frame_rounding = 3.0;
     style.window_title_align = ImVec2::new(0.5, 0.5);
-    style.colors[ImGuiCol::Text as usize]                 = ImVec4::new(0.73, 0.73, 0.73, 1.00);
-    style.colors[ImGuiCol::TextDisabled as usize]         = ImVec4::new(0.50, 0.50, 0.50, 1.00);
-    style.colors[ImGuiCol::WindowBg as usize]             = ImVec4::new(0.26, 0.26, 0.26, 0.95);
+    style.colors[ImGuiCol::Text as usize] = ImVec4::new(0.73, 0.73, 0.73, 1.00);
+    style.colors[ImGuiCol::TextDisabled as usize] = ImVec4::new(0.50, 0.50, 0.50, 1.00);
+    style.colors[ImGuiCol::WindowBg as usize] = ImVec4::new(0.26, 0.26, 0.26, 0.95);
     // style.colors[ImGuiCol::ChildWindowBg as usize]        = ImVec4::new(0.28, 0.28, 0.28, 1.00);
-    style.colors[ImGuiCol::PopupBg as usize]              = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::Border as usize]               = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::BorderShadow as usize]         = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::FrameBg as usize]              = ImVec4::new(0.16, 0.16, 0.16, 1.00);
-    style.colors[ImGuiCol::FrameBgHovered as usize]       = ImVec4::new(0.16, 0.16, 0.16, 1.00);
-    style.colors[ImGuiCol::FrameBgActive as usize]        = ImVec4::new(0.16, 0.16, 0.16, 1.00);
-    style.colors[ImGuiCol::TitleBg as usize]              = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::TitleBgCollapsed as usize]     = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::TitleBgActive as usize]        = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::MenuBarBg as usize]            = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::ScrollbarBg as usize]          = ImVec4::new(0.21, 0.21, 0.21, 1.00);
-    style.colors[ImGuiCol::ScrollbarGrab as usize]        = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::PopupBg as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::Border as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::BorderShadow as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::FrameBg as usize] = ImVec4::new(0.16, 0.16, 0.16, 1.00);
+    style.colors[ImGuiCol::FrameBgHovered as usize] = ImVec4::new(0.16, 0.16, 0.16, 1.00);
+    style.colors[ImGuiCol::FrameBgActive as usize] = ImVec4::new(0.16, 0.16, 0.16, 1.00);
+    style.colors[ImGuiCol::TitleBg as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::TitleBgCollapsed as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::TitleBgActive as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::MenuBarBg as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
+    style.colors[ImGuiCol::ScrollbarBg as usize] = ImVec4::new(0.21, 0.21, 0.21, 1.00);
+    style.colors[ImGuiCol::ScrollbarGrab as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
     style.colors[ImGuiCol::ScrollbarGrabHovered as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ScrollbarGrabActive as usize]  = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ScrollbarGrabActive as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
     // style.colors[ImGuiCol::ComboBg as usize]              = ImVec4::new(0.32, 0.32, 0.32, 1.00);
-    style.colors[ImGuiCol::CheckMark as usize]            = ImVec4::new(0.78, 0.78, 0.78, 1.00);
-    style.colors[ImGuiCol::SliderGrab as usize]           = ImVec4::new(0.74, 0.74, 0.74, 1.00);
-    style.colors[ImGuiCol::SliderGrabActive as usize]     = ImVec4::new(0.74, 0.74, 0.74, 1.00);
-    style.colors[ImGuiCol::Button as usize]               = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ButtonHovered as usize]        = ImVec4::new(0.43, 0.43, 0.43, 1.00);
-    style.colors[ImGuiCol::ButtonActive as usize]         = ImVec4::new(0.11, 0.11, 0.11, 1.00);
-    style.colors[ImGuiCol::Header as usize]               = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::HeaderHovered as usize]        = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::HeaderActive as usize]         = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::Separator as usize]            = ImVec4::new(0.39, 0.39, 0.39, 1.00);
-    style.colors[ImGuiCol::SeparatorHovered as usize]     = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::SeparatorActive as usize]      = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::ResizeGrip as usize]           = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ResizeGripHovered as usize]    = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::ResizeGripActive as usize]     = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::CloseButton as usize]          = ImVec4::new(0.59, 0.59, 0.59, 1.00);
-    style.colors[ImGuiCol::CloseButtonHovered as usize]   = ImVec4::new(0.98, 0.39, 0.36, 1.00);
-    style.colors[ImGuiCol::CloseButtonActive as usize]    = ImVec4::new(0.98, 0.39, 0.36, 1.00);
-    style.colors[ImGuiCol::PlotLines as usize]            = ImVec4::new(0.39, 0.39, 0.39, 1.00);
-    style.colors[ImGuiCol::PlotLinesHovered as usize]     = ImVec4::new(1.00, 0.43, 0.35, 1.00);
-    style.colors[ImGuiCol::PlotHistogram as usize]        = ImVec4::new(0.90, 0.70, 0.00, 1.00);
+    style.colors[ImGuiCol::CheckMark as usize] = ImVec4::new(0.78, 0.78, 0.78, 1.00);
+    style.colors[ImGuiCol::SliderGrab as usize] = ImVec4::new(0.74, 0.74, 0.74, 1.00);
+    style.colors[ImGuiCol::SliderGrabActive as usize] = ImVec4::new(0.74, 0.74, 0.74, 1.00);
+    style.colors[ImGuiCol::Button as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ButtonHovered as usize] = ImVec4::new(0.43, 0.43, 0.43, 1.00);
+    style.colors[ImGuiCol::ButtonActive as usize] = ImVec4::new(0.11, 0.11, 0.11, 1.00);
+    style.colors[ImGuiCol::Header as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::HeaderHovered as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::HeaderActive as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::Separator as usize] = ImVec4::new(0.39, 0.39, 0.39, 1.00);
+    style.colors[ImGuiCol::SeparatorHovered as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::SeparatorActive as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::ResizeGrip as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
+    style.colors[ImGuiCol::ResizeGripHovered as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::ResizeGripActive as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
+    style.colors[ImGuiCol::CloseButton as usize] = ImVec4::new(0.59, 0.59, 0.59, 1.00);
+    style.colors[ImGuiCol::CloseButtonHovered as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
+    style.colors[ImGuiCol::CloseButtonActive as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
+    style.colors[ImGuiCol::PlotLines as usize] = ImVec4::new(0.39, 0.39, 0.39, 1.00);
+    style.colors[ImGuiCol::PlotLinesHovered as usize] = ImVec4::new(1.00, 0.43, 0.35, 1.00);
+    style.colors[ImGuiCol::PlotHistogram as usize] = ImVec4::new(0.90, 0.70, 0.00, 1.00);
     style.colors[ImGuiCol::PlotHistogramHovered as usize] = ImVec4::new(1.00, 0.60, 0.00, 1.00);
-    style.colors[ImGuiCol::TextSelectedBg as usize]       = ImVec4::new(0.32, 0.52, 0.65, 1.00);
+    style.colors[ImGuiCol::TextSelectedBg as usize] = ImVec4::new(0.32, 0.52, 0.65, 1.00);
     style.colors[ImGuiCol::ModalWindowDarkening as usize] = ImVec4::new(0.20, 0.20, 0.20, 0.50);
 }
 
@@ -172,8 +164,12 @@ impl InputState {
 
     #[inline]
     pub fn get_projection_matrix(&self, near: f32, far: f32) -> M4x4 {
-        M4x4::perspective(self.view_angle.to_radians(),
-                          self.size.0 as f32 / self.size.1 as f32, near, far)
+        M4x4::perspective(
+            self.view_angle.to_radians(),
+            self.size.0 as f32 / self.size.1 as f32,
+            near,
+            far,
+        )
     }
 
     #[inline]
@@ -205,7 +201,10 @@ impl InputState {
         if let Some(k) = self.keys.get(&k) {
             *k
         } else {
-            KeyState { down: false, changed: false }
+            KeyState {
+                down: false,
+                changed: false,
+            }
         }
     }
 
@@ -249,13 +248,11 @@ impl InputState {
     }
 
     pub fn shift_down(&self) -> bool {
-        self.key_held(VirtualKeyCode::LShift) ||
-        self.key_held(VirtualKeyCode::RShift)
+        self.key_held(VirtualKeyCode::LShift) || self.key_held(VirtualKeyCode::RShift)
     }
 
     pub fn ctrl_down(&self) -> bool {
-        self.key_held(VirtualKeyCode::LControl) ||
-        self.key_held(VirtualKeyCode::RControl)
+        self.key_held(VirtualKeyCode::LControl) || self.key_held(VirtualKeyCode::RControl)
     }
 
     pub fn update(&mut self, events: &mut EventsLoop, display: &mut Display, dt: f32) -> bool {
@@ -283,11 +280,13 @@ impl InputState {
                     WindowEvent::Resized(glium::glutin::dpi::LogicalSize { width, height }) => {
                         self.size = (width as u32, height as u32);
                     }
-                    WindowEvent::Focused(true) => {
-                        self.keys.clear()
-                    }
+                    WindowEvent::Focused(true) => self.keys.clear(),
                     WindowEvent::KeyboardInput { input, .. } => {
-                        let vk = if let Some(kc) = input.virtual_keycode { kc } else { return; };
+                        let vk = if let Some(kc) = input.virtual_keycode {
+                            kc
+                        } else {
+                            return;
+                        };
                         let was_hit = input.state == ElementState::Pressed;
                         self.key_changes.push((vk, was_hit));
                         update_keyboard(&mut self.gui.borrow_mut(), vk, was_hit);
@@ -304,12 +303,13 @@ impl InputState {
                             // let dpi = gl_window.get_hidpi_factor();
                             let dims = self.dims();
                             // let dpi_dims = dims / dpi;
-                            gl_window.set_cursor_position(
-                                glium::glutin::dpi::LogicalPosition {
+                            gl_window
+                                .set_cursor_position(glium::glutin::dpi::LogicalPosition {
                                     x: (dims.x / 2.0).trunc() as f64,
                                     y: (dims.y / 2.0).trunc() as f64,
                                 })
-                                .ok().expect("Could not set mouse cursor position");
+                                .ok()
+                                .expect("Could not set mouse cursor position");
                             self.mouse.pos = pos - last_pos;
                             self.mouse_prev.pos = dims / 2.0;
                             moved_mouse = true;
@@ -320,25 +320,33 @@ impl InputState {
                     WindowEvent::MouseInput { button, state, .. } => {
                         let pressed = state == ElementState::Pressed;
                         match button {
-                            MouseButton::Left => { self.mouse.down.0 = pressed; }
-                            MouseButton::Middle => { self.mouse.down.1 = pressed; }
-                            MouseButton::Right => { self.mouse.down.2 = pressed; }
+                            MouseButton::Left => {
+                                self.mouse.down.0 = pressed;
+                            }
+                            MouseButton::Middle => {
+                                self.mouse.down.1 = pressed;
+                            }
+                            MouseButton::Right => {
+                                self.mouse.down.2 = pressed;
+                            }
                             _ => {}
                         }
                     }
                     WindowEvent::ReceivedCharacter(c) => {
                         self.gui.borrow_mut().add_input_character(c);
                     }
-                    WindowEvent::MouseWheel { delta, phase: TouchPhase::Moved, .. } => {
-                        match delta {
-                            MouseScrollDelta::LineDelta(_, y) => {
-                                self.mouse.wheel = y * 10.0;
-                            }
-                            MouseScrollDelta::PixelDelta(pos) => {
-                                self.mouse.wheel = pos.y as f32;
-                            }
+                    WindowEvent::MouseWheel {
+                        delta,
+                        phase: TouchPhase::Moved,
+                        ..
+                    } => match delta {
+                        MouseScrollDelta::LineDelta(_, y) => {
+                            self.mouse.wheel = y * 10.0;
                         }
-                    }
+                        MouseScrollDelta::PixelDelta(pos) => {
+                            self.mouse.wheel = pos.y as f32;
+                        }
+                    },
                     _ => {}
                 }
             }
@@ -346,11 +354,14 @@ impl InputState {
         if !moved_mouse && self.mouse_grabbed {
             let gl_window = display.gl_window();
             // let dpi = gl_window.get_hidpi_factor();
-            let dims = self.dims();// / dpi;
-            gl_window.set_cursor_position(glium::glutin::dpi::LogicalPosition {
-                x: (dims.x / 2.0).trunc() as f64,
-                y: (dims.y / 2.0).trunc() as f64
-            }).ok().expect("Could not set mouse cursor position");
+            let dims = self.dims(); // / dpi;
+            gl_window
+                .set_cursor_position(glium::glutin::dpi::LogicalPosition {
+                    x: (dims.x / 2.0).trunc() as f64,
+                    y: (dims.y / 2.0).trunc() as f64,
+                })
+                .ok()
+                .expect("Could not set mouse cursor position");
             self.mouse.pos = vec2(0.0, 0.0);
             self.mouse_prev.pos = self.dims() / 2.0;
         }
@@ -359,13 +370,15 @@ impl InputState {
         let mut gui = self.gui.borrow_mut();
         let scale = gui.display_framebuffer_scale();
 
-        gui.set_mouse_pos(self.mouse.pos.x / scale.0,
-                          self.mouse.pos.y / scale.1);
+        gui.set_mouse_pos(self.mouse.pos.x / scale.0, self.mouse.pos.y / scale.1);
 
-        gui.set_mouse_down([self.mouse.down.0,
-                            self.mouse.down.1,
-                            self.mouse.down.2,
-                            false, false]);
+        gui.set_mouse_down([
+            self.mouse.down.0,
+            self.mouse.down.1,
+            self.mouse.down.2,
+            false,
+            false,
+        ]);
 
         gui.set_mouse_wheel(self.mouse.wheel / scale.1);
 

@@ -1,7 +1,6 @@
-
-use bad3d::{self, prelude::*};
 use crate::shared::input;
-use glium::glutin::{VirtualKeyCode as Key};
+use bad3d::{self, prelude::*};
+use glium::glutin::VirtualKeyCode as Key;
 
 #[derive(Clone, Debug, Copy)]
 pub struct CamUpdate {
@@ -52,10 +51,18 @@ impl FlyCam {
     pub fn update(&mut self, update: CamUpdate) {
         let look_len = self.look.length();
         let up_len = self.up.length();
-        debug_assert!(approx_eq_e(look_len, 1.0, 1.0e-6),
-                      "look not normalized: {} (len = {})", self.look, look_len);
-        debug_assert!(approx_eq_e(up_len, 1.0, 1.0e-6),
-                      "up not normalized: {} (len = {})", self.up, look_len);
+        debug_assert!(
+            approx_eq_e(look_len, 1.0, 1.0e-6),
+            "look not normalized: {} (len = {})",
+            self.look,
+            look_len
+        );
+        debug_assert!(
+            approx_eq_e(up_len, 1.0, 1.0e-6),
+            "up not normalized: {} (len = {})",
+            self.up,
+            look_len
+        );
 
         let fwd = self.look / look_len;
         let up_norm = self.up / up_len;
@@ -65,8 +72,8 @@ impl FlyCam {
         // let upward = cross(across, fwd).fast_norm();
 
         if (update.right_held != update.left_held) || (update.forward_held != update.back_held) {
-            let x_mul = (update.right_held as i32 as f32)  - (update.left_held as i32 as f32);
-            let z_mul = (update.forward_held as i32 as f32)  - (update.back_held as i32 as f32);
+            let x_mul = (update.right_held as i32 as f32) - (update.left_held as i32 as f32);
+            let z_mul = (update.forward_held as i32 as f32) - (update.back_held as i32 as f32);
             let xz = (across * x_mul + fwd * z_mul).fast_norm();
             self.eye += xz * (self.eye_speed * update.dt);
         }
@@ -78,38 +85,44 @@ impl FlyCam {
         }
 
         if update.cursor_delta.x != 0.0 {
-            let (ys, yc) = (-update.cursor_delta.x * self.mouse_speed).to_radians().sin_cos();
+            let (ys, yc) = (-update.cursor_delta.x * self.mouse_speed)
+                .to_radians()
+                .sin_cos();
             let ym = 1.0 - yc;
             let (ux, uy, uz) = up_norm.tup();
             // todo: figure out what's backwards with quat::yaw for this case
             let (uxx, uxy, uxz) = (ux * ux, ux * uy, ux * uz);
-            let (uyy, uyz)      = (uy * uy, uy * uz);
-            let uzz             = uz * uz;
+            let (uyy, uyz) = (uy * uy, uy * uz);
+            let uzz = uz * uz;
             let (lx, ly, lz) = self.look.tup();
             self.look = vec3(
-                (ym * uxx + yc     ) * lx + (ym * uxy - ys * uz) * ly + (ym * uxz + ys * uy) * lz,
-                (ym * uxy + ys * uz) * lx + (ym * uyy + yc     ) * ly + (ym * uyz - ys * ux) * lz,
-                (ym * uxz - ys * uy) * lx + (ym * uyz + ys * ux) * ly + (ym * uzz + yc     ) * lz
-            ).fast_norm();
+                (ym * uxx + yc) * lx + (ym * uxy - ys * uz) * ly + (ym * uxz + ys * uy) * lz,
+                (ym * uxy + ys * uz) * lx + (ym * uyy + yc) * ly + (ym * uyz - ys * ux) * lz,
+                (ym * uxz - ys * uy) * lx + (ym * uyz + ys * ux) * ly + (ym * uzz + yc) * lz,
+            )
+            .fast_norm();
         }
 
         if update.cursor_delta.y != 0.0 {
-            let (ps, pc) = (update.cursor_delta.y * self.mouse_speed).to_radians().sin_cos();
+            let (ps, pc) = (update.cursor_delta.y * self.mouse_speed)
+                .to_radians()
+                .sin_cos();
             let pm = 1.0 - pc;
 
             let (ax, ay, az) = across.tup();
 
             let (axx, axy, axz) = (ax * ax, ax * ay, ax * az);
-            let (ayy, ayz)      = (ay * ay, ay * az);
-            let azz             = az * az;
+            let (ayy, ayz) = (ay * ay, ay * az);
+            let azz = az * az;
 
             let (lx, ly, lz) = self.look.tup();
 
             self.look = vec3(
-                (pm * axx + pc     ) * lx + (pm * axy + ps * az) * ly + (pm * axz - ps * ay) * lz,
-                (pm * axy - ps * az) * lx + (pm * ayy + pc     ) * ly + (pm * ayz + ps * ax) * lz,
-                (pm * axz + ps * ay) * lx + (pm * ayz - ps * ax) * ly + (pm * azz + pc     ) * lz,
-            ).must_norm();
+                (pm * axx + pc) * lx + (pm * axy + ps * az) * ly + (pm * axz - ps * ay) * lz,
+                (pm * axy - ps * az) * lx + (pm * ayy + pc) * ly + (pm * ayz + ps * ax) * lz,
+                (pm * axz + ps * ay) * lx + (pm * ayz - ps * ax) * ly + (pm * azz + pc) * lz,
+            )
+            .must_norm();
         }
 
         let up_norm = self.up.fast_norm();
@@ -125,14 +138,11 @@ impl FlyCam {
         let t = vec3(
             s.x * -self.eye.x + s.y * -self.eye.y + s.z * -self.eye.z,
             u.x * -self.eye.x + u.y * -self.eye.y + u.z * -self.eye.z,
-            f.x * -self.eye.x + f.y * -self.eye.y + f.z * -self.eye.z
+            f.x * -self.eye.x + f.y * -self.eye.y + f.z * -self.eye.z,
         );
 
         self.view = mat4(
-            s.x, u.x, f.x, 0.0,
-            s.y, u.y, f.y, 0.0,
-            s.z, u.z, f.z, 0.0,
-            t.x, t.y, t.z, 1.0
+            s.x, u.x, f.x, 0.0, s.y, u.y, f.y, 0.0, s.z, u.z, f.z, 0.0, t.x, t.y, t.z, 1.0,
         );
     }
 }

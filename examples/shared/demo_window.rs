@@ -1,26 +1,23 @@
-
-use crate::shared::{object::{DemoMesh, vertex_slice, unpack_arr3}, input::InputState};
+use crate::shared::{
+    input::InputState,
+    object::{unpack_arr3, vertex_slice, DemoMesh},
+};
 use failure::Error;
 
-use std::time::Instant;
-use std::rc::Rc;
-use std::cell::{RefCell, Ref, RefMut};
 use imgui_glium_renderer::Renderer;
+use std::cell::{Ref, RefCell, RefMut};
+use std::rc::Rc;
+use std::time::Instant;
 
-use bad3d::{prelude::*, bsp::Face};
+use bad3d::{bsp::Face, prelude::*};
 use imgui::{self, Ui};
 use std::fmt::Write;
 
 use glium::{
     self,
-    Display,
-    Surface,
-    glutin::{
-        EventsLoop,
-        ContextBuilder,
-        WindowBuilder,
-    },
     backend::Facade,
+    glutin::{ContextBuilder, EventsLoop, WindowBuilder},
+    Display, Surface,
 };
 
 // lit flat shader
@@ -43,7 +40,7 @@ pub struct DemoWindow {
     pub view: M4x4,
     pub lit_shader: glium::Program,
     pub solid_shader: glium::Program,
-//    pub tex_shader: glium::Program,
+    //    pub tex_shader: glium::Program,
     pub clear_color: V4,
     pub light_pos: [f32; 3],
     pub targ: Option<RefCell<glium::Frame>>,
@@ -78,12 +75,17 @@ impl<'a> Default for DemoOptions<'a> {
             near_far: (0.01, 500.0),
             fov: 75.0,
             view: M4x4::identity(),
-            fog_amount: 0.0
+            fog_amount: 0.0,
         }
     }
 }
 
-fn compile_shader<F: glium::backend::Facade>(facade: &F, which: &str, vert: &str, frag: &str) -> Result<glium::Program, Error> {
+fn compile_shader<F: glium::backend::Facade>(
+    facade: &F,
+    which: &str,
+    vert: &str,
+    frag: &str,
+) -> Result<glium::Program, Error> {
     let mut fsrc = PREAMBLE_SRC.to_string();
     write!(fsrc, "\n#line 1\n{}", frag).unwrap();
 
@@ -97,27 +99,24 @@ fn compile_shader<F: glium::backend::Facade>(facade: &F, which: &str, vert: &str
 
 impl DemoWindow {
     pub fn new(opts: DemoOptions, gui: Rc<RefCell<imgui::ImGui>>) -> Result<DemoWindow, Error> {
-        let context = ContextBuilder::new()
-            .with_depth_buffer(24)
-            .with_vsync(true);
+        let context = ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
 
         let window = WindowBuilder::new()
             .with_title(opts.title)
             .with_min_dimensions(glium::glutin::dpi::LogicalSize {
                 width: opts.window_size.0 as f64,
-                height: opts.window_size.1 as f64
+                height: opts.window_size.1 as f64,
             });
 
         let events = EventsLoop::new();
 
         let display = Display::new(window, context, &events).unwrap();
 
-        let input_state = InputState::new(
-            display.get_framebuffer_dimensions(), opts.fov, gui);
+        let input_state = InputState::new(display.get_framebuffer_dimensions(), opts.fov, gui);
 
         let phong_program = compile_shader(&display, "lit", VERT_SRC, FRAG_SRC)?;
         let solid_program = compile_shader(&display, "solid", SOLID_VERT_SRC, SOLID_FRAG_SRC)?;
-//        let tex_program = compile_shader(&display, "tex", TEX_VERT_SRC, TEX_FRAG_SRC)?;
+        //        let tex_program = compile_shader(&display, "tex", TEX_VERT_SRC, TEX_FRAG_SRC)?;
 
         Ok(DemoWindow {
             display,
@@ -126,7 +125,7 @@ impl DemoWindow {
             view: opts.view,
             lit_shader: phong_program,
             solid_shader: solid_program,
-//            tex_shader: tex_program,
+            //            tex_shader: tex_program,
             clear_color: opts.clear_color,
             light_pos: opts.light_pos.into(),
             near_far: opts.near_far,
@@ -141,12 +140,14 @@ impl DemoWindow {
     pub fn is_up(&mut self) -> bool {
         let now = Instant::now();
         let delta = now - self.last_frame;
-        let delta_s = delta.as_secs() as f32 +
-                      delta.subsec_nanos() as f32 / 1_000_000_000.0;
+        let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
         self.last_frame = now;
         self.last_frame_time = delta_s;
         assert!(self.targ.is_none());
-        if !self.input.update(&mut self.events, &mut self.display, delta_s) {
+        if !self
+            .input
+            .update(&mut self.events, &mut self.display, delta_s)
+        {
             false
         } else {
             let mut targ = self.display.draw();
@@ -162,15 +163,17 @@ impl DemoWindow {
         if !self.grabbed_cursor {
             self.grabbed_cursor = true;
             self.input.mouse_grabbed = true;
-            gl_window.hide_cursor(true);//.ok().expect("Could not grab mouse cursor");
+            gl_window.hide_cursor(true); //.ok().expect("Could not grab mouse cursor");
         }
         // let dpi = gl_window.hidpi_factor();
-        let dims = self.input.dims();// / dpi;
-        gl_window.set_cursor_position(glium::glutin::dpi::LogicalPosition {
-            x: (dims.x / 2.0).trunc() as f64,
-            y: (dims.y / 2.0).trunc() as f64,
-        }).ok().expect("Could not set mouse cursor position");
-
+        let dims = self.input.dims(); // / dpi;
+        gl_window
+            .set_cursor_position(glium::glutin::dpi::LogicalPosition {
+                x: (dims.x / 2.0).trunc() as f64,
+                y: (dims.y / 2.0).trunc() as f64,
+            })
+            .ok()
+            .expect("Could not set mouse cursor position");
     }
 
     #[inline]
@@ -212,47 +215,66 @@ impl DemoWindow {
                 depth: glium::Depth {
                     test: glium::draw_parameters::DepthTest::IfLess,
                     write: true,
-                    .. Default::default()
+                    ..Default::default()
                 },
-                .. Default::default()
-            })?;
+                ..Default::default()
+            },
+        )?;
         Ok(())
     }
 
-    pub fn draw_wire_mesh(&self, mat: M4x4, mesh: &DemoMesh, color: V4, use_depth: bool) -> Result<(), Error> {
+    pub fn draw_wire_mesh(
+        &self,
+        mat: M4x4,
+        mesh: &DemoMesh,
+        color: V4,
+        use_depth: bool,
+    ) -> Result<(), Error> {
         let mut wire = Vec::with_capacity(mesh.tris.len() * 6);
         for tri in &mesh.tris {
             let (v0, v1, v2) = tri.tri_verts(&mesh.verts);
-            wire.extend([v0,v1, v1,v2, v2,v0].iter().cloned())
+            wire.extend([v0, v1, v1, v2, v2, v0].iter().cloned())
         }
-        self.draw_solid(mat, color, &wire,
-                        glium::index::PrimitiveType::LinesList,
-                        use_depth)?;
+        self.draw_solid(
+            mat,
+            color,
+            &wire,
+            glium::index::PrimitiveType::LinesList,
+            use_depth,
+        )?;
         Ok(())
     }
 
     pub fn draw_tris(
-        & self,
+        &self,
         mat: M4x4,
         color: V4,
         verts: &[V3],
         maybe_tris: Option<&[[u16; 3]]>,
-        solid: bool
+        solid: bool,
     ) -> Result<(), Error> {
         let vbo = glium::VertexBuffer::new(&self.display, vertex_slice(verts))?;
         let params = glium::DrawParameters {
             point_size: if solid { Some(5.0) } else { None },
-            smooth: if solid { None } else { Some(glium::draw_parameters::Smooth::Nicest) },
-//            blend: glium::Blend::alpha_blending(),
+            smooth: if solid {
+                None
+            } else {
+                Some(glium::draw_parameters::Smooth::Nicest)
+            },
+            //            blend: glium::Blend::alpha_blending(),
             backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
             depth: glium::Depth {
                 test: glium::draw_parameters::DepthTest::IfLess,
                 write: true,
-                .. Default::default()
+                ..Default::default()
             },
-            .. Default::default()
+            ..Default::default()
         };
-        let shader = if solid { &self.solid_shader } else { &self.lit_shader };
+        let shader = if solid {
+            &self.solid_shader
+        } else {
+            &self.lit_shader
+        };
         let uniforms = uniform! {
             model: mat.to_arr(),
             u_color: color.to_arr(),
@@ -266,7 +288,7 @@ impl DemoWindow {
             let ibo = glium::IndexBuffer::new(
                 &self.display,
                 glium::index::PrimitiveType::TrianglesList,
-                unpack_arr3(tris)
+                unpack_arr3(tris),
             )?;
             target.draw((&vbo,), &ibo, &shader, &uniforms, &params)?;
         } else {
@@ -276,7 +298,14 @@ impl DemoWindow {
         Ok(())
     }
 
-    pub fn draw_solid(&self, mat: M4x4, color: V4, verts: &[V3], prim_type: glium::index::PrimitiveType, depth: bool) -> Result<(), Error> {
+    pub fn draw_solid(
+        &self,
+        mat: M4x4,
+        color: V4,
+        verts: &[V3],
+        prim_type: glium::index::PrimitiveType,
+        depth: bool,
+    ) -> Result<(), Error> {
         let vbo = glium::VertexBuffer::new(&self.display, vertex_slice(verts)).unwrap();
         let ibo = glium::index::NoIndices(prim_type);
         let mut target = self.target_mut();
@@ -284,37 +313,53 @@ impl DemoWindow {
             glium::Depth {
                 test: glium::draw_parameters::DepthTest::IfLess,
                 write: true,
-                .. Default::default()
+                ..Default::default()
             }
         } else {
             Default::default()
         };
-        target.draw((&vbo,), &ibo, &self.solid_shader,
-                &uniform! {
-                    model: mat.to_arr(),
-                    u_color: color.to_arr(),
-                    view: self.view.to_arr(),
-                    perspective: self.input.get_projection_matrix(
-                        self.near_far.0, self.near_far.1).to_arr(),
-                },
-                &glium::DrawParameters {
-                    point_size: Some(5.0),
-                    line_width: Some(2.0),
-                    backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
-                    blend: glium::Blend::alpha_blending(),
-                    depth: depth_test,
-                    .. Default::default()
-                })?;
+        target.draw(
+            (&vbo,),
+            &ibo,
+            &self.solid_shader,
+            &uniform! {
+                model: mat.to_arr(),
+                u_color: color.to_arr(),
+                view: self.view.to_arr(),
+                perspective: self.input.get_projection_matrix(
+                    self.near_far.0, self.near_far.1).to_arr(),
+            },
+            &glium::DrawParameters {
+                point_size: Some(5.0),
+                line_width: Some(2.0),
+                backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
+                blend: glium::Blend::alpha_blending(),
+                depth: depth_test,
+                ..Default::default()
+            },
+        )?;
         Ok(())
     }
 
-    pub fn wm_draw_wireframe(&self, mat: M4x4, color: V4, wm: &WingMesh, use_depth: bool) -> Result<(), Error> {
-        let mut verts = Vec::with_capacity(wm.edges.len()*2);
+    pub fn wm_draw_wireframe(
+        &self,
+        mat: M4x4,
+        color: V4,
+        wm: &WingMesh,
+        use_depth: bool,
+    ) -> Result<(), Error> {
+        let mut verts = Vec::with_capacity(wm.edges.len() * 2);
         for e in &wm.edges {
             verts.push(wm.verts[e.vert_idx()]);
             verts.push(wm.verts[wm.edges[e.next_idx()].vert_idx()]);
         }
-        self.draw_solid(mat, color, &verts[..], glium::index::PrimitiveType::LinesList, use_depth)?;
+        self.draw_solid(
+            mat,
+            color,
+            &verts[..],
+            glium::index::PrimitiveType::LinesList,
+            use_depth,
+        )?;
         Ok(())
     }
 
@@ -352,7 +397,11 @@ impl DemoWindow {
         }
     }
 
-    pub fn end_frame_and_ui<'a>(&mut self, ui_render: &mut Renderer, ui: Ui<'a>) -> Result<(), Error> {
+    pub fn end_frame_and_ui<'a>(
+        &mut self,
+        ui_render: &mut Renderer,
+        ui: Ui<'a>,
+    ) -> Result<(), Error> {
         self.end_ui(ui_render, ui);
         self.end_frame()
     }
@@ -364,35 +413,35 @@ impl DemoWindow {
         // let dpi = gl_window.hidpi_factor();
         // let size = gl_window.get_inner_size().unwrap();
         // let size_points = ((size.width as f32) as u32,
-                           // (size.height as f32) as u32);
+        // (size.height as f32) as u32);
         let size = gl_window.get_inner_size().unwrap();
         let hidpi_factor = gl_window.get_hidpi_factor();
         let frame_size = imgui::FrameSize {
             logical_size: (size.width, size.height),
-            hidpi_factor
+            hidpi_factor,
         };
         gui.frame(frame_size, self.last_frame_time)
     }
 
     // pub fn ui<F: FnMut(&Ui) -> Result<(), Error>>(&self, mut ui_callback: F) -> Result<(), Error> {
-        // let gl_window = self.display.gl_window();
-        // // let size_points = gl_window.get_inner_size_points().unwrap();
-        // // let size_pixels = gl_window.get_inner_size_pixels().unwrap();
-        // let dpi = gl_window.hidpi_factor();
-        // let size = gl_window.get_inner_size().unwrap();
-        // let size_points = ((size.0 as f32 * dpi) as u32,
-        //                    (size.1 as f32 * dpi) as u32);
-        // let mut gui = self.gui.borrow_mut();
-        // let ui = self.get_ui(&mut *gui);//gui.frame(size, size_points, self.last_frame_time);
-        // ui_callback(&ui)?;
-        // self.end_ui(ui);
+    // let gl_window = self.display.gl_window();
+    // // let size_points = gl_window.get_inner_size_points().unwrap();
+    // // let size_pixels = gl_window.get_inner_size_pixels().unwrap();
+    // let dpi = gl_window.hidpi_factor();
+    // let size = gl_window.get_inner_size().unwrap();
+    // let size_points = ((size.0 as f32 * dpi) as u32,
+    //                    (size.1 as f32 * dpi) as u32);
+    // let mut gui = self.gui.borrow_mut();
+    // let ui = self.get_ui(&mut *gui);//gui.frame(size, size_points, self.last_frame_time);
+    // ui_callback(&ui)?;
+    // self.end_ui(ui);
 
-        // let mut targ = self.target_mut();
-        // let mut renderer = self.gui_renderer.borrow_mut();
-        // let result = renderer.render(&mut *targ, ui);
-        // if let Err(e) = result {
-        //     println!("Error: {}", e);
-        // }
-        // Ok(())
+    // let mut targ = self.target_mut();
+    // let mut renderer = self.gui_renderer.borrow_mut();
+    // let result = renderer.render(&mut *targ, ui);
+    // if let Err(e) = result {
+    //     println!("Error: {}", e);
+    // }
+    // Ok(())
     // }
 }

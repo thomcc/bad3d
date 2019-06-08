@@ -9,12 +9,20 @@ pub use crate::util::wrap_iter::*;
 
 #[inline]
 pub fn some_if<T>(cond: bool, val: T) -> Option<T> {
-    if cond { Some(val) } else { None }
+    if cond {
+        Some(val)
+    } else {
+        None
+    }
 }
 
 #[inline]
 pub fn some_when<T>(cond: bool, func: impl FnOnce() -> T) -> Option<T> {
-    if cond { Some(func()) } else { None }
+    if cond {
+        Some(func())
+    } else {
+        None
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]

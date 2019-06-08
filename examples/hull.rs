@@ -15,22 +15,27 @@ extern crate imgui;
 extern crate imgui_glium_renderer;
 
 mod shared;
+use crate::shared::{object, DemoMesh, DemoOptions, DemoWindow, Result};
 use failure::Error;
-use crate::shared::{DemoWindow, DemoOptions, Result, object, DemoMesh};
 
 use bad3d::prelude::*;
-use std::{rc::Rc, cell::RefCell};
+use std::{cell::RefCell, rc::Rc};
 
 fn main() -> Result<()> {
-    let mut win = DemoWindow::new(DemoOptions {
-        title: "Hull test",
-        view: M4x4::look_at(vec3(0.0, 0.0, 2.0),
-                            vec3(0.0, 0.0, 0.0),
-                            vec3(0.0, 1.0, 0.0)),
-        clear_color: vec4(0.5, 0.6, 1.0, 1.0),
-        near_far: (0.01, 50.0),
-        .. Default::default()
-    }, Rc::new(RefCell::new(imgui::ImGui::init())))?;
+    let mut win = DemoWindow::new(
+        DemoOptions {
+            title: "Hull test",
+            view: M4x4::look_at(
+                vec3(0.0, 0.0, 2.0),
+                vec3(0.0, 0.0, 0.0),
+                vec3(0.0, 1.0, 0.0),
+            ),
+            clear_color: vec4(0.5, 0.6, 1.0, 1.0),
+            near_far: (0.01, 50.0),
+            ..Default::default()
+        },
+        Rc::new(RefCell::new(imgui::ImGui::init())),
+    )?;
 
     let (vertices, triangles) = object::random_point_cloud(64);
     let mesh = DemoMesh::new(&win.display, vertices, triangles, object::random_color())?;
@@ -43,7 +48,7 @@ fn main() -> Result<()> {
                 vec3(0.0, 0.0, 2.0),
                 vec3(0.0, 0.0, 0.0),
                 win.input.mouse_prev.vec,
-                win.input.mouse.vec
+                win.input.mouse.vec,
             ) * q;
         }
 

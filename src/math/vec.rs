@@ -1,8 +1,8 @@
-use std::ops::*;
-use std::{self, iter, mem, fmt, slice};
-use crate::math::traits::*;
-use crate::math::scalar::*;
 use crate::math::mat::*;
+use crate::math::scalar::*;
+use crate::math::traits::*;
+use std::ops::*;
+use std::{self, fmt, iter, mem, slice};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]
@@ -61,44 +61,34 @@ impl fmt::Display for V4 {
     }
 }
 
-pub trait VecType
-    : Copy
+pub trait VecType:
+    Copy
     + Clone
-
     + Fold
     + Map
     + ApproxEq
-
     + Identity
     + Zero
-
     + Add<Output = Self>
     + Sub<Output = Self>
-
     + AddAssign
     + SubAssign
-
     + Mul<f32, Output = Self>
     + Div<f32, Output = Self>
-
     + MulAssign<f32>
     + DivAssign<f32>
-
     + Neg<Output = Self>
-
     + Mul<Output = Self>
     + Div<Output = Self>
     + MulAssign
     + DivAssign
     + AsRef<[f32]>
     + AsMut<[f32]>
-
     + Index<usize, Output = f32>
     + Index<Range<usize>, Output = [f32]>
     + Index<RangeFrom<usize>, Output = [f32]>
     + Index<RangeTo<usize>, Output = [f32]>
     + Index<RangeFull, Output = [f32]>
-
     + IndexMut<usize, Output = f32>
     + IndexMut<Range<usize>, Output = [f32]>
     + IndexMut<RangeFrom<usize>, Output = [f32]>
@@ -108,8 +98,14 @@ pub trait VecType
     const SIZE: usize;
 
     fn splat(v: f32) -> Self;
-    #[inline] fn min(self, o: Self) -> Self { self.map2(o, |a, b| a.min(b)) }
-    #[inline] fn max(self, o: Self) -> Self { self.map2(o, |a, b| a.max(b)) }
+    #[inline]
+    fn min(self, o: Self) -> Self {
+        self.map2(o, |a, b| a.min(b))
+    }
+    #[inline]
+    fn max(self, o: Self) -> Self {
+        self.map2(o, |a, b| a.max(b))
+    }
 
     // #[inline] fn len(&self) -> usize { self.as_ref().len() }
 
@@ -178,7 +174,11 @@ impl Fold for V4 {
 
     #[inline]
     fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
-        f(f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z), o.w, self.w)
+        f(
+            f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z),
+            o.w,
+            self.w,
+        )
     }
 }
 
@@ -190,8 +190,7 @@ macro_rules! vec_from {
     )+};
 }
 
-
-vec_from!{ V2 [
+vec_from! { V2 [
     (t: (i32, i32)) -> vec2(t.0 as f32, t.1 as f32);
     (t: (u32, u32)) -> vec2(t.0 as f32, t.1 as f32);
     (t: (usize, usize)) -> vec2(t.0 as f32, t.1 as f32);
@@ -205,7 +204,7 @@ vec_from!{ V2 [
     (t: [f64; 2]) -> vec2(t[0] as f32, t[1] as f32);
 ]}
 
-vec_from!{ V3 [
+vec_from! { V3 [
     (t: (V2, f32)) -> vec3(t.0.x, t.0.y, t.1);
     (t: (f32, V2)) -> vec3(t.0, t.1.x, t.1.y);
 
@@ -225,7 +224,7 @@ vec_from!{ V3 [
     (t: [f64; 3]) -> vec3(t[0] as f32, t[1] as f32, t[2] as f32);
 ]}
 
-vec_from!{ V4 [
+vec_from! { V4 [
     (t: (V2, f32, f32)) -> vec4(t.0.x, t.0.y, t.1, t.2);
     (t: (f32, V2, f32)) -> vec4(t.0, t.1.x, t.1.y, t.2);
     (t: (f32, f32, V2)) -> vec4(t.0, t.1, t.2.x, t.2.y);
@@ -282,7 +281,7 @@ macro_rules! define_transmute_conversions {
                 unsafe { mem::transmute(v) }
             }
         }
-    }
+    };
 }
 
 macro_rules! impl_index_op {
@@ -312,8 +311,13 @@ pub struct VecIter<T: VecType> {
 }
 
 impl<T: VecType> VecIter<T> {
-    #[inline] pub fn new(v: T) -> Self {
-        Self { v, p: 0, e: <T as VecType>::SIZE }
+    #[inline]
+    pub fn new(v: T) -> Self {
+        Self {
+            v,
+            p: 0,
+            e: <T as VecType>::SIZE,
+        }
     }
 
     #[inline]
@@ -334,16 +338,24 @@ impl<T: VecType> VecIter<T> {
     unsafe fn raw_get(&self, p: usize) -> f32 {
         debug_assert_le!(self.e, <T as VecType>::SIZE);
         debug_assert_lt!(p, <T as VecType>::SIZE);
-        if cfg!(debug_assertions) { *self.v.as_ref().get_unchecked(p) }
-        else                      { self.v[p] }
+        if cfg!(debug_assertions) {
+            *self.v.as_ref().get_unchecked(p)
+        } else {
+            self.v[p]
+        }
     }
 
     #[inline]
     fn do_iter_fwd(&mut self, pre: usize, post: usize) -> Option<usize> {
         debug_assert_le!(self.e, <T as VecType>::SIZE);
         let (p, e) = (self.p + pre, self.e);
-        if p >= e { self.p = self.e; None }
-        else { self.p = p + post; Some(p) }
+        if p >= e {
+            self.p = self.e;
+            None
+        } else {
+            self.p = p + post;
+            Some(p)
+        }
     }
 
     // #[inline]
@@ -375,8 +387,11 @@ impl<T: VecType> Iterator for VecIter<T> {
 
     #[inline]
     fn last(self) -> Option<Self::Item> {
-        if self.p >= self.e { None }
-        else { Some(unsafe { self.raw_get(<T as VecType>::SIZE - 1) }) }
+        if self.p >= self.e {
+            None
+        } else {
+            Some(unsafe { self.raw_get(<T as VecType>::SIZE - 1) })
+        }
     }
 
     #[inline]
@@ -389,7 +404,9 @@ impl<T: VecType> iter::ExactSizeIterator for VecIter<T> {}
 impl<T: VecType> iter::DoubleEndedIterator for VecIter<T> {
     #[inline]
     fn next_back(&mut self) -> Option<f32> {
-        if self.p >= self.e { return None; }
+        if self.p >= self.e {
+            return None;
+        }
         debug_assert_gt!(self.e, 1);
         self.e -= 1;
         Some(unsafe { self.raw_get(self.e) })
@@ -397,7 +414,9 @@ impl<T: VecType> iter::DoubleEndedIterator for VecIter<T> {
 }
 
 macro_rules! first_expr {
-    ($fst:expr, $($_rest:expr),+) => ($fst);
+    ($fst:expr, $($_rest:expr),+) => {
+        $fst
+    };
 }
 
 macro_rules! do_vec_boilerplate {
@@ -838,38 +857,74 @@ macro_rules! do_vec_boilerplate {
     }
 }
 
-do_vec_boilerplate!(V2 { x: 0, y: 1             }, 2, (f32, f32));
-do_vec_boilerplate!(V3 { x: 0, y: 1, z: 2       }, 3, (f32, f32, f32));
-do_vec_boilerplate!(V4 { x: 0, y: 1, z: 2, w: 3 }, 4, (f32, f32, f32, f32));
+do_vec_boilerplate!(V2 { x: 0, y: 1 }, 2, (f32, f32));
+do_vec_boilerplate!(V3 { x: 0, y: 1, z: 2 }, 3, (f32, f32, f32));
+do_vec_boilerplate!(
+    V4 {
+        x: 0,
+        y: 1,
+        z: 2,
+        w: 3
+    },
+    4,
+    (f32, f32, f32, f32)
+);
 
 impl V2 {
-    #[inline] pub fn unit() -> V2 { V2::new(1.0, 0.0) }
-    #[inline] pub fn outer_prod(self, o: V2) -> M2x2 { M2x2 { x: self * o.x, y: self * o.y } }
-    #[inline] pub fn cross(self, o: V2) -> f32 { self.x * o.y - self.y * o.x }
-    #[inline] pub fn norm_or_unit(self) -> V2 { self.norm_or(0.0, 1.0) }
-    #[inline] pub fn to_arr(self) -> [f32; 2] { [self.x, self.y] }
+    #[inline]
+    pub fn unit() -> V2 {
+        V2::new(1.0, 0.0)
+    }
+    #[inline]
+    pub fn outer_prod(self, o: V2) -> M2x2 {
+        M2x2 {
+            x: self * o.x,
+            y: self * o.y,
+        }
+    }
+    #[inline]
+    pub fn cross(self, o: V2) -> f32 {
+        self.x * o.y - self.y * o.x
+    }
+    #[inline]
+    pub fn norm_or_unit(self) -> V2 {
+        self.norm_or(0.0, 1.0)
+    }
+    #[inline]
+    pub fn to_arr(self) -> [f32; 2] {
+        [self.x, self.y]
+    }
 
     #[inline]
     pub fn to_arr16(self) -> [u16; 2] {
         debug_assert!(self.x >= 0.0 && self.x <= 1.0, "x out of range {}", self.x);
         debug_assert!(self.y >= 0.0 && self.y <= 1.0, "y out of range {}", self.y);
-        [(self.x * (std::u16::MAX as f32)).trunc() as u16,
-         (self.y * (std::u16::MAX as f32)).trunc() as u16]
+        [
+            (self.x * (std::u16::MAX as f32)).trunc() as u16,
+            (self.y * (std::u16::MAX as f32)).trunc() as u16,
+        ]
     }
 
     #[inline]
     pub fn max_index(&self) -> usize {
-        if self.x > self.y { 0 } else { 1 }
+        if self.x > self.y {
+            0
+        } else {
+            1
+        }
     }
 
     #[inline]
     pub fn min_index(&self) -> usize {
-        if self.x > self.y { 1 } else { 0 }
+        if self.x > self.y {
+            1
+        } else {
+            0
+        }
     }
 }
 
 impl V3 {
-
     #[inline]
     pub fn expand(v: V2, z: f32) -> V3 {
         V3 { x: v.x, y: v.y, z }
@@ -877,14 +932,20 @@ impl V3 {
 
     #[inline]
     pub fn outer_prod(self, o: V3) -> M3x3 {
-        M3x3 { x: self * o.x, y: self * o.y, z: self * o.z }
+        M3x3 {
+            x: self * o.x,
+            y: self * o.y,
+            z: self * o.z,
+        }
     }
 
     #[inline]
     pub fn cross(&self, b: V3) -> V3 {
-        vec3(self.y * b.z - self.z * b.y,
-             self.z * b.x - self.x * b.z,
-             self.x * b.y - self.y * b.x)
+        vec3(
+            self.y * b.z - self.z * b.y,
+            self.z * b.x - self.x * b.z,
+            self.x * b.y - self.y * b.x,
+        )
     }
 
     #[inline]
@@ -899,12 +960,12 @@ impl V3 {
     #[inline]
     pub fn basis(self) -> (V3, V3, V3) {
         let a = self.norm_or(1.0, 0.0, 0.0);
-        let bu =
-            if self.x.abs() > 0.57735 { // sqrt(1/3)
-                vec3(self.y, -self.x, 0.0)
-            } else {
-                vec3(0.0, self.z, -self.y)
-            };
+        let bu = if self.x.abs() > 0.57735 {
+            // sqrt(1/3)
+            vec3(self.y, -self.x, 0.0)
+        } else {
+            vec3(0.0, self.z, -self.y)
+        };
         // should never need normalizing, but there may be degenerate cases...
         let b = bu.norm_or(0.0, -1.0, 0.0);
         let c = a.cross(b);
@@ -922,41 +983,120 @@ impl V3 {
 
     #[inline]
     pub fn max_index(&self) -> usize {
-        if self.x > self.y { if self.x > self.z { 0 } else { 2 } }
-        else               { if self.y > self.z { 1 } else { 2 } }
+        if self.x > self.y {
+            if self.x > self.z {
+                0
+            } else {
+                2
+            }
+        } else {
+            if self.y > self.z {
+                1
+            } else {
+                2
+            }
+        }
     }
 
     #[inline]
     pub fn min_index(&self) -> usize {
-        if self.x < self.y { if self.x < self.z { 0 } else { 2 } }
-        else               { if self.y < self.z { 1 } else { 2 } }
+        if self.x < self.y {
+            if self.x < self.z {
+                0
+            } else {
+                2
+            }
+        } else {
+            if self.y < self.z {
+                1
+            } else {
+                2
+            }
+        }
     }
 }
 
 impl V4 {
-    #[inline] pub fn expand(v: V3, w: f32) -> V4 { V4 { x: v.x, y: v.y, z: v.z, w: w } }
-    #[inline] pub fn xyz(self) -> V3 { V3 { x: self.x, y: self.y, z: self.z } }
-    #[inline] pub fn norm_or_unit(self) -> V4 { self.norm_or(0.0, 0.0, 0.0, 1.0) }
-    #[inline] pub fn to_arr(self) -> [f32; 4] { self.into() }
-    #[inline] pub fn outer_prod(self, o: V4) -> M4x4 {
-        M4x4 { x: self * o.x, y: self * o.y, z: self * o.z, w: self * o.w }
+    #[inline]
+    pub fn expand(v: V3, w: f32) -> V4 {
+        V4 {
+            x: v.x,
+            y: v.y,
+            z: v.z,
+            w: w,
+        }
+    }
+    #[inline]
+    pub fn xyz(self) -> V3 {
+        V3 {
+            x: self.x,
+            y: self.y,
+            z: self.z,
+        }
+    }
+    #[inline]
+    pub fn norm_or_unit(self) -> V4 {
+        self.norm_or(0.0, 0.0, 0.0, 1.0)
+    }
+    #[inline]
+    pub fn to_arr(self) -> [f32; 4] {
+        self.into()
+    }
+    #[inline]
+    pub fn outer_prod(self, o: V4) -> M4x4 {
+        M4x4 {
+            x: self * o.x,
+            y: self * o.y,
+            z: self * o.z,
+            w: self * o.w,
+        }
     }
     #[inline]
     pub fn to_arr8(self) -> [u8; 4] {
-        [(self.x * 255.0).trunc() as u8, (self.y * 255.0).trunc() as u8,
-         (self.z * 255.0).trunc() as u8, (self.w * 255.0).trunc() as u8]
+        [
+            (self.x * 255.0).trunc() as u8,
+            (self.y * 255.0).trunc() as u8,
+            (self.z * 255.0).trunc() as u8,
+            (self.w * 255.0).trunc() as u8,
+        ]
     }
 
     #[inline]
     pub fn max_index(&self) -> usize {
         if self.x > self.y {
             // y out
-            if self.x > self.z { if self.x > self.w { 0 } else { 3 } } // z out
-            else               { if self.z > self.w { 2 } else { 3 } } // x out
+            if self.x > self.z {
+                if self.x > self.w {
+                    0
+                } else {
+                    3
+                }
+            }
+            // z out
+            else {
+                if self.z > self.w {
+                    2
+                } else {
+                    3
+                }
+            } // x out
         } else {
             // x out
-            if self.y > self.z { if self.y > self.w { 1 } else { 3 } } // z out
-            else               { if self.z > self.w { 2 } else { 3 } } // y out
+            if self.y > self.z {
+                if self.y > self.w {
+                    1
+                } else {
+                    3
+                }
+            }
+            // z out
+            else {
+                if self.z > self.w {
+                    2
+                } else {
+                    3
+                }
+            } // y out
         }
     }
 
@@ -964,30 +1104,134 @@ impl V4 {
     pub fn min_index(&self) -> usize {
         if self.x < self.y {
             // y out
-            if self.x < self.z { if self.x < self.w { 0 } else { 3 } } // z out
-            else               { if self.z < self.w { 2 } else { 3 } } // x out
+            if self.x < self.z {
+                if self.x < self.w {
+                    0
+                } else {
+                    3
+                }
+            }
+            // z out
+            else {
+                if self.z < self.w {
+                    2
+                } else {
+                    3
+                }
+            } // x out
         } else {
             // x out
-            if self.y < self.z { if self.y < self.w { 1 } else { 3 } } // z out
-            else               { if self.z < self.w { 2 } else { 3 } } // y out
+            if self.y < self.z {
+                if self.y < self.w {
+                    1
+                } else {
+                    3
+                }
+            }
+            // z out
+            else {
+                if self.z < self.w {
+                    2
+                } else {
+                    3
+                }
+            } // y out
         }
     }
 }
 
-impl From<V3> for V2 { #[inline] fn from(v: V3) -> V2 { V2 { x: v.x, y: v.y                 } } }
-impl From<V2> for V3 { #[inline] fn from(v: V2) -> V3 { V3 { x: v.x, y: v.y, z: 0.0         } } }
-impl From<V4> for V3 { #[inline] fn from(v: V4) -> V3 { V3 { x: v.x, y: v.y, z: v.z         } } }
-impl From<V3> for V4 { #[inline] fn from(v: V3) -> V4 { V4 { x: v.x, y: v.y, z: v.z, w: 0.0 } } }
-impl From<V4> for V2 { #[inline] fn from(v: V4) -> V2 { V2 { x: v.x, y: v.y                 } } }
-impl From<V2> for V4 { #[inline] fn from(v: V2) -> V4 { V4 { x: v.x, y: v.y, z: 0.0, w: 0.0 } } }
+impl From<V3> for V2 {
+    #[inline]
+    fn from(v: V3) -> V2 {
+        V2 { x: v.x, y: v.y }
+    }
+}
+impl From<V2> for V3 {
+    #[inline]
+    fn from(v: V2) -> V3 {
+        V3 {
+            x: v.x,
+            y: v.y,
+            z: 0.0,
+        }
+    }
+}
+impl From<V4> for V3 {
+    #[inline]
+    fn from(v: V4) -> V3 {
+        V3 {
+            x: v.x,
+            y: v.y,
+            z: v.z,
+        }
+    }
+}
+impl From<V3> for V4 {
+    #[inline]
+    fn from(v: V3) -> V4 {
+        V4 {
+            x: v.x,
+            y: v.y,
+            z: v.z,
+            w: 0.0,
+        }
+    }
+}
+impl From<V4> for V2 {
+    #[inline]
+    fn from(v: V4) -> V2 {
+        V2 { x: v.x, y: v.y }
+    }
+}
+impl From<V2> for V4 {
+    #[inline]
+    fn from(v: V2) -> V4 {
+        V4 {
+            x: v.x,
+            y: v.y,
+            z: 0.0,
+            w: 0.0,
+        }
+    }
+}
 
-impl AsRef<V2> for V3 { #[inline] fn as_ref(&self) -> &V2 { unsafe { mem::transmute(self) } } }
-impl AsRef<V2> for V4 { #[inline] fn as_ref(&self) -> &V2 { unsafe { mem::transmute(self) } } }
-impl AsRef<V3> for V4 { #[inline] fn as_ref(&self) -> &V3 { unsafe { mem::transmute(self) } } }
+impl AsRef<V2> for V3 {
+    #[inline]
+    fn as_ref(&self) -> &V2 {
+        unsafe { mem::transmute(self) }
+    }
+}
+impl AsRef<V2> for V4 {
+    #[inline]
+    fn as_ref(&self) -> &V2 {
+        unsafe { mem::transmute(self) }
+    }
+}
+impl AsRef<V3> for V4 {
+    #[inline]
+    fn as_ref(&self) -> &V3 {
+        unsafe { mem::transmute(self) }
+    }
+}
 
-impl AsMut<V2> for V3 { #[inline] fn as_mut(&mut self) -> &mut V2 { unsafe { mem::transmute(self) } } }
-impl AsMut<V2> for V4 { #[inline] fn as_mut(&mut self) -> &mut V2 { unsafe { mem::transmute(self) } } }
-impl AsMut<V3> for V4 { #[inline] fn as_mut(&mut self) -> &mut V3 { unsafe { mem::transmute(self) } } }
+impl AsMut<V2> for V3 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut V2 {
+        unsafe { mem::transmute(self) }
+    }
+}
+impl AsMut<V2> for V4 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut V2 {
+        unsafe { mem::transmute(self) }
+    }
+}
+impl AsMut<V3> for V4 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut V3 {
+        unsafe { mem::transmute(self) }
+    }
+}
 
 #[inline]
 pub fn cross(a: V3, b: V3) -> V3 {
@@ -1003,7 +1247,7 @@ pub fn scalar_triple(a: V3, b: V3, c: V3) -> f32 {
 pub fn max_dir(arr: &[V3], dir: V3) -> Option<V3> {
     match max_dir_index(arr, dir) {
         Some(index) => Some(arr[index]),
-        None => None
+        None => None,
     }
 }
 
@@ -1038,7 +1282,7 @@ pub fn max_dir_i<I: Iterator<Item = V3>>(dir: V3, iter: &mut I) -> Option<V3> {
 pub fn compute_bounds_i<I, Vt>(iter: &mut I) -> Option<(Vt, Vt)>
 where
     I: Iterator<Item = Vt>,
-    Vt: VecType
+    Vt: VecType,
 {
     let initial = iter.next()?;
 

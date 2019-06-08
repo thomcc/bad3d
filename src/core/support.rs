@@ -6,7 +6,7 @@ pub trait Support {
 
 pub struct TransformedSupport<'a, T: 'a + Support + ?Sized> {
     pub pose: Pose,
-    pub object: &'a T
+    pub object: &'a T,
 }
 
 impl<'a, T: Support> TransformedSupport<'a, T> {
@@ -36,4 +36,3 @@ impl<'a> Support for &'a [V3] {
         self[m]
     }
 }
-

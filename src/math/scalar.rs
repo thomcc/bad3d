@@ -28,15 +28,29 @@ impl Clamp for f32 {
 
 #[inline]
 pub fn safe_div(a: f32, b: f32) -> Option<f32> {
-    if b == 0.0 { None } else { Some(a / b) }
+    if b == 0.0 {
+        None
+    } else {
+        Some(a / b)
+    }
 }
 
-#[inline] pub fn safe_div0(a: f32, b: f32) -> f32 { safe_div(a, b).unwrap_or(0.0) }
-#[inline] pub fn safe_div1(a: f32, b: f32) -> f32 { safe_div(a, b).unwrap_or(1.0) }
+#[inline]
+pub fn safe_div0(a: f32, b: f32) -> f32 {
+    safe_div(a, b).unwrap_or(0.0)
+}
+#[inline]
+pub fn safe_div1(a: f32, b: f32) -> f32 {
+    safe_div(a, b).unwrap_or(1.0)
+}
 
 #[inline]
 pub fn safe_div_e(a: f32, b: f32, e: f32) -> Option<f32> {
-    if b.approx_zero_e(e) { None } else { Some(a / b) }
+    if b.approx_zero_e(e) {
+        None
+    } else {
+        Some(a / b)
+    }
 }
 
 #[inline]

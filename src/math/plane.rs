@@ -1,11 +1,10 @@
-
-use crate::math::traits::*;
-use crate::math::scalar::*;
-use crate::math::vec::*;
-use crate::math::quat::*;
 use crate::math::geom::*;
+use crate::math::quat::*;
+use crate::math::scalar::*;
+use crate::math::traits::*;
+use crate::math::vec::*;
 
-use std::{fmt, ops, mem};
+use std::{fmt, mem, ops};
 
 pub const DEFAULT_PLANE_WIDTH: f32 = 0.0001_f32;
 
@@ -17,32 +16,68 @@ pub struct Plane {
 }
 
 impl Default for Plane {
-    #[inline] fn default() -> Plane { plane(0.0, 0.0, 1.0, 0.0) }
+    #[inline]
+    fn default() -> Plane {
+        plane(0.0, 0.0, 1.0, 0.0)
+    }
 }
 
 impl fmt::Display for Plane {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "plane(({}, {}, {}), {})",
-               self.normal.x, self.normal.y, self.normal.z, self.offset)
+        write!(
+            f,
+            "plane(({}, {}, {}), {})",
+            self.normal.x, self.normal.y, self.normal.z, self.offset
+        )
     }
 }
 
-impl AsRef<Plane> for V4 { #[inline] fn as_ref(&self) -> &Plane { unsafe { mem::transmute(self) } } }
-impl AsRef<V4> for Plane { #[inline] fn as_ref(&self) -> &V4    { unsafe { mem::transmute(self) } } }
+impl AsRef<Plane> for V4 {
+    #[inline]
+    fn as_ref(&self) -> &Plane {
+        unsafe { mem::transmute(self) }
+    }
+}
+impl AsRef<V4> for Plane {
+    #[inline]
+    fn as_ref(&self) -> &V4 {
+        unsafe { mem::transmute(self) }
+    }
+}
 
-impl AsMut<Plane> for V4 { #[inline] fn as_mut(&mut self) -> &mut Plane { unsafe { mem::transmute(self) } } }
-impl AsMut<V4> for Plane { #[inline] fn as_mut(&mut self) -> &mut V4    { unsafe { mem::transmute(self) } } }
+impl AsMut<Plane> for V4 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Plane {
+        unsafe { mem::transmute(self) }
+    }
+}
+impl AsMut<V4> for Plane {
+    #[inline]
+    fn as_mut(&mut self) -> &mut V4 {
+        unsafe { mem::transmute(self) }
+    }
+}
 
-impl From<Plane> for V4 { #[inline] fn from(p: Plane) -> Self { p.to_v4() } }
-impl From<V4> for Plane { #[inline] fn from(v: V4) -> Self { Plane::from_v4(v) } }
+impl From<Plane> for V4 {
+    #[inline]
+    fn from(p: Plane) -> Self {
+        p.to_v4()
+    }
+}
+impl From<V4> for Plane {
+    #[inline]
+    fn from(v: V4) -> Self {
+        Plane::from_v4(v)
+    }
+}
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Hash)]
 pub enum PlaneTestResult {
     Coplanar = 0b00,
-    Under    = 0b01,
-    Over     = 0b10,
-    Split    = 0b11, // Under | Over, not possible for points
+    Under = 0b01,
+    Over = 0b10,
+    Split = 0b11, // Under | Over, not possible for points
 }
 
 impl ops::Neg for Plane {
@@ -61,7 +96,12 @@ impl Plane {
 
     #[inline]
     pub fn to_v4(&self) -> V4 {
-        V4 { x: self.normal.x, y: self.normal.y, z: self.normal.z, w: self.offset }
+        V4 {
+            x: self.normal.x,
+            y: self.normal.y,
+            z: self.normal.z,
+            w: self.offset,
+        }
     }
 
     #[inline]
@@ -77,7 +117,7 @@ impl Plane {
     #[inline]
     pub fn from_points(points: &[V3]) -> Plane {
         assert_ge!(points.len(), 3);
-        let c = points.iter().fold(V3::zero(), |a, &b| a+b) / (points.len() as f32);
+        let c = points.iter().fold(V3::zero(), |a, &b| a + b) / (points.len() as f32);
         let mut n = V3::zero();
         for i in 0..points.len() {
             let i1 = (i + 1) % points.len();
@@ -153,19 +193,29 @@ impl Plane {
     pub fn test_e(&self, pos: V3, e: f32) -> PlaneTestResult {
         debug_assert_ge!(e, 0.0);
         let a = dot(pos, self.normal) + self.offset;
-        if a > e { PlaneTestResult::Over }
-        else if a < -e { PlaneTestResult::Under }
-        else { PlaneTestResult::Coplanar }
+        if a > e {
+            PlaneTestResult::Over
+        } else if a < -e {
+            PlaneTestResult::Under
+        } else {
+            PlaneTestResult::Coplanar
+        }
     }
 
     #[inline]
     pub fn split_test_e(&self, verts: &[V3], e: f32) -> PlaneTestResult {
         let u = self.split_test_val_e(verts, e);
-        if u == PlaneTestResult::Coplanar as usize { PlaneTestResult::Coplanar }
-        else if u == PlaneTestResult::Under as usize { PlaneTestResult::Under }
-        else if u == PlaneTestResult::Over as usize { PlaneTestResult::Over }
-        else if u == PlaneTestResult::Split as usize { PlaneTestResult::Split }
-        else { unreachable!("bad plane test result: {}", u) }
+        if u == PlaneTestResult::Coplanar as usize {
+            PlaneTestResult::Coplanar
+        } else if u == PlaneTestResult::Under as usize {
+            PlaneTestResult::Under
+        } else if u == PlaneTestResult::Over as usize {
+            PlaneTestResult::Over
+        } else if u == PlaneTestResult::Split as usize {
+            PlaneTestResult::Split
+        } else {
+            unreachable!("bad plane test result: {}", u)
+        }
     }
 
     #[inline]
@@ -181,7 +231,7 @@ impl Plane {
     }
 
     #[inline]
-    pub fn split_line_e(&self, v0: V3, v1: V3, e: f32) -> Option<V3>  {
+    pub fn split_line_e(&self, v0: V3, v1: V3, e: f32) -> Option<V3> {
         let t0 = self.test_e(v0, e) as usize;
         let t1 = self.test_e(v1, e) as usize;
 
@@ -219,7 +269,10 @@ impl Plane {
 }
 
 impl Zero for Plane {
-    const ZERO: Plane = Plane { normal: V3::ZERO, offset: 0.0 };
+    const ZERO: Plane = Plane {
+        normal: V3::ZERO,
+        offset: 0.0,
+    };
 }
 
 impl Dot for Plane {

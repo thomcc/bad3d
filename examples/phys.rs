@@ -15,14 +15,15 @@ extern crate imgui_glium_renderer;
 extern crate failure;
 
 mod shared;
-use crate::shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
-use glium::glutin::VirtualKeyCode;
+use crate::shared::{
+    input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result,
+};
 use bad3d::prelude::*;
-use std::rc::Rc;
-use std::f32;
-use std::time::Instant;
+use glium::glutin::VirtualKeyCode;
 use std::cell::RefCell;
-
+use std::f32;
+use std::rc::Rc;
+use std::time::Instant;
 
 struct DemoCamera {
     pub head_tilt: f32,
@@ -56,8 +57,7 @@ impl DemoCamera {
     }
 
     pub fn orientation(&self) -> Quat {
-        Quat::from_yaw_pitch_roll(
-            self.head_turn, self.head_tilt+f32::consts::PI/4.0, 0.0)
+        Quat::from_yaw_pitch_roll(self.head_turn, self.head_tilt + f32::consts::PI / 4.0, 0.0)
     }
 
     pub fn handle_input(&mut self, is: &InputState) {
@@ -69,8 +69,8 @@ impl DemoCamera {
         let mut move_tilt = 0.0;
         if is.mouse.down.0 && !is.shift_down() {
             let dm = is.mouse_delta();
-            move_turn = (-dm.x*self.mouse_sensitivity*is.view_angle).to_radians()/100.0;
-            move_tilt = (-dm.y*self.mouse_sensitivity*is.view_angle).to_radians()/100.0;
+            move_turn = (-dm.x * self.mouse_sensitivity * is.view_angle).to_radians() / 100.0;
+            move_tilt = (-dm.y * self.mouse_sensitivity * is.view_angle).to_radians() / 100.0;
         }
 
         self.head_turn += move_turn;
@@ -86,10 +86,15 @@ impl DemoCamera {
 fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
     let pose = body.pose;
     for shape in &body.shapes {
-        let hit = geom::convex_hit_check_posed(shape.tris.iter().map(|&tri| {
-            let (v0, v1, v2) = tri.tri_verts(&shape.vertices);
-            Plane::from_tri(v0, v1, v2)
-        }), pose, p0, p1);
+        let hit = geom::convex_hit_check_posed(
+            shape.tris.iter().map(|&tri| {
+                let (v0, v1, v2) = tri.tri_verts(&shape.vertices);
+                Plane::from_tri(v0, v1, v2)
+            }),
+            pose,
+            p0,
+            p1,
+        );
 
         if hit.is_some() {
             return hit;
@@ -102,36 +107,49 @@ fn main() -> Result<()> {
     let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
     gui.borrow_mut().set_ini_filename(None);
 
-    let mut win = DemoWindow::new(DemoOptions {
-        title: "Physics engine test",
-        clear_color: vec4(0.5, 0.6, 1.0, 1.0),
-        near_far: (0.01, 100.0),
-        light_pos: vec3(0.0, 1.2, 1.0),
-        .. Default::default()
-    }, gui.clone())?;
+    let mut win = DemoWindow::new(
+        DemoOptions {
+            title: "Physics engine test",
+            clear_color: vec4(0.5, 0.6, 1.0, 1.0),
+            near_far: (0.01, 100.0),
+            light_pos: vec3(0.0, 1.2, 1.0),
+            ..Default::default()
+        },
+        gui.clone(),
+    )?;
 
     let ground = Shape::new_aabb(vec3(-10.0, -10.0, -5.0), vec3(10.0, 10.0, -2.0));
 
-    let ground_mesh = DemoMesh::from_shape(&win.display, &ground,
-        Some(vec4(0.25, 0.75, 0.25, 1.0)))?;
+    let ground_mesh =
+        DemoMesh::from_shape(&win.display, &ground, Some(vec4(0.25, 0.75, 0.25, 1.0)))?;
 
     let mut demo_objects: Vec<DemoObject> = Vec::new();
 
-    let jack_push_pos   = vec3(0.0, 0.0, 0.0);
-    let jack_momentum   = vec3(4.0, -0.8, 5.0);
+    let jack_push_pos = vec3(0.0, 0.0, 0.0);
+    let jack_momentum = vec3(4.0, -0.8, 5.0);
     let jack_push_pos_2 = vec3(0.0, 0.5, 0.0);
     let jack_momentum_2 = vec3(0.3, 0.4, 1.0);
-    let seesaw_start    = vec3(0.0, -4.0, 0.25);
+    let seesaw_start = vec3(0.0, -4.0, 0.25);
 
-    demo_objects.push(DemoObject::from_wingmesh(&win.display,
-                                                WingMesh::new_cone(10, 0.5, 1.0),
-                                                vec3(1.5, 0.0, 1.5))?);
+    demo_objects.push(DemoObject::from_wingmesh(
+        &win.display,
+        WingMesh::new_cone(10, 0.5, 1.0),
+        vec3(1.5, 0.0, 1.5),
+    )?);
 
-    demo_objects.push(DemoObject::new_box(&win.display, V3::splat(1.0), vec3(-1.5, 0.0, 1.5),
-                      Some(quat(0.1, 0.01, 0.3, 1.0).must_norm()))?);
+    demo_objects.push(DemoObject::new_box(
+        &win.display,
+        V3::splat(1.0),
+        vec3(-1.5, 0.0, 1.5),
+        Some(quat(0.1, 0.01, 0.3, 1.0).must_norm()),
+    )?);
 
-    demo_objects.push(DemoObject::new_box(&win.display, vec3(4.0, 0.5, 0.1),
-                                          seesaw_start, None)?);
+    demo_objects.push(DemoObject::new_box(
+        &win.display,
+        vec3(4.0, 0.5, 0.1),
+        seesaw_start,
+        None,
+    )?);
 
     let seesaw = demo_objects[demo_objects.len() - 1].body.clone();
 
@@ -143,10 +161,20 @@ fn main() -> Result<()> {
         let l = DemoObject::from_wingmesh(&win.display, wm, seesaw_start + vec3(3.5, 0.0, 50.0))?;
         l.body.borrow_mut().scale_mass(6.0);
 
-        let l2 = DemoObject::new_box(&win.display, V3::splat(0.25), seesaw_start + vec3(3.0, 0.0, 0.4), None)?;
+        let l2 = DemoObject::new_box(
+            &win.display,
+            V3::splat(0.25),
+            seesaw_start + vec3(3.0, 0.0, 0.4),
+            None,
+        )?;
         l2.body.borrow_mut().scale_mass(0.75);
 
-        let r = DemoObject::new_box(&win.display, V3::splat(0.5), seesaw_start + vec3(-2.5, 0.0, 5.0), None)?;
+        let r = DemoObject::new_box(
+            &win.display,
+            V3::splat(0.5),
+            seesaw_start + vec3(-2.5, 0.0, 5.0),
+            None,
+        )?;
         r.body.borrow_mut().scale_mass(2.0);
 
         demo_objects.push(l);
@@ -154,19 +182,30 @@ fn main() -> Result<()> {
         demo_objects.push(r);
     }
 
-    let jack = RigidBody::new_ref(vec![
-        Shape::new_box(vec3(1.0, 0.2, 0.2)),
-        Shape::new_box(vec3(0.2, 1.0, 0.2)),
-        Shape::new_box(vec3(0.2, 0.2, 1.0)),
-    ], vec3(-5.5, 0.5, 7.5), 1.0);
-    jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
-    jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
+    let jack = RigidBody::new_ref(
+        vec![
+            Shape::new_box(vec3(1.0, 0.2, 0.2)),
+            Shape::new_box(vec3(0.2, 1.0, 0.2)),
+            Shape::new_box(vec3(0.2, 0.2, 1.0)),
+        ],
+        vec3(-5.5, 0.5, 7.5),
+        1.0,
+    );
+    jack.borrow_mut()
+        .apply_impulse(jack_push_pos, jack_momentum);
+    jack.borrow_mut()
+        .apply_impulse(jack_push_pos_2, jack_momentum_2);
     demo_objects.push(DemoObject::from_body(&win.display, jack.clone())?);
 
     {
         let mut z = 5.5;
         while z < 14.0 {
-            demo_objects.push(DemoObject::new_box(&win.display, V3::splat(0.5), vec3(0.0, 0.0, z), None)?);
+            demo_objects.push(DemoObject::new_box(
+                &win.display,
+                V3::splat(0.5),
+                vec3(0.0, 0.0, z),
+                None,
+            )?);
             z += 3.0;
         }
     }
@@ -174,24 +213,49 @@ fn main() -> Result<()> {
     {
         let mut z = 15.0;
         while z < 20.0 {
-            demo_objects.push(DemoObject::new_octa(&win.display, V3::splat(0.5), vec3(0.0, 0.0, z), None)?);
+            demo_objects.push(DemoObject::new_octa(
+                &win.display,
+                V3::splat(0.5),
+                vec3(0.0, 0.0, z),
+                None,
+            )?);
             z += 3.0;
         }
     }
 
     for i in 0..4 {
         let fi = i as f32;
-        demo_objects.push(DemoObject::new_cloud(&win.display,
-            vec3(3.0+fi*2.0, -3.0, 4.0+fi*3.0), None)?);
+        demo_objects.push(DemoObject::new_cloud(
+            &win.display,
+            vec3(3.0 + fi * 2.0, -3.0, 4.0 + fi * 3.0),
+            None,
+        )?);
     }
 
-    demo_objects.push(DemoObject::new_box(&win.display, vec3(2.0, 0.1, 0.1), vec3(0.0, 0.0, -0.5), None)?);
-    demo_objects.push(DemoObject::new_box(&win.display, vec3(2.0, 0.4, 0.1), vec3(0.0, 1.0, -0.5), None)?);
+    demo_objects.push(DemoObject::new_box(
+        &win.display,
+        vec3(2.0, 0.1, 0.1),
+        vec3(0.0, 0.0, -0.5),
+        None,
+    )?);
+    demo_objects.push(DemoObject::new_box(
+        &win.display,
+        vec3(2.0, 0.4, 0.1),
+        vec3(0.0, 1.0, -0.5),
+        None,
+    )?);
 
     {
         let mut wm = WingMesh::new_cone(30, 0.5, 2.0);
-        wm.rotate(Quat::shortest_arc(vec3(0.0, 0.0, 1.0), vec3(0.0, -0.5, -0.5)));
-        demo_objects.push(DemoObject::from_wingmesh(&win.display, wm, vec3(-4.0, -4.0, 4.0))?);
+        wm.rotate(Quat::shortest_arc(
+            vec3(0.0, 0.0, 1.0),
+            vec3(0.0, -0.5, -0.5),
+        ));
+        demo_objects.push(DemoObject::from_wingmesh(
+            &win.display,
+            wm,
+            vec3(-4.0, -4.0, 4.0),
+        )?);
     }
 
     let mut cam = DemoCamera::new_at(vec3(0.2, -20.6, 6.5));
@@ -201,29 +265,31 @@ fn main() -> Result<()> {
     let mini_cube = DemoMesh::from_shape(
         &win.display,
         &Shape::new_box(vec3(0.025, 0.025, 0.025)),
-        Some(vec4(1.0, 0.0, 1.0, 1.0))
+        Some(vec4(1.0, 0.0, 1.0, 1.0)),
     )?;
     let mut cube_pos = cam.pose() * vec3(0.0, 0.0, -10.0);
 
     let mut selected: Option<RigidBodyRef> = None;
     let mut rb_pos = V3::zero();
 
-    let mut gui_renderer = imgui_glium_renderer::Renderer::init(
-        &mut *gui.borrow_mut(), &win.display).unwrap();
+    let mut gui_renderer =
+        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
 
     let mut running = false;
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
         let ui = win.get_ui(&mut *imgui);
         for &(key, down) in win.input.key_changes.iter() {
-            if !down { continue; }
+            if !down {
+                continue;
+            }
             match key {
                 glium::glutin::VirtualKeyCode::Space => {
                     let r = running;
                     running = !r;
-                },
+                }
                 glium::glutin::VirtualKeyCode::R => {
-                    for &mut DemoObject{ body: ref b, .. } in demo_objects.iter_mut() {
+                    for &mut DemoObject { body: ref b, .. } in demo_objects.iter_mut() {
                         let mut body = b.borrow_mut();
                         body.pose = body.start_pose;
                         body.linear_momentum = V3::zero();
@@ -231,10 +297,12 @@ fn main() -> Result<()> {
                     }
                     seesaw.borrow_mut().pose.orientation = Quat::identity();
 
-                    jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
-                    jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
-                },
-                _ => {},
+                    jack.borrow_mut()
+                        .apply_impulse(jack_push_pos, jack_momentum);
+                    jack.borrow_mut()
+                        .apply_impulse(jack_push_pos_2, jack_momentum_2);
+                }
+                _ => {}
             }
         }
         let mut targ_id = selected.as_ref().map(|rb| rb.borrow().id);
@@ -266,8 +334,9 @@ fn main() -> Result<()> {
         if !win.input.mouse.down.0 {
             selected = None;
         }
-        cube_pos = cam.position + mouse_ray *
-            (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
+        cube_pos = cam.position
+            + mouse_ray
+                * (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
         if running {
             let dt = 1.0 / 60.0;
             let mut cs = phys::ConstraintSet::new(dt);
@@ -279,10 +348,16 @@ fn main() -> Result<()> {
             }
 
             cs.nail(None, seesaw_start, Some(seesaw.clone()), V3::zero());
-            cs.range(None, Some(seesaw.clone()), Quat::identity(),
-                vec3(0.0, -20.0, 0.0), vec3(0.0, 20.0, 0.0));
+            cs.range(
+                None,
+                Some(seesaw.clone()),
+                Quat::identity(),
+                vec3(0.0, -20.0, 0.0),
+                vec3(0.0, 20.0, 0.0),
+            );
 
-            let mut bodies = demo_objects.iter()
+            let mut bodies = demo_objects
+                .iter()
                 .map(|item| item.body.clone())
                 .collect::<Vec<phys::RigidBodyRef>>();
             phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt);
@@ -306,8 +381,8 @@ fn main() -> Result<()> {
         }
 
         // win.ui(|ui| {
-            let framerate = ui.framerate();
-            ui.window(im_str!("test"))
+        let framerate = ui.framerate();
+        ui.window(im_str!("test"))
             // .size((200.0, 300.0), imgui::ImGuiCond::Appearing)
             .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
             // .size((300.0, 100.0), imgui::ImGuiCond::FirstUseEver)
@@ -318,10 +393,9 @@ fn main() -> Result<()> {
                 ui.text(im_str!("  reset: [R]"));
                 ui.text(im_str!("  pause/unpause: [Space]"));
             });
-            // Ok(())
+        // Ok(())
         // })?;
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
     }
     Ok(())
 }
-

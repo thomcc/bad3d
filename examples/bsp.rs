@@ -19,15 +19,15 @@ extern crate more_asserts;
 #[macro_use]
 mod shared;
 
-use shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
+use shared::{input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
 
-use bad3d::prelude::*;//{hull, bsp, gjk, wingmesh::WingMesh, phys::{self, RigidBody, RigidBodyRef}};
-// use bad3d::math::*;
-use std::rc::Rc;
+use bad3d::prelude::*; //{hull, bsp, gjk, wingmesh::WingMesh, phys::{self, RigidBody, RigidBodyRef}};
+                       // use bad3d::math::*;
+use std::cell::RefCell;
 use std::f32;
 use std::fmt::Debug;
-use std::cell::RefCell;
-use std::time::{Instant, Duration};
+use std::rc::Rc;
+use std::time::{Duration, Instant};
 
 pub trait PickableEnum: Debug + Clone + PartialEq {
     fn variants() -> Vec<Self>;
@@ -46,16 +46,25 @@ macro_rules! implement_pickable {
 
 trait ImguiExt {
     fn enum_picker<E>(&mut self, label: &str, cur_choice: &mut E) -> (bool, E)
-        where E: PickableEnum + Debug + PartialEq + Clone;
+    where
+        E: PickableEnum + Debug + PartialEq + Clone;
 }
 
 impl<'a> ImguiExt for imgui::Ui<'a> {
     fn enum_picker<E: PickableEnum>(&mut self, label: &str, cur_choice: &mut E) -> (bool, E) {
         let choices = E::variants();
-        let items_storage = choices.iter().map(|choice| im_str!("{:?}", choice).clone()).collect::<Vec<_>>();
+        let items_storage = choices
+            .iter()
+            .map(|choice| im_str!("{:?}", choice).clone())
+            .collect::<Vec<_>>();
         let items = items_storage.iter().map(|r| r.as_ref()).collect::<Vec<_>>();
 
-        let mut cur_item = choices.iter().enumerate().find(|(_, x)| x == &cur_choice).unwrap().0 as i32;
+        let mut cur_item = choices
+            .iter()
+            .enumerate()
+            .find(|(_, x)| x == &cur_choice)
+            .unwrap()
+            .0 as i32;
 
         let res = self.combo(im_str!("{}", label), &mut cur_item, &items, -1);
         if cur_item < 0 || cur_item as usize > choices.len() {
@@ -68,7 +77,10 @@ impl<'a> ImguiExt for imgui::Ui<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum DrawMode { Faces, Cells, }
+enum DrawMode {
+    Faces,
+    Cells,
+}
 
 implement_pickable!(DrawMode { Faces, Cells });
 
@@ -96,7 +108,7 @@ enum Shape {
 enum CsgOp {
     Intersect,
     Union,
-    Subtract
+    Subtract,
 }
 
 #[derive(Clone)]
@@ -115,13 +127,19 @@ impl SceneObj {
             Shape::Octahedron(V3 { x, y, z }) => {
                 let s = vec3(1.0 / x, 1.0 / y, 1.0 / z);
                 WingMesh::new_box(-s, s).dual()
-            },
+            }
             Shape::Cylinder { sides, r, h } => WingMesh::new_cylinder(sides, r, h),
             Shape::Cone { sides, r, h } => WingMesh::new_cone(sides, r, h),
             Shape::Sphere { lat, lng, r } => WingMesh::new_sphere(r, (lat, lng)),
         };
         let faces = mesh.faces();
-        SceneObj { shape, pos, mesh, faces, color: object::random_color() }
+        SceneObj {
+            shape,
+            pos,
+            mesh,
+            faces,
+            color: object::random_color(),
+        }
     }
 }
 
@@ -152,16 +170,44 @@ impl BspScene {
             world_size: 2.0,
             hit_dist: 0.0,
             faces: vec![],
-            cam: Pose::from_rotation(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), 60f32.to_radians())),
+            cam: Pose::from_rotation(Quat::from_axis_angle(
+                vec3(1.0, 0.0, 0.0),
+                60f32.to_radians(),
+            )),
             objects: vec![
-                (SceneObj::new(Shape::Rect(vec3(1.0, 1.0, 2.4)), vec3(0.0, 0.0, 0.5)),
-                 CsgOp::Subtract),
-                (SceneObj::new(Shape::Cylinder { sides: 20, r: 0.6, h: 1.0 }, vec3(0.6, 0.8, 0.2)),
-                 CsgOp::Union),
-                (SceneObj::new(Shape::Octahedron(vec3(0.85, 0.85, 0.85)), vec3(0.8, 0.0, 0.45)),
-                 CsgOp::Subtract),
-                (SceneObj::new(Shape::Sphere { lat: 8, lng: 8, r: 1.0 }, vec3(0.2, 0.1, 0.2)),
-                 CsgOp::Subtract),
+                (
+                    SceneObj::new(Shape::Rect(vec3(1.0, 1.0, 2.4)), vec3(0.0, 0.0, 0.5)),
+                    CsgOp::Subtract,
+                ),
+                (
+                    SceneObj::new(
+                        Shape::Cylinder {
+                            sides: 20,
+                            r: 0.6,
+                            h: 1.0,
+                        },
+                        vec3(0.6, 0.8, 0.2),
+                    ),
+                    CsgOp::Union,
+                ),
+                (
+                    SceneObj::new(
+                        Shape::Octahedron(vec3(0.85, 0.85, 0.85)),
+                        vec3(0.8, 0.0, 0.45),
+                    ),
+                    CsgOp::Subtract,
+                ),
+                (
+                    SceneObj::new(
+                        Shape::Sphere {
+                            lat: 8,
+                            lng: 8,
+                            r: 1.0,
+                        },
+                        vec3(0.2, 0.1, 0.2),
+                    ),
+                    CsgOp::Subtract,
+                ),
             ],
             root_obj: SceneObj::new(Shape::Rect(V3::splat(2.0)), V3::zero()),
         }
@@ -176,17 +222,21 @@ impl BspScene {
         match dm {
             Some(DragMode::Scene) => {
                 self.cam.orientation *= Quat::virtual_track_ball(
-                        vec3(0.0, 0.0, 2.0), V3::zero(),
-                        input.mouse_prev.vec, input.mouse.vec).conj();
-            },
+                    vec3(0.0, 0.0, 2.0),
+                    V3::zero(),
+                    input.mouse_prev.vec,
+                    input.mouse.vec,
+                )
+                .conj();
+            }
             Some(DragMode::Obj(which)) => {
                 assert_lt!(which, self.objects.len());
-                let pos_offset = (self.cam.orientation * input.mouse.vec -
-                                  self.cam.orientation * input.mouse_prev.vec)
-                                * self.hit_dist;
+                let pos_offset = (self.cam.orientation * input.mouse.vec
+                    - self.cam.orientation * input.mouse_prev.vec)
+                    * self.hit_dist;
                 self.objects[which].0.pos += pos_offset;
                 self.bsp = None;
-            },
+            }
             None => {
                 let mut next_mode = DragMode::Scene;
                 let v0 = self.cam.position;
@@ -197,7 +247,7 @@ impl BspScene {
                         o.0.mesh.faces.iter().cloned(),
                         Pose::from_translation(o.0.pos),
                         v0,
-                        v1
+                        v1,
                     );
                     if let Some(hit) = hit_info {
                         v1 = hit.impact;
@@ -223,13 +273,19 @@ impl BspScene {
             match op {
                 CsgOp::Union => bspres = bsp::union(b, bspres),
                 CsgOp::Intersect => bspres = bsp::intersect(b, bspres),
-                CsgOp::Subtract => { b.negate(); bspres = bsp::intersect(b, bspres); }
+                CsgOp::Subtract => {
+                    b.negate();
+                    bspres = bsp::intersect(b, bspres);
+                }
             }
         }
         bspres.rebuild_boundary();
         self.faces = bspres.rip_boundary();
         self.bsp = bsp::clean(bspres);
-        assert!(self.bsp.is_some(), "Somehow our compiled BSP ended up as a leaf?");
+        assert!(
+            self.bsp.is_some(),
+            "Somehow our compiled BSP ended up as a leaf?"
+        );
         Some(now.elapsed())
     }
 }
@@ -243,16 +299,19 @@ pub fn main() -> Result<()> {
     let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
     gui.borrow_mut().set_ini_filename(None);
 
-    let mut win = DemoWindow::new(DemoOptions {
-        title: "BSP (CSG) test",
-        fov: 45.0,
-        light_pos: vec3(-1.0, 0.5, 0.5),
-        near_far: (0.01, 10.0),
-        .. Default::default()
-    }, gui.clone())?;
+    let mut win = DemoWindow::new(
+        DemoOptions {
+            title: "BSP (CSG) test",
+            fov: 45.0,
+            light_pos: vec3(-1.0, 0.5, 0.5),
+            near_far: (0.01, 10.0),
+            ..Default::default()
+        },
+        gui.clone(),
+    )?;
 
-    let mut gui_renderer = imgui_glium_renderer::Renderer::init(
-        &mut *gui.borrow_mut(), &win.display).unwrap();
+    let mut gui_renderer =
+        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
 
     win.input.view_angle = 45.0;
 
@@ -270,7 +329,7 @@ pub fn main() -> Result<()> {
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
         let mut ui = win.get_ui(&mut *imgui);
-        use glium::glutin::{VirtualKeyCode as Key};
+        use glium::glutin::VirtualKeyCode as Key;
         if win.input.key_hit(Key::Q) {
             win.end_frame()?;
             break;
@@ -289,41 +348,55 @@ pub fn main() -> Result<()> {
         let render_start = Instant::now();
 
         if ui_opts.collider_wires {
-            win.wm_draw_wireframe(M4x4::identity(), vec4(0.0, 1.0, 0.5, 1.0), &scene.root_obj.mesh, false)?;
+            win.wm_draw_wireframe(
+                M4x4::identity(),
+                vec4(0.0, 1.0, 0.5, 1.0),
+                &scene.root_obj.mesh,
+                false,
+            )?;
             for (obj, _) in scene.objects.iter() {
-                win.wm_draw_wireframe(M4x4::from_translation(obj.pos),
-                                      obj.color, &obj.mesh, false)?;
+                win.wm_draw_wireframe(
+                    M4x4::from_translation(obj.pos),
+                    obj.color,
+                    &obj.mesh,
+                    false,
+                )?;
             }
         }
 
         if ui_opts.collider_solids {
             for (obj, _) in scene.objects.iter() {
-                win.wm_draw_lit(M4x4::from_translation(obj.pos),
-                                      obj.color, &obj.mesh)?;
+                win.wm_draw_lit(M4x4::from_translation(obj.pos), obj.color, &obj.mesh)?;
             }
         }
 
         match ui_opts.draw_mode {
             DrawMode::Faces => {
                 win.draw_faces(M4x4::identity(), &scene.faces)?;
-            },
+            }
             DrawMode::Cells => {
                 let mut stack = vec![scene.bsp.as_ref().unwrap().as_ref()];
                 while let Some(n) = stack.pop() {
                     if n.leaf_type == bsp::LeafType::Under {
-                        let c = n.convex.verts.iter().fold(V3::zero(), |a, &b| a+b) / (n.convex.verts.len() as f32);
-                        let m = M4x4::from_translation(c) *
-                                M4x4::from_scale(V3::splat(ui_opts.cell_scale)) *
-                                M4x4::from_translation(-c);
-                        win.draw_tris(m,
-                                      V4::splat(1.0),
-                                      &n.convex.verts,
-                                      Some(&n.convex.generate_tris()),
-                                      false)?;
+                        let c = n.convex.verts.iter().fold(V3::zero(), |a, &b| a + b)
+                            / (n.convex.verts.len() as f32);
+                        let m = M4x4::from_translation(c)
+                            * M4x4::from_scale(V3::splat(ui_opts.cell_scale))
+                            * M4x4::from_translation(-c);
+                        win.draw_tris(
+                            m,
+                            V4::splat(1.0),
+                            &n.convex.verts,
+                            Some(&n.convex.generate_tris()),
+                            false,
+                        )?;
                         if ui_opts.cell_wireframe {
-                            win.wm_draw_wireframe(M4x4::identity(),
-                                vec4(1.0, 0.0, 1.0, 1.0), &n.convex,
-                                ui_opts.cell_wires_respect_depth)?;
+                            win.wm_draw_wireframe(
+                                M4x4::identity(),
+                                vec4(1.0, 0.0, 1.0, 1.0),
+                                &n.convex,
+                                ui_opts.cell_wires_respect_depth,
+                            )?;
                         }
                     }
                     if let Some(ref r) = n.under {
@@ -340,32 +413,36 @@ pub fn main() -> Result<()> {
 
         let framerate = ui.framerate();
         ui.window(im_str!("test"))
-        .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
-        .build(|| {
-            ui.text(im_str!("fps: {:.3}", framerate));
-            if cfg!(debug_assertions) {
-                ui.text(im_str!("  debug_assertions enabled (slow)"));
-            }
-            ui.text(im_str!("render_ms: {:.3}", render_time));
-            ui.separator();
-            let e = ui.enum_picker("draw mode", &mut ui_opts.draw_mode).1;
-            match e {
-                DrawMode::Faces => {
-                    // No special options
+            .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
+            .build(|| {
+                ui.text(im_str!("fps: {:.3}", framerate));
+                if cfg!(debug_assertions) {
+                    ui.text(im_str!("  debug_assertions enabled (slow)"));
                 }
-                DrawMode::Cells => {
-                    ui.checkbox(im_str!("cell wireframe?"), &mut ui_opts.cell_wireframe);
-                    if ui_opts.cell_wireframe {
-                        ui.checkbox(im_str!("cell wires respect depth?"), &mut ui_opts.cell_wires_respect_depth);
+                ui.text(im_str!("render_ms: {:.3}", render_time));
+                ui.separator();
+                let e = ui.enum_picker("draw mode", &mut ui_opts.draw_mode).1;
+                match e {
+                    DrawMode::Faces => {
+                        // No special options
                     }
-                    ui.slider_float(im_str!("cell scale"), &mut ui_opts.cell_scale, 0.1, 1.0).build();
+                    DrawMode::Cells => {
+                        ui.checkbox(im_str!("cell wireframe?"), &mut ui_opts.cell_wireframe);
+                        if ui_opts.cell_wireframe {
+                            ui.checkbox(
+                                im_str!("cell wires respect depth?"),
+                                &mut ui_opts.cell_wires_respect_depth,
+                            );
+                        }
+                        ui.slider_float(im_str!("cell scale"), &mut ui_opts.cell_scale, 0.1, 1.0)
+                            .build();
+                    }
                 }
-            }
-            ui.separator();
-            ui.text(im_str!("intersected objects"));
-            ui.checkbox(im_str!("show solid"), &mut ui_opts.collider_solids);
-            ui.checkbox(im_str!("show wires"), &mut ui_opts.collider_wires);
-        });
+                ui.separator();
+                ui.text(im_str!("intersected objects"));
+                ui.checkbox(im_str!("show solid"), &mut ui_opts.collider_solids);
+                ui.checkbox(im_str!("show wires"), &mut ui_opts.collider_wires);
+            });
 
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
     }

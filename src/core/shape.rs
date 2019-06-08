@@ -1,6 +1,6 @@
-use crate::math::prelude::*;
-use crate::core::wingmesh;
 use crate::core::hull;
+use crate::core::wingmesh;
+use crate::math::prelude::*;
 
 #[derive(Debug, Clone, Default)]
 pub struct Shape {
@@ -23,7 +23,7 @@ impl Shape {
     #[inline]
     pub fn new_hull(mut vertices: Vec<V3>) -> Option<Self> {
         if let Some(tris) = hull::compute_hull_trunc(&mut vertices, None) {
-            Some(Self { vertices, tris})
+            Some(Self { vertices, tris })
         } else {
             None
         }
@@ -98,10 +98,7 @@ impl Shape {
                     vec3(x4, y2, z4) * radius,
                 ]);
 
-                tris.extend(&[
-                    [k + 0, k + 1, k + 2],
-                    [k + 2, k + 1, k + 3],
-                ]);
+                tris.extend(&[[k + 0, k + 1, k + 2], [k + 2, k + 1, k + 3]]);
             }
         }
         Shape { vertices, tris }
@@ -112,11 +109,11 @@ impl Shape {
         let size = radii.abs().map(|x| x.max(1.0e-3));
         let vertices = vec![
             vec3(-size.x, 0.0, 0.0),
-            vec3( size.x, 0.0, 0.0),
+            vec3(size.x, 0.0, 0.0),
             vec3(0.0, -size.y, 0.0),
-            vec3(0.0,  size.y, 0.0),
+            vec3(0.0, size.y, 0.0),
             vec3(0.0, 0.0, -size.z),
-            vec3(0.0, 0.0,  size.z),
+            vec3(0.0, 0.0, size.z),
         ];
         // This is so lazy...
         Shape::new_hull(vertices).unwrap()
@@ -164,16 +161,14 @@ pub fn combined_center_of_mass(shapes: &[Shape]) -> V3 {
         let v = mesh.volume();
         let c = mesh.center_of_mass();
         vol += v;
-        com += c*v;
+        com += c * v;
     }
     com / vol
 }
 
 pub fn combined_inertia(shapes: &[Shape], com: V3) -> M3x3 {
     let mut vol = 0.0f32;
-    let mut inertia = mat3(0.0, 0.0, 0.0,
-                           0.0, 0.0, 0.0,
-                           0.0, 0.0, 0.0);
+    let mut inertia = mat3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     for mesh in shapes {
         let v = mesh.volume();
         let i = mesh.inertia(com);

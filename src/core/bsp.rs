@@ -1,10 +1,10 @@
+use crate::core::{gjk, support::Support, wingmesh::WingMesh};
 use crate::math::prelude::*;
 use crate::util::OrdFloat;
-use crate::core::{wingmesh::WingMesh, gjk, support::Support};
 use std::{f32, mem};
 const Q_SNAP: f32 = 0.5;
 const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);
-const FUZZY_WIDTH: f32 = 100.0*DEFAULT_PLANE_WIDTH;
+const FUZZY_WIDTH: f32 = 100.0 * DEFAULT_PLANE_WIDTH;
 
 // const SOLID_BIAS: bool = false;
 const ALLOW_AXIAL: u8 = 0b111;
@@ -30,7 +30,7 @@ pub struct Face {
 pub enum LeafType {
     NotLeaf = 0b00,
     Under = (PlaneTestResult::Under as u8), // 0b01
-    Over = (PlaneTestResult::Over as u8), // 0b10
+    Over = (PlaneTestResult::Over as u8),   // 0b10
 }
 
 impl Default for LeafType {
@@ -52,7 +52,7 @@ pub struct BspNode {
 
 #[derive(Clone)]
 pub struct BspPreorder<'a> {
-    stack: Vec<&'a BspNode>
+    stack: Vec<&'a BspNode>,
 }
 
 impl<'a> Iterator for BspPreorder<'a> {
@@ -103,7 +103,10 @@ fn plane_cost_c(input: &[Face], split: Plane, space: &WingMesh) -> (f32, [f32; 4
         counts[face.split_test_val(split, FUZZY_WIDTH)] += 1.0;
     }
     if space.verts.is_empty() {
-        return (((counts[OVER] - counts[UNDER]).abs() + counts[SPLIT] - counts[COPLANAR]), counts)
+        return (
+            ((counts[OVER] - counts[UNDER]).abs() + counts[SPLIT] - counts[COPLANAR]),
+            counts,
+        );
     }
 
     // let mut vol_over = 1.0f32;
@@ -123,9 +126,11 @@ fn plane_cost_c(input: &[Face], split: Plane, space: &WingMesh) -> (f32, [f32; 4
     //     vol_total = vol_over + vol_under;
     // }
 
-    (vol_over * (counts[OVER] + 1.5*counts[SPLIT]).powf(0.9) +
-     vol_under * (counts[UNDER] + 1.5*counts[SPLIT]).powf(0.9),
-     counts)
+    (
+        vol_over * (counts[OVER] + 1.5 * counts[SPLIT]).powf(0.9)
+            + vol_under * (counts[UNDER] + 1.5 * counts[SPLIT]).powf(0.9),
+        counts,
+    )
 }
 
 fn plane_cost(input: &[Face], split: Plane, space: &WingMesh) -> f32 {
@@ -141,7 +146,7 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
         return Box::new(BspNode {
             convex: space,
             leaf_type: side,
-            .. BspNode::new(Plane::zero())
+            ..BspNode::new(Plane::zero())
         });
     }
 
@@ -173,7 +178,8 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
                         let mut n = V3::zero();
                         n[c] = 1.0;
                         let (val, count) = plane_cost_c(&faces[..], Plane::new(n, -v[c]), &space);
-                        if val < min_val && (count[OVER] * count[UNDER] > 0.0 || count[SPLIT] > 0.0) {
+                        if val < min_val && (count[OVER] * count[UNDER] > 0.0 || count[SPLIT] > 0.0)
+                        {
                             min_val = val;
                             split = Plane::new(n, -v[c]);
                         }
@@ -202,7 +208,7 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
     }
 
     node.under = Some(compile_lt(under, space.cropped(split), LeafType::Under));
-    node.over  = Some(compile_lt(over,  space.crop(-split), LeafType::Over));
+    node.over = Some(compile_lt(over, space.crop(-split), LeafType::Over));
     node
 }
 
@@ -234,13 +240,19 @@ pub fn divide_polys(split: Plane, input: Vec<Face>) -> (Vec<Face>, Vec<Face>, Ve
 
     for face in input.into_iter().rev() {
         match face.split_test(split, FUZZY_WIDTH) {
-            PlaneTestResult::Coplanar => { coplanar.push(face); },
-            PlaneTestResult::Over => { over.push(face); },
-            PlaneTestResult::Under => { under.push(face); },
+            PlaneTestResult::Coplanar => {
+                coplanar.push(face);
+            }
+            PlaneTestResult::Over => {
+                over.push(face);
+            }
+            PlaneTestResult::Under => {
+                under.push(face);
+            }
             PlaneTestResult::Split => {
                 over.push(face.clipped(-split));
                 under.push(face.into_clipped(split));
-            },
+            }
         }
     }
     (under, over, coplanar)
@@ -249,12 +261,19 @@ pub fn divide_polys(split: Plane, input: Vec<Face>) -> (Vec<Face>, Vec<Face>, Ve
 impl BspNode {
     #[inline]
     pub fn new(plane: Plane) -> BspNode {
-        BspNode { plane, .. Default::default() }
+        BspNode {
+            plane,
+            ..Default::default()
+        }
     }
 
     #[inline]
     pub fn new_with_type(plane: Plane, leaf_type: LeafType) -> BspNode {
-        BspNode { plane, leaf_type, .. Default::default() }
+        BspNode {
+            plane,
+            leaf_type,
+            ..Default::default()
+        }
     }
 
     #[inline]
@@ -268,13 +287,13 @@ impl BspNode {
             plane: self.plane,
             under: self.under.as_ref().map(|n| Box::new(n.only_planes())),
             over: self.over.as_ref().map(|n| Box::new(n.only_planes())),
-            .. Default::default()
+            ..Default::default()
         }
     }
 
     pub fn count(&self) -> usize {
         1 + self.over.as_ref().map_or(0, |node| node.count())
-          + self.under.as_ref().map_or(0, |node| node.count())
+            + self.under.as_ref().map_or(0, |node| node.count())
     }
 
     pub fn assign_tex(&mut self, mat_id: usize) -> &mut BspNode {
@@ -306,15 +325,15 @@ impl BspNode {
         if !self.convex.verts.is_empty() {
             match self.convex.split_test(self.plane) {
                 PlaneTestResult::Split => {
-                    cu = self.convex.cropped( self.plane);
+                    cu = self.convex.cropped(self.plane);
                     co = self.convex.cropped(-self.plane);
-                },
+                }
                 PlaneTestResult::Over => {
                     co = self.convex.clone();
-                },
+                }
                 PlaneTestResult::Under => {
                     cu = self.convex.clone();
-                },
+                }
                 PlaneTestResult::Coplanar => {
                     unreachable!("has 0 volume somehow?");
                 }
@@ -330,7 +349,10 @@ impl BspNode {
     }
 
     pub fn iter_back_to_front(&self, p: V3) -> BspBackToFront {
-        BspBackToFront { stack: vec![self], p }
+        BspBackToFront {
+            stack: vec![self],
+            p,
+        }
     }
 
     #[inline]
@@ -362,15 +384,19 @@ impl BspNode {
             return;
         }
         match face.split_test(self.plane, FUZZY_WIDTH) {
-            PlaneTestResult::Under => { self.under_mut().embed_face(face); },
-            PlaneTestResult::Over => { self.over_mut().embed_face(face); },
+            PlaneTestResult::Under => {
+                self.under_mut().embed_face(face);
+            }
+            PlaneTestResult::Over => {
+                self.over_mut().embed_face(face);
+            }
             PlaneTestResult::Coplanar => {
                 if dot(self.plane.normal, face.plane.normal) > 0.0 {
                     self.under_mut().embed_face(face);
                 } else {
                     self.over_mut().embed_face(face);
                 }
-            },
+            }
             PlaneTestResult::Split => {
                 // TODO slice edge here...
                 let p = self.plane;
@@ -590,9 +616,11 @@ impl BspNode {
     }
 
     fn do_hit_check<'tree>(
-        &'tree self, v0: V3, v1: V3,
+        &'tree self,
+        v0: V3,
+        v1: V3,
         skip_solid: &mut bool,
-        out_info: &mut BspHitInfo<'tree>
+        out_info: &mut BspHitInfo<'tree>,
     ) -> bool {
         if self.is_leaf() {
             if self.leaf_type == LeafType::Under {
@@ -607,12 +635,8 @@ impl BspNode {
         let f0 = self.plane.test_e(v0, 0.0) == PlaneTestResult::Over;
         let f1 = self.plane.test_e(v1, 0.0) == PlaneTestResult::Over;
         match (f0, f1) {
-            (false, false) => {
-                self.under().do_hit_check(v0, v1, skip_solid, out_info)
-            }
-            (true, true) => {
-                self.over().do_hit_check(v0, v1, skip_solid, out_info)
-            }
+            (false, false) => self.under().do_hit_check(v0, v1, skip_solid, out_info),
+            (true, true) => self.over().do_hit_check(v0, v1, skip_solid, out_info),
             (false, true) => {
                 let vmid = self.plane.intersect_with_line(v0, v1);
                 let mid_check_u = self.under().do_hit_check(v0, vmid, skip_solid, out_info);
@@ -643,7 +667,7 @@ impl BspNode {
             vertex_hit: -1,
             node: self,
             leaf: None,
-            over_leaf: None
+            over_leaf: None,
         };
         let mut solid_reenter = false;
         if self.do_hit_check(v0, v1, &mut solid_reenter, &mut info) {
@@ -660,7 +684,7 @@ impl BspNode {
             vertex_hit: -1,
             node: self,
             leaf: None,
-            over_leaf: None
+            over_leaf: None,
         };
         let mut solid_reenter = true;
         if self.do_hit_check(v0, v1, &mut solid_reenter, &mut info) {
@@ -674,11 +698,18 @@ impl BspNode {
         if self.is_leaf() {
             return geom::HitInfo::new_opt(self.leaf_type == LeafType::Under, v0, nv0);
         }
-        let mut test_info = geom::SegmentTestInfo { w0: v0, w1: v1, nw0: nv0 };
+        let mut test_info = geom::SegmentTestInfo {
+            w0: v0,
+            w1: v1,
+            nw0: nv0,
+        };
         let mut hit = false;
         if let Some(ti) = geom::segment_under(self.plane.offset_by(-r), v0, v1, nv0) {
             test_info = ti;
-            if let Some(hit_info) = self.under().hit_check_sphere(r, test_info.w0, test_info.w1, test_info.nw0) {
+            if let Some(hit_info) =
+                self.under()
+                    .hit_check_sphere(r, test_info.w0, test_info.w1, test_info.nw0)
+            {
                 v1 = hit_info.impact;
                 hit = true;
             }
@@ -686,7 +717,10 @@ impl BspNode {
 
         if let Some(ti) = geom::segment_over(self.plane.offset_by(r), v0, v1, nv0) {
             test_info = ti;
-            if let Some(hit_info) = self.over().hit_check_sphere(r, test_info.w0, test_info.w1, test_info.nw0) {
+            if let Some(hit_info) =
+                self.over()
+                    .hit_check_sphere(r, test_info.w0, test_info.w1, test_info.nw0)
+            {
                 v1 = hit_info.impact;
                 hit = true;
             }
@@ -695,15 +729,25 @@ impl BspNode {
         geom::HitInfo::new_opt(hit, v1, test_info.nw0)
     }
 
-    pub fn hit_check_cylinder(&self, r: f32, h: f32, v0: V3, mut v1: V3, nv0: V3, bevel: bool) -> Option<geom::HitInfo> {
+    pub fn hit_check_cylinder(
+        &self,
+        r: f32,
+        h: f32,
+        v0: V3,
+        mut v1: V3,
+        nv0: V3,
+        bevel: bool,
+    ) -> Option<geom::HitInfo> {
         if self.is_leaf() {
             if bevel && self.leaf_type == LeafType::Under {
                 return hit_check_bevel_cylinder(&self.convex, r, h, v0, v1, nv0);
             }
             return geom::HitInfo::new_opt(self.leaf_type == LeafType::Under, v0, nv0);
         }
-        let offset_up   = -geom::tangent_point_on_cylinder(r, h, -self.plane.normal).dot(-self.plane.normal);
-        let offset_down =  geom::tangent_point_on_cylinder(r, h,  self.plane.normal).dot( self.plane.normal);
+        let offset_up =
+            -geom::tangent_point_on_cylinder(r, h, -self.plane.normal).dot(-self.plane.normal);
+        let offset_down =
+            geom::tangent_point_on_cylinder(r, h, self.plane.normal).dot(self.plane.normal);
 
         let mut test_info: geom::SegmentTestInfo;
         let mut hit = false;
@@ -711,7 +755,14 @@ impl BspNode {
 
         if let Some(ti) = geom::segment_under(self.plane.offset_by(offset_up), v0, v1, nv0) {
             test_info = ti;
-            if let Some(hit_info) = self.under().hit_check_cylinder(r, h, test_info.w0, test_info.w1, test_info.nw0, bevel) {
+            if let Some(hit_info) = self.under().hit_check_cylinder(
+                r,
+                h,
+                test_info.w0,
+                test_info.w1,
+                test_info.nw0,
+                bevel,
+            ) {
                 v1 = hit_info.impact;
                 norm_hit = hit_info.normal;
                 hit = true;
@@ -719,7 +770,14 @@ impl BspNode {
         }
         if let Some(ti) = geom::segment_over(self.plane.offset_by(offset_down), v0, v1, nv0) {
             test_info = ti;
-            if let Some(hit_info) = self.over().hit_check_cylinder(r, h, test_info.w0, test_info.w1, test_info.nw0, bevel) {
+            if let Some(hit_info) = self.over().hit_check_cylinder(
+                r,
+                h,
+                test_info.w0,
+                test_info.w1,
+                test_info.nw0,
+                bevel,
+            ) {
                 v1 = hit_info.impact;
                 norm_hit = hit_info.normal;
                 hit = true;
@@ -731,7 +789,7 @@ impl BspNode {
     pub fn all_proximity_cells<'a, S: Support>(
         &'a self,
         collider: &S,
-        padding: f32
+        padding: f32,
     ) -> Vec<&'a WingMesh> {
         let mut v = vec![];
         self.proximity_cells(collider, padding, &mut v);
@@ -742,18 +800,21 @@ impl BspNode {
         &'a self,
         collider: &S,
         padding: f32,
-        res: &mut Vec<&'a WingMesh>
+        res: &mut Vec<&'a WingMesh>,
     ) -> usize {
         match self.leaf_type {
             LeafType::Over => return 0,
-            LeafType::Under => { res.push(&self.convex); return 1; },
+            LeafType::Under => {
+                res.push(&self.convex);
+                return 1;
+            }
             _ => {}
         }
         let start_len = res.len();
         let u = collider.support(-self.plane.normal);
-        let o = collider.support( self.plane.normal);
+        let o = collider.support(self.plane.normal);
         let t = (self.plane.offset_by(-padding).test_e(u, 0.0) as usize)
-              | (self.plane.offset_by( padding).test_e(o, 0.0) as usize);
+            | (self.plane.offset_by(padding).test_e(o, 0.0) as usize);
         if (t & UNDER) != 0 {
             self.under().proximity_cells(collider, padding, res);
         }
@@ -769,11 +830,11 @@ impl BspNode {
             LeafType::Under => {
                 let s = gjk::separated(collider, &self.convex, true);
                 return if s.separation <= 0.0 { Some(s) } else { None };
-            },
+            }
             _ => {}
         }
         let t = (self.plane.test_e(collider.support(-self.plane.normal), 0.0) as usize)
-              | (self.plane.test_e(collider.support( self.plane.normal), 0.0) as usize);
+            | (self.plane.test_e(collider.support(self.plane.normal), 0.0) as usize);
         if (t & UNDER) != 0 {
             if let Some(hit) = self.under().hit_check_convex_gjk(collider) {
                 return Some(hit);
@@ -786,13 +847,15 @@ impl BspNode {
         }
         None
     }
-
 }
 
 fn hit_check_bevel_cylinder(
     convex: &WingMesh,
-    r: f32, h: f32,
-    mut v0: V3, mut v1: V3, mut nv0: V3
+    r: f32,
+    h: f32,
+    mut v0: V3,
+    mut v1: V3,
+    mut nv0: V3,
 ) -> Option<geom::HitInfo> {
     if convex.edges.len() == 0 {
         return None;
@@ -812,19 +875,25 @@ fn hit_check_bevel_cylinder(
         let mut bev = Plane::from_norm_and_point(half_angle, convex.verts[edge_0.vert_idx()]);
         if cfg!(debug_assertions) {
             for &vert in &convex.verts {
-                debug_assert_ne!(bev.test_e(vert, DEFAULT_PLANE_WIDTH * 10.0),
-                                 PlaneTestResult::Over,
-                                 "vert = {:?}, bev = {:?}", vert, bev);
+                debug_assert_ne!(
+                    bev.test_e(vert, DEFAULT_PLANE_WIDTH * 10.0),
+                    PlaneTestResult::Over,
+                    "vert = {:?}, bev = {:?}",
+                    vert,
+                    bev
+                );
             }
         }
-        bev.offset += -dot(geom::tangent_point_on_cylinder(r, h, -bev.normal),
-                           -bev.normal);
+        bev.offset += -dot(
+            geom::tangent_point_on_cylinder(r, h, -bev.normal),
+            -bev.normal,
+        );
         if let Some(hit) = geom::segment_under(bev, v0, v1, nv0) {
             v0 = hit.w0;
             v1 = hit.w1;
             match (nv0.dot(nv0) == 0.0, hit.nw0.dot(hit.nw0) == 0.0) {
                 (true, true) => nv0 = bev.normal,
-                (false, true) => {},
+                (false, true) => {}
                 (_, false) => nv0 = hit.nw0,
             }
         } else {
@@ -844,7 +913,10 @@ pub struct BspHitInfo<'tree> {
 }
 
 fn do_union(ao: Option<Box<BspNode>>, mut b: Box<BspNode>) -> Box<BspNode> {
-    if ao.is_none() || b.leaf_type == LeafType::Under || ao.as_ref().unwrap().leaf_type == LeafType::Over {
+    if ao.is_none()
+        || b.leaf_type == LeafType::Under
+        || ao.as_ref().unwrap().leaf_type == LeafType::Over
+    {
         if ao.is_some() && b.leaf_type == LeafType::Under {
             ao.as_ref().unwrap().face_cutting(&mut b.boundary);
         }
@@ -896,29 +968,29 @@ fn do_intersect(ao: Option<Box<BspNode>>, mut b: Box<BspNode>) -> Box<BspNode> {
     let (a_under, a_over) = partition(a, b.plane);
 
     let nbu = do_intersect(a_under, b.under.take().unwrap());
-    let nbo = do_intersect(a_over,  b.over.take().unwrap());
+    let nbo = do_intersect(a_over, b.over.take().unwrap());
     b.under = Some(nbu);
     b.over = Some(nbo);
     if same_type_leaf_children(&b) {
         consume_children(&mut b);
     }
     b
-//    if nbo.is_leaf() && nbo.leaf_type == nbu.leaf_type {
-//        b.boundary.reserve(nbo.boundary.len() + nbu.boundary.len());
-//        while let Some(f) = nbo.boundary.pop() {
-//            b.boundary.push(f);
-//        }
-//        while let Some(f) = nbu.boundary.pop() {
-//            b.boundary.push(f);
-//        }
-//        b.leaf_type = nbo.leaf_type;
-//        b.under = None;
-//        b.over = None;
-//    } else {
-//        b.under = Some(nbu);
-//        b.over = Some(nbo);
-//    }
-//    b
+    //    if nbo.is_leaf() && nbo.leaf_type == nbu.leaf_type {
+    //        b.boundary.reserve(nbo.boundary.len() + nbu.boundary.len());
+    //        while let Some(f) = nbo.boundary.pop() {
+    //            b.boundary.push(f);
+    //        }
+    //        while let Some(f) = nbu.boundary.pop() {
+    //            b.boundary.push(f);
+    //        }
+    //        b.leaf_type = nbo.leaf_type;
+    //        b.under = None;
+    //        b.over = None;
+    //    } else {
+    //        b.under = Some(nbu);
+    //        b.over = Some(nbo);
+    //    }
+    //    b
 }
 
 pub fn intersect(a: Box<BspNode>, b: Box<BspNode>) -> Box<BspNode> {
@@ -975,7 +1047,8 @@ fn consume_children(bsp: &mut BspNode) {
     bsp.leaf_type = over.leaf_type;
 
     assert_eq!(bsp.boundary.len(), 0);
-    bsp.boundary.reserve(under.boundary.len() + over.boundary.len());
+    bsp.boundary
+        .reserve(under.boundary.len() + over.boundary.len());
 
     bsp.boundary.extend(under.boundary.drain(..).rev());
     bsp.boundary.extend(over.boundary.drain(..).rev());
@@ -998,18 +1071,18 @@ mod part {
         result
     }
 
-
-    pub fn partition(mut bsp: Box<BspNode>, split_plane: Plane)
-        -> (Option<Box<BspNode>>, Option<Box<BspNode>>)
-    {
+    pub fn partition(
+        mut bsp: Box<BspNode>,
+        split_plane: Plane,
+    ) -> (Option<Box<BspNode>>, Option<Box<BspNode>>) {
         match bsp.convex.split_test(split_plane) {
             PlaneTestResult::Under => {
                 return (Some(bsp), None);
-            },
+            }
             PlaneTestResult::Over => {
                 return (None, Some(bsp));
-            },
-            PlaneTestResult::Split => {},
+            }
+            PlaneTestResult::Split => {}
             PlaneTestResult::Coplanar => {
                 unreachable!("convex shape is flat?");
             }
@@ -1025,7 +1098,7 @@ mod part {
             let mut fake = BspNode {
                 under: Some(under),
                 over: Some(over),
-                .. BspNode::new(split_plane)
+                ..BspNode::new(split_plane)
             };
             let mut e = Vec::new();
             e.append(&mut bsp.boundary);
@@ -1056,7 +1129,6 @@ mod part {
             return (Some(under), Some(over));
         }
 
-
         under = delinearize(under);
         over = delinearize(over);
 
@@ -1078,13 +1150,15 @@ mod part {
 pub use self::part::partition;
 
 impl Face {
-    pub fn new() -> Face { Default::default() }
+    pub fn new() -> Face {
+        Default::default()
+    }
 
     pub fn new_quad(v0: V3, v1: V3, v2: V3, v3: V3) -> Face {
         let mut f = Face::new();
         f.vertex = vec![v0, v1, v2, v3];
-        let norm = (cross(v1-v0, v2-v1) + cross(v3-v2, v0-v3)).norm_or_unit();
-        f.plane = Plane::from_norm_and_point(norm, (v0+v1+v2+v3)*0.25);
+        let norm = (cross(v1 - v0, v2 - v1) + cross(v3 - v2, v0 - v3)).norm_or_unit();
+        f.plane = Plane::from_norm_and_point(norm, (v0 + v1 + v2 + v3) * 0.25);
         for v in f.vertex.iter() {
             debug_assert_eq!(f.plane.test(*v), PlaneTestResult::Coplanar);
         }
@@ -1098,8 +1172,11 @@ impl Face {
     pub fn new_tri(v0: V3, v1: V3, v2: V3) -> Face {
         let mut f = Face::new();
         f.vertex = vec![v0, v1, v2];
-        f.plane = Plane::from_norm_and_point(cross(v1-v0, v2-v1).norm_or_unit(), (v0+v1+v2)*0.25);
-        f.gu = (v1-v0).norm_or_unit();
+        f.plane = Plane::from_norm_and_point(
+            cross(v1 - v0, v2 - v1).norm_or_unit(),
+            (v0 + v1 + v2) * 0.25,
+        );
+        f.gu = (v1 - v0).norm_or_unit();
         f.gv = cross(f.plane.normal, f.gu).norm_or_unit();
         f
     }
@@ -1107,7 +1184,10 @@ impl Face {
     pub fn new_tri_tex(v0: V3, v1: V3, v2: V3, t0: V2, t1: V2, t2: V2) -> Face {
         let mut f = Face::new();
         f.vertex = vec![v0, v1, v2];
-        f.plane = Plane::from_norm_and_point(cross(v1-v0, v2-v1).norm_or_unit(), (v0+v1+v2)*0.25);
+        f.plane = Plane::from_norm_and_point(
+            cross(v1 - v0, v2 - v1).norm_or_unit(),
+            (v0 + v1 + v2) * 0.25,
+        );
         f.extract_mat_vals(v0, v1, v2, t0, t1, t2);
         f
     }
@@ -1132,8 +1212,8 @@ impl Face {
     }
 
     pub fn center(&self) -> V3 {
-        self.vertex.iter().fold(V3::zero(), |a, &b| a + b) *
-            safe_div0(1.0, self.vertex.len() as f32)
+        self.vertex.iter().fold(V3::zero(), |a, &b| a + b)
+            * safe_div0(1.0, self.vertex.len() as f32)
     }
 
     pub fn split_test(&self, plane: Plane, e: f32) -> PlaneTestResult {
@@ -1178,7 +1258,7 @@ impl Face {
         let mut closest = -1;
         let mut min_d = 0.0;
         for (i, &v0) in self.vertex.iter().enumerate() {
-            let i1 = (i+1)% self.vertex.len();
+            let i1 = (i + 1) % self.vertex.len();
             let v1 = self.vertex[i1];
             let d = geom::line_project(v0, v1, point).dist(point);
             if closest == -1 || d < min_d {
@@ -1192,8 +1272,8 @@ impl Face {
 
     pub fn contains_point(&self, s: V3) -> bool {
         for (i, &pp1) in self.vertex.iter().enumerate() {
-            let pp2 = self.vertex[(i+1)%self.vertex.len()];
-            let side = cross(pp2-pp1, s-pp1);
+            let pp2 = self.vertex[(i + 1) % self.vertex.len()];
+            let side = cross(pp2 - pp1, s - pp1);
             if dot(self.plane.normal, side) < 0.0 {
                 return false;
             }
@@ -1203,8 +1283,10 @@ impl Face {
 
     #[inline]
     pub fn vert_uv(&self, i: usize) -> V2 {
-        vec2(self.ot.x + dot(self.vertex[i], self.gu),
-             self.ot.y + dot(self.vertex[i], self.gv))
+        vec2(
+            self.ot.x + dot(self.vertex[i], self.gu),
+            self.ot.y + dot(self.vertex[i], self.gv),
+        )
     }
 
     #[inline]
@@ -1240,7 +1322,7 @@ impl Face {
         debug_assert_gt!(v0.dist(v1), QUANTIZE_CHECK);
         let f0 = n.plane.test_e(v0, QUANTIZE_CHECK);
         let f1 = n.plane.test_e(v1, QUANTIZE_CHECK);
-        match (f0 as usize)|(f1 as usize) {
+        match (f0 as usize) | (f1 as usize) {
             COPLANAR => {
                 let count = self.vertex.len();
                 split_count += self.edge_splicer(vi0, n.under.as_ref().unwrap());
@@ -1252,13 +1334,11 @@ impl Face {
                     }
                     k -= 1;
                 }
-            },
+            }
             UNDER => {
                 split_count += self.edge_splicer(vi0, n.under.as_ref().unwrap());
-            },
-            OVER => {
-                split_count += self.edge_splicer(vi0, n.over.as_ref().unwrap())
-            },
+            }
+            OVER => split_count += self.edge_splicer(vi0, n.over.as_ref().unwrap()),
             SPLIT => {
                 split_count += 1;
                 assert_gt!(v0.dist(v1), QUANTIZE_CHECK);
@@ -1268,9 +1348,12 @@ impl Face {
                 assert_eq!(n.plane.test(v_mid), PlaneTestResult::Coplanar);
 
                 self.vertex.insert(vi0 + 1, v_mid);
-            },
+            }
             _ => {
-                unreachable!("Bad plane test result combination? {}", (f0 as usize)|(f1 as usize));
+                unreachable!(
+                    "Bad plane test result combination? {}",
+                    (f0 as usize) | (f1 as usize)
+                );
             }
         }
         split_count
@@ -1283,7 +1366,8 @@ impl Face {
     pub fn into_clipped(mut self, clip: Plane) -> Face {
         debug_assert_eq!(self.split_test(clip, FUZZY_WIDTH), PlaneTestResult::Split);
         self.slice(clip);
-        self.vertex.retain(|&v| clip.test(v) != PlaneTestResult::Over);
+        self.vertex
+            .retain(|&v| clip.test(v) != PlaneTestResult::Over);
         self
     }
 
@@ -1291,17 +1375,17 @@ impl Face {
         let mut c = 0;
         let mut i = 0;
         while i < self.vertex.len() {
-            let i2 = (i+1) % self.vertex.len();
+            let i2 = (i + 1) % self.vertex.len();
             match (clip.test(self.vertex[i]), clip.test(self.vertex[i2])) {
-                (PlaneTestResult::Over, PlaneTestResult::Under) |
-                (PlaneTestResult::Under, PlaneTestResult::Over) => {
+                (PlaneTestResult::Over, PlaneTestResult::Under)
+                | (PlaneTestResult::Under, PlaneTestResult::Over) => {
                     let v_mid = clip.intersect_with_line(self.vertex[i], self.vertex[i2]);
                     assert_eq!(clip.test(v_mid), PlaneTestResult::Coplanar);
                     self.vertex.insert(i2, v_mid);
                     i = 0;
                     assert_lt!(c, 2);
                     c += 1;
-                },
+                }
                 _ => {}
             }
             i += 1;
@@ -1322,7 +1406,13 @@ impl Face {
             return;
         }
         let interior = face.center();
-        if geom::poly_hit_check(&face.vertex, interior + face.plane.normal, interior - face.plane.normal).is_none() {
+        if geom::poly_hit_check(
+            &face.vertex,
+            interior + face.plane.normal,
+            interior - face.plane.normal,
+        )
+        .is_none()
+        {
             return;
         }
 
@@ -1332,8 +1422,8 @@ impl Face {
     }
 
     pub fn gen_tris(&self) -> Vec<[u16; 3]> {
-        let mut tris = Vec::with_capacity(self.vertex.len()-2);
-        for i in 1..self.vertex.len()-1 {
+        let mut tris = Vec::with_capacity(self.vertex.len() - 2);
+        for i in 1..self.vertex.len() - 1 {
             tris.push([0, i as u16, (i + 1) as u16]);
         }
         tris

@@ -19,15 +19,17 @@ extern crate failure;
 
 mod shared;
 
-use crate::shared::{DemoWindow, DemoOptions, Result, object, DemoMesh, DemoObject, input::InputState};
 use crate::shared::cam::*;
+use crate::shared::{
+    input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result,
+};
 
-use glium::glutin::{VirtualKeyCode as Key};
 use bad3d::prelude::*;
-use std::rc::Rc;
-use std::{f32, u16};
-use std::time::Instant;
+use glium::glutin::VirtualKeyCode as Key;
 use std::cell::RefCell;
+use std::rc::Rc;
+use std::time::Instant;
+use std::{f32, u16};
 
 const GRAVITY: V3 = phys::GRAVITY;
 
@@ -75,13 +77,15 @@ impl Player {
     }
 
     pub fn eye_pose(&self) -> Pose {
-        self.pose * Pose::new(
-            vec3(0.0, 0.0, self.height * 0.8
-                + (self.bob_phase * 2.0).sin() * 0.05 + self.bob * 0.1
-            ),
-            Quat::from_axis_angle(vec3(1.0, 0.0, 0.0),
-                                  (90.0 + self.head_tilt).to_radians())
-        )
+        self.pose
+            * Pose::new(
+                vec3(
+                    0.0,
+                    0.0,
+                    self.height * 0.8 + (self.bob_phase * 2.0).sin() * 0.05 + self.bob * 0.1,
+                ),
+                Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), (90.0 + self.head_tilt).to_radians()),
+            )
     }
 
     #[inline]
@@ -109,11 +113,15 @@ impl Player {
             } else if norm.z < -0.5 {
                 wall_contact = true;
             }
-            self.pos_new = Plane::from_norm_and_point(norm, impact).project(self.pos_new) + (norm * 0.00001);
+            self.pos_new =
+                Plane::from_norm_and_point(norm, impact).project(self.pos_new) + (norm * 0.00001);
             if let Some(ground_normal) = self.ground_norm {
-                if dot(norm, ground_normal) < 0.0 && dot(ground_normal, self.pos_new) + ground_dist <= 0.0 {
+                if dot(norm, ground_normal) < 0.0
+                    && dot(ground_normal, self.pos_new) + ground_dist <= 0.0
+                {
                     let mut slide = Plane::new(norm, 0.0).project(ground_normal);
-                    slide = slide * -(dot(ground_normal, self.pos_new) + ground_dist) / (dot(slide, ground_normal));
+                    slide = slide * -(dot(ground_normal, self.pos_new) + ground_dist)
+                        / (dot(slide, ground_normal));
                     slide = slide + slide.norm_or_unit() * 0.000001;
                     self.pos_new += slide;
                 }
@@ -138,8 +146,8 @@ impl Player {
                 hit += 1;
                 impact = hi.impact;
                 // slide along plane of impact
-                target_up = Plane::from_norm_and_point(
-                    hi.normal, impact).project(target_up) + hi.normal * 0.00001;
+                target_up = Plane::from_norm_and_point(hi.normal, impact).project(target_up)
+                    + hi.normal * 0.00001;
             }
 
             let mut pos_drop = target_up - (pos_up - self.pos_new);
@@ -188,18 +196,23 @@ impl Player {
                 self.ground_norm = None;
             }
         }
-        let accel = GRAVITY + acc_damping + micro_impulse +
-            (thrust_dom.y_dir() * thrust.y + thrust_dom.x_dir() * thrust.x) * MAX_SPEED * damp;
+        let accel = GRAVITY
+            + acc_damping
+            + micro_impulse
+            + (thrust_dom.y_dir() * thrust.y + thrust_dom.x_dir() * thrust.x) * MAX_SPEED * damp;
 
         self.vel += accel * dt;
 
         self.pos_new = self.pose.position + (self.vel * dt);
-        self.pose.orientation = (
-            self.pose.orientation * Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), -mouse.x * MOUSE_SENSITIVITY)
-        ).must_norm();
+        self.pose.orientation = (self.pose.orientation
+            * Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), -mouse.x * MOUSE_SENSITIVITY))
+        .must_norm();
 
-        self.head_tilt = clamp(self.head_tilt + (mouse.y * MOUSE_SENSITIVITY).to_degrees(),
-                               -90.0, 90.0);
+        self.head_tilt = clamp(
+            self.head_tilt + (mouse.y * MOUSE_SENSITIVITY).to_degrees(),
+            -90.0,
+            90.0,
+        );
 
         self.pos_old = self.pose.position;
         self.ground_norm = None;
@@ -242,7 +255,10 @@ struct Blaster {
 
 impl Blaster {
     pub fn new() -> Self {
-        Self { mashers: Blaster::build_mashers(), idx: 0 }
+        Self {
+            mashers: Blaster::build_mashers(),
+            idx: 0,
+        }
     }
 
     pub fn blast(&mut self, bsp: Box<BspNode>, p: V3, s: f32) -> Box<BspNode> {
@@ -268,7 +284,8 @@ impl Blaster {
                     (rng.gen::<f32>() * 9.0 - 4.0) / 4.0,
                     (rng.gen::<f32>() * 9.0 - 4.0) / 4.0,
                     (rng.gen::<f32>() * 9.0 - 4.0) / 4.0,
-                ).norm_or_v(vec3(0.0, 0.0, 1.0));
+                )
+                .norm_or_v(vec3(0.0, 0.0, 1.0));
                 let rd = -(rng.gen::<f32>() * 0.5 + 0.125);
                 mash_box = mash_box.crop(quantized_p(Plane::new(rn, rd)));
             }
@@ -293,35 +310,38 @@ fn build_scene_bsp() -> Box<BspNode> {
     bsp_geom.negate();
 
     let boxes = [
-        (vec3(-11.0, -11.0,-0.25), vec3(11.0, 11.0, 0.0)),
-        (vec3(  4.0, -11.0, -6.0), vec3( 4.5, 11.0, 6.0)),
-        (vec3( -4.5, -11.0, -6.0), vec3(-4.0, 11.0, 6.0)),
-        (vec3(-11.0,   4.0, -6.0), vec3(11.0,  4.5, 6.0)),
-        (vec3(-11.0,  -4.5, -6.0), vec3(11.0, -4.0, 6.0)),
-        (vec3(  2.5,   1.5,  2.0), vec3( 3.5,  3.5, 4.5)),
+        (vec3(-11.0, -11.0, -0.25), vec3(11.0, 11.0, 0.0)),
+        (vec3(4.0, -11.0, -6.0), vec3(4.5, 11.0, 6.0)),
+        (vec3(-4.5, -11.0, -6.0), vec3(-4.0, 11.0, 6.0)),
+        (vec3(-11.0, 4.0, -6.0), vec3(11.0, 4.5, 6.0)),
+        (vec3(-11.0, -4.5, -6.0), vec3(11.0, -4.0, 6.0)),
+        (vec3(2.5, 1.5, 2.0), vec3(3.5, 3.5, 4.5)),
     ];
 
     for (min, max) in boxes.iter() {
         bsp_geom = bsp::union(
-            bsp::compile(WingMesh::new_box(*min, *max).faces(),
-                         WingMesh::new_cube(16.0)),
-            bsp_geom);
+            bsp::compile(
+                WingMesh::new_box(*min, *max).faces(),
+                WingMesh::new_cube(16.0),
+            ),
+            bsp_geom,
+        );
     }
 
     for door_x in &[-7.0f32, 0.0, 7.0] {
         let mut dx = bsp::compile(
-            WingMesh::new_box(vec3(door_x - 1.0, -9.0, 0.0),
-                              vec3(door_x + 1.0,  9.0, 2.5)).faces(),
-            WingMesh::new_cube(16.0));
+            WingMesh::new_box(vec3(door_x - 1.0, -9.0, 0.0), vec3(door_x + 1.0, 9.0, 2.5)).faces(),
+            WingMesh::new_cube(16.0),
+        );
         dx.negate();
         bsp_geom = bsp::intersect(dx, bsp_geom);
     }
 
     for y_door in &[-7.0f32, 7.0] {
         let mut dy = bsp::compile(
-            WingMesh::new_box(vec3(-9.0, y_door - 1.0, 0.0),
-                              vec3( 9.0, y_door + 1.0, 2.5)).faces(),
-            WingMesh::new_cube(16.0));
+            WingMesh::new_box(vec3(-9.0, y_door - 1.0, 0.0), vec3(9.0, y_door + 1.0, 2.5)).faces(),
+            WingMesh::new_cube(16.0),
+        );
         dy.negate();
         bsp_geom = bsp::intersect(dy, bsp_geom);
     }
@@ -344,7 +364,12 @@ fn bsp_meshes(f: &glium::Display, bsp: &mut BspNode, color: V4) -> Result<Vec<De
         }
         assert_lt!(vertices, u16::MAX as usize);
         if offset + vertices >= u16::MAX as usize {
-            ms.push(DemoMesh::new(f, vs.drain(..).collect(), ts.drain(..).collect(), color)?);
+            ms.push(DemoMesh::new(
+                f,
+                vs.drain(..).collect(),
+                ts.drain(..).collect(),
+                color,
+            )?);
             assert_eq!(vs.len(), 0);
             assert_eq!(ts.len(), 0);
             offset = 0;
@@ -364,7 +389,6 @@ fn bsp_meshes(f: &glium::Display, bsp: &mut BspNode, color: V4) -> Result<Vec<De
 }
 
 fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<DemoMesh>> {
-
     let mut vs = Vec::new();
     let mut ts = Vec::new();
     let mut ms = vec![];
@@ -377,7 +401,12 @@ fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<D
                 continue;
             }
             if offset + vertices >= u16::MAX as usize {
-                ms.push(DemoMesh::new(f, vs.drain(..).collect(), ts.drain(..).collect(), color)?);
+                ms.push(DemoMesh::new(
+                    f,
+                    vs.drain(..).collect(),
+                    ts.drain(..).collect(),
+                    color,
+                )?);
                 assert_eq!(vs.len(), 0);
                 assert_eq!(ts.len(), 0);
                 offset = 0;
@@ -385,8 +414,13 @@ fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<D
             vs.extend(&n.convex.verts);
             let new_tris = n.convex.generate_tris();
             ts.reserve(new_tris.len());
-            ts.extend(new_tris.into_iter().map(|t|
-                [t[0] + (offset as u16), t[1] + (offset as u16), t[2] + (offset as u16)]));
+            ts.extend(new_tris.into_iter().map(|t| {
+                [
+                    t[0] + (offset as u16),
+                    t[1] + (offset as u16),
+                    t[2] + (offset as u16),
+                ]
+            }));
         }
         if let Some(ref r) = n.under {
             stack.push(r.as_ref());
@@ -405,24 +439,27 @@ fn main() -> Result<()> {
     let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
     gui.borrow_mut().set_ini_filename(None);
 
-    let mut win = DemoWindow::new(DemoOptions {
-        title: "FPS (bsp test)",
-        clear_color: vec4(0.5, 0.6, 1.0, 1.0),
-        near_far: (0.01, 100.0),
-        light_pos: vec3(0.0, 1.2, 1.0),
-        fov: 45.0,
-        fog_amount: 16.0,
-        .. Default::default()
-    }, gui.clone())?;
+    let mut win = DemoWindow::new(
+        DemoOptions {
+            title: "FPS (bsp test)",
+            clear_color: vec4(0.5, 0.6, 1.0, 1.0),
+            near_far: (0.01, 100.0),
+            light_pos: vec3(0.0, 1.2, 1.0),
+            fov: 45.0,
+            fog_amount: 16.0,
+            ..Default::default()
+        },
+        gui.clone(),
+    )?;
 
-    let mut gui_renderer = imgui_glium_renderer::Renderer::init(
-        &mut *gui.borrow_mut(), &win.display).unwrap();
+    let mut gui_renderer =
+        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
 
     let mut fly_cam = false;
     let mut paused = false;
 
     let mut player = Player::new();
-    let mut camera = player.eye_pose();// Pose::new(vec3(0.0, 0.0, 20.0), Quat::identity());
+    let mut camera = player.eye_pose(); // Pose::new(vec3(0.0, 0.0, 20.0), Quat::identity());
     let mut blaster = Blaster::new();
 
     let mut bsp_geom = build_scene_bsp();
@@ -469,9 +506,9 @@ fn main() -> Result<()> {
         }
 
         if paused {
-             win.ungrab_cursor();
+            win.ungrab_cursor();
         } else {
-             win.grab_cursor();
+            win.grab_cursor();
         }
 
         if !paused {
@@ -499,12 +536,19 @@ fn main() -> Result<()> {
 
             let thrust = {
                 use glium::glutin::VirtualKeyCode::*;
-                vec3(win.input.keys_dir(A, D),
-                     win.input.keys_dir(S, W),
-                     win.input.keys_dir(Z, Space))
+                vec3(
+                    win.input.keys_dir(A, D),
+                    win.input.keys_dir(S, W),
+                    win.input.keys_dir(Z, Space),
+                )
             };
 
-            player.update(win.input.scaled_mouse_delta(), thrust, &bsp_geom, 1.0 / 60.0);
+            player.update(
+                win.input.scaled_mouse_delta(),
+                thrust,
+                &bsp_geom,
+                1.0 / 60.0,
+            );
             if !fly_cam {
                 camera = player.eye_pose();
                 win.view = camera.to_mat4().inverse().unwrap();
@@ -538,6 +582,3 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
-
-

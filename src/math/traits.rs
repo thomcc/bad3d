@@ -1,4 +1,3 @@
-
 pub trait ApproxEq {
     fn approx_zero_e(&self, e: f32) -> bool;
     fn approx_eq_e(&self, o: &Self, e: f32) -> bool;
@@ -19,10 +18,22 @@ pub trait ApproxEq {
     }
 }
 
-#[inline] pub fn approx_zero<T: ApproxEq>(n: T) -> bool { n.approx_zero() }
-#[inline] pub fn approx_eq<T: ApproxEq>(a: T, b: T) -> bool { a.approx_eq(&b) }
-#[inline] pub fn approx_zero_e<T: ApproxEq>(n: T, e: f32) -> bool { n.approx_zero_e(e) }
-#[inline] pub fn approx_eq_e<T: ApproxEq>(a: T, b: T, e: f32) -> bool { a.approx_eq_e(&b, e) }
+#[inline]
+pub fn approx_zero<T: ApproxEq>(n: T) -> bool {
+    n.approx_zero()
+}
+#[inline]
+pub fn approx_eq<T: ApproxEq>(a: T, b: T) -> bool {
+    a.approx_eq(&b)
+}
+#[inline]
+pub fn approx_zero_e<T: ApproxEq>(n: T, e: f32) -> bool {
+    n.approx_zero_e(e)
+}
+#[inline]
+pub fn approx_eq_e<T: ApproxEq>(a: T, b: T, e: f32) -> bool {
+    a.approx_eq_e(&b, e)
+}
 
 pub trait Lerp: Copy + Clone {
     fn lerp(self, _: Self, _: f32) -> Self;
@@ -34,12 +45,16 @@ pub trait Clamp: Copy + Clone {
 
 pub trait Zero: Copy + Clone {
     const ZERO: Self;
-    fn zero() -> Self { Self::ZERO }
+    fn zero() -> Self {
+        Self::ZERO
+    }
 }
 
 pub trait Identity: Copy + Clone {
     const IDENTITY: Self;
-    fn identity() -> Self { Self::IDENTITY }
+    fn identity() -> Self {
+        Self::IDENTITY
+    }
 }
 
 pub trait Fold: Copy + Clone {
@@ -86,19 +101,23 @@ pub trait Dot {
 }
 
 pub trait Map: Copy + Clone {
-
     fn map3<F>(self, a: Self, b: Self, f: F) -> Self
-            where F: Fn(f32, f32, f32) -> f32;
+    where
+        F: Fn(f32, f32, f32) -> f32;
 
     #[inline]
     fn map2<F>(self, o: Self, f: F) -> Self
-            where F: Fn(f32, f32) -> f32 {
+    where
+        F: Fn(f32, f32) -> f32,
+    {
         self.map3(o, self, |a, b, _| f(a, b))
     }
 
     #[inline]
     fn map<F>(self, f: F) -> Self
-            where F: Fn(f32) -> f32 {
+    where
+        F: Fn(f32) -> f32,
+    {
         self.map3(self, self, |a, _, _| f(a))
     }
 }
@@ -135,7 +154,10 @@ impl TriIndices for (u32, u32, u32) {
     }
 }
 
-impl<T> Dot for T where T: Map + Fold {
+impl<T> Dot for T
+where
+    T: Map + Fold,
+{
     #[inline]
     fn dot(self, o: Self) -> f32 {
         self.map2(o, |x, y| x * y).fold(|a, b| a + b)

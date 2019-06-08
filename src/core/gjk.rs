@@ -1,5 +1,8 @@
+use crate::core::{
+    hull,
+    support::{Support, TransformedSupport},
+};
 use crate::math::prelude::*;
-use crate::core::{hull, support::{TransformedSupport, Support}};
 use std::f32;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
@@ -11,7 +14,10 @@ pub enum ContactType {
 }
 
 impl Default for ContactType {
-    #[inline] fn default() -> ContactType { ContactType::Unknown }
+    #[inline]
+    fn default() -> ContactType {
+        ContactType::Unknown
+    }
 }
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -35,38 +41,65 @@ impl ContactInfo {
             self.simplex[1] = src.points[0].b;
             self.simplex[2] = src.points[1].b;
             self.simplex[3] = src.points[2].b;
-            if dot(self.plane.normal,
-                   cross(src.points[1].p - src.points[0].p,
-                         src.points[2].p - src.points[0].p)) < 0.0 {
+            if dot(
+                self.plane.normal,
+                cross(
+                    src.points[1].p - src.points[0].p,
+                    src.points[2].p - src.points[0].p,
+                ),
+            ) < 0.0
+            {
                 self.simplex.swap(1, 2);
             }
-        }
-        else if src.points[0].b == src.points[1].b && src.points[0].b == src.points[2].b {
+        } else if src.points[0].b == src.points[1].b && src.points[0].b == src.points[2].b {
             self.ty = ContactType::PlanePt;
             self.simplex[0] = src.points[0].a;
             self.simplex[1] = src.points[1].a;
             self.simplex[2] = src.points[2].a;
             self.simplex[3] = src.points[2].b;
-            if dot(self.plane.normal, cross(src.points[1].p - src.points[0].p,
-                                            src.points[2].p - src.points[0].p)) < 0.0 {
+            if dot(
+                self.plane.normal,
+                cross(
+                    src.points[1].p - src.points[0].p,
+                    src.points[2].p - src.points[0].p,
+                ),
+            ) < 0.0
+            {
                 self.simplex.swap(1, 2);
             }
-        }
-        else if (src.points[0].a == src.points[1].a || src.points[0].a == src.points[2].a || src.points[1].a == src.points[2].a) &&
-                (src.points[0].b == src.points[1].b || src.points[0].b == src.points[2].b || src.points[1].b == src.points[2].b) {
-
+        } else if (src.points[0].a == src.points[1].a
+            || src.points[0].a == src.points[2].a
+            || src.points[1].a == src.points[2].a)
+            && (src.points[0].b == src.points[1].b
+                || src.points[0].b == src.points[2].b
+                || src.points[1].b == src.points[2].b)
+        {
             self.ty = ContactType::EdgeEdge;
 
             self.simplex[0] = src.points[0].a;
-            self.simplex[1] = if src.points[1].a != src.points[0].a {src.points[1].a} else {src.points[2].a};
+            self.simplex[1] = if src.points[1].a != src.points[0].a {
+                src.points[1].a
+            } else {
+                src.points[2].a
+            };
             self.simplex[2] = src.points[0].b;
-            self.simplex[3] = if src.points[1].b != src.points[0].b {src.points[1].b} else {src.points[2].b};
+            self.simplex[3] = if src.points[1].b != src.points[0].b {
+                src.points[1].b
+            } else {
+                src.points[2].b
+            };
 
-            let dp = dot(self.plane.normal,
-                         cross(src.points[1].p - src.points[0].p,
-                               src.points[2].p - src.points[0].p));
+            let dp = dot(
+                self.plane.normal,
+                cross(
+                    src.points[1].p - src.points[0].p,
+                    src.points[2].p - src.points[0].p,
+                ),
+            );
 
-            if (dp < 0.0 && src.points[1].a != src.points[0].a) || (dp > 0.0 && src.points[1].a == src.points[0].a) {
+            if (dp < 0.0 && src.points[1].a != src.points[0].a)
+                || (dp > 0.0 && src.points[1].a == src.points[0].a)
+            {
                 self.simplex.swap(2, 3);
             }
         }
@@ -83,17 +116,22 @@ struct Point {
 
 impl Point {
     fn new(a: V3, b: V3, p: V3) -> Point {
-        Point { a: a, b: b, p: p, t: 0.0 }
+        Point {
+            a: a,
+            b: b,
+            p: p,
+            t: 0.0,
+        }
     }
 
     fn on_sum(a: &Support, b: &Support, n: V3) -> Point {
         let pa = a.support(n);
         let pb = b.support(-n);
-        Point::new(pa, pb, pa-pb)
+        Point::new(pa, pb, pa - pb)
     }
     #[inline]
     fn with_t(&self, t: f32) -> Point {
-        Point { t: t, .. *self }
+        Point { t: t, ..*self }
     }
 
     #[inline]
@@ -101,8 +139,6 @@ impl Point {
         self.a == o.a && self.b == o.b
     }
 }
-
-
 
 #[derive(Copy, Clone, Debug, Default)]
 struct Simplex {
@@ -117,7 +153,6 @@ fn towards_origin(a: V3, b: V3) -> bool {
 }
 
 impl Simplex {
-
     fn set(&self, v: V3, pts: &[Point]) -> Simplex {
         let mut res = *self;
         res.v = v;
@@ -129,7 +164,11 @@ impl Simplex {
     }
 
     fn initial(v: V3) -> Simplex {
-        Simplex { v: v, size: 0, .. Default::default() }
+        Simplex {
+            v: v,
+            size: 0,
+            ..Default::default()
+        }
     }
 
     fn finish(&self, w: &Point) -> Simplex {
@@ -144,8 +183,14 @@ impl Simplex {
     fn next1(&self, w: &Point) -> Simplex {
         let s = self.points[0];
         let t = geom::line_project_time(w.p, s.p, V3::zero());
-        if t < 0.0 { self.set(w.p, &[w.with_t(1.0)]) }
-        else { self.set(w.p + (self.points[0].p - w.p) * t, &[s.with_t(t), w.with_t(1.0-t)]) }
+        if t < 0.0 {
+            self.set(w.p, &[w.with_t(1.0)])
+        } else {
+            self.set(
+                w.p + (self.points[0].p - w.p) * t,
+                &[s.with_t(t), w.with_t(1.0 - t)],
+            )
+        }
     }
 
     fn next2(&self, w: &Point) -> Simplex {
@@ -161,10 +206,18 @@ impl Simplex {
         let in_edge0 = towards_origin(v0, s1.p);
         let in_edge1 = towards_origin(v1, s0.p);
 
-        if in_edge0 && in_edge1 { self.set(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), &[s0, s1, *w]) }
-        else if !in_edge0 && t0 > 0.0 { self.set(v0, &[s0.with_t(t0), w.with_t(1.0 - t0)]) }
-        else if !in_edge1 && t1 > 0.0 { self.set(v1, &[s1.with_t(t1), w.with_t(1.0 - t1)]) }
-        else { self.set(w.p, &[w.with_t(1.0)]) }
+        if in_edge0 && in_edge1 {
+            self.set(
+                geom::tri_project(s0.p, s1.p, w.p, V3::zero()),
+                &[s0, s1, *w],
+            )
+        } else if !in_edge0 && t0 > 0.0 {
+            self.set(v0, &[s0.with_t(t0), w.with_t(1.0 - t0)])
+        } else if !in_edge1 && t1 > 0.0 {
+            self.set(v1, &[s1.with_t(t1), w.with_t(1.0 - t1)])
+        } else {
+            self.set(w.p, &[w.with_t(1.0)])
+        }
     }
 
     fn next3(&self, w: &Point) -> Simplex {
@@ -174,9 +227,9 @@ impl Simplex {
         let t0 = geom::line_project_time(w.p, s0.p, V3::zero());
         let t1 = geom::line_project_time(w.p, s1.p, V3::zero());
         let t2 = geom::line_project_time(w.p, s2.p, V3::zero());
-        let v0 = w.p + (s0.p - w.p)*t0;
-        let v1 = w.p + (s1.p - w.p)*t1;
-        let v2 = w.p + (s2.p - w.p)*t2;
+        let v0 = w.p + (s0.p - w.p) * t0;
+        let v1 = w.p + (s1.p - w.p) * t1;
+        let v2 = w.p + (s2.p - w.p) * t2;
         let c0 = geom::tri_project(w.p, s1.p, s2.p, V3::zero());
         let c1 = geom::tri_project(w.p, s2.p, s0.p, V3::zero());
         let c2 = geom::tri_project(w.p, s0.p, s1.p, V3::zero());
@@ -193,23 +246,41 @@ impl Simplex {
 
         let inp1e2 = towards_origin(v2, s0.p);
         let inp1e0 = towards_origin(v0, s2.p);
-        if inp0 && inp1 && inp2 { self.finish(w) /* terminated */ }
-        else if !inp2 && inp2e0 && inp2e1 { self.set(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), &[self.points[0], self.points[1], *w]) }
-        else if !inp0 && inp0e1 && inp0e2 { self.set(geom::tri_project(s1.p, s2.p, w.p, V3::zero()), &[self.points[1], self.points[2], *w]) }
-        else if !inp1 && inp1e2 && inp1e0 { self.set(geom::tri_project(s2.p, s0.p, w.p, V3::zero()), &[self.points[2], self.points[0], *w]) }
-        else if !inp1e0 && !inp2e0 && t0 > 0.0 { self.set(v0, &[self.points[0].with_t(t0), w.with_t(1.0 - t0)]) }
-        else if !inp2e1 && !inp0e1 && t1 > 0.0 { self.set(v1, &[self.points[1].with_t(t1), w.with_t(1.0 - t1)]) }
-        else if !inp0e2 && !inp1e2 && t2 > 0.0 { self.set(v2, &[self.points[2].with_t(t2), w.with_t(1.0 - t2)]) }
-        else { self.set(w.p, &[w.with_t(1.0)]) }
+        if inp0 && inp1 && inp2 {
+            self.finish(w) /* terminated */
+        } else if !inp2 && inp2e0 && inp2e1 {
+            self.set(
+                geom::tri_project(s0.p, s1.p, w.p, V3::zero()),
+                &[self.points[0], self.points[1], *w],
+            )
+        } else if !inp0 && inp0e1 && inp0e2 {
+            self.set(
+                geom::tri_project(s1.p, s2.p, w.p, V3::zero()),
+                &[self.points[1], self.points[2], *w],
+            )
+        } else if !inp1 && inp1e2 && inp1e0 {
+            self.set(
+                geom::tri_project(s2.p, s0.p, w.p, V3::zero()),
+                &[self.points[2], self.points[0], *w],
+            )
+        } else if !inp1e0 && !inp2e0 && t0 > 0.0 {
+            self.set(v0, &[self.points[0].with_t(t0), w.with_t(1.0 - t0)])
+        } else if !inp2e1 && !inp0e1 && t1 > 0.0 {
+            self.set(v1, &[self.points[1].with_t(t1), w.with_t(1.0 - t1)])
+        } else if !inp0e2 && !inp1e2 && t2 > 0.0 {
+            self.set(v2, &[self.points[2].with_t(t2), w.with_t(1.0 - t2)])
+        } else {
+            self.set(w.p, &[w.with_t(1.0)])
+        }
     }
 
     fn next(&self, w: &Point) -> Simplex {
         match self.size {
-            0 => { self.set(w.p, &[w.with_t(1.0)]) },
+            0 => self.set(w.p, &[w.with_t(1.0)]),
             1 => self.next1(w),
             2 => self.next2(w),
             3 => self.next3(w),
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -222,7 +293,6 @@ impl Simplex {
             self.points[2].t = b.z;
         }
 
-
         let mut pa = V3::zero();
         let mut pb = V3::zero();
         for pt in self.points[0..(self.size as usize)].iter() {
@@ -230,9 +300,11 @@ impl Simplex {
             pb += pt.t * pt.b;
         }
 
-        let (pa, pb) = self.points[0..(self.size as usize)].iter().fold((V3::zero(), V3::zero()),
-            |(pa, pb), p| (pa + p.t*p.a, pb + p.t*p.b));
-
+        let (pa, pb) = self.points[0..(self.size as usize)]
+            .iter()
+            .fold((V3::zero(), V3::zero()), |(pa, pb), p| {
+                (pa + p.t * p.a, pb + p.t * p.b)
+            });
 
         let norm = self.v.norm_or(0.0, 0.0, 1.0);
         let impact = (pa + pb) * 0.5;
@@ -241,7 +313,7 @@ impl Simplex {
             impact: impact,
             separation: pa.dist(pb) + f32::MIN_POSITIVE,
             plane: Plane::from_norm_and_point(norm, impact),
-            .. Default::default()
+            ..Default::default()
         };
         hit_info.fill_simplex(self);
 
@@ -265,8 +337,12 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
         last = next;
         v = last.v;
         w = Point::on_sum(a, b, -v);
-        if dot(w.p, v) >= dot(v, v) - (eps + eps * dot(v, v)) { break; }
-        if !find_closest && dot(w.p, v) >= 0.0 { break; }
+        if dot(w.p, v) >= dot(v, v) - (eps + eps * dot(v, v)) {
+            break;
+        }
+        if !find_closest && dot(w.p, v) >= 0.0 {
+            break;
+        }
 
         next = last.next(&w);
         if next.v.is_zero() {
@@ -284,23 +360,35 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
             }
             assert!(next.size == 4);
             let min_penetration_plane = hull::furthest_plane_epa(
-                (next.points[0].p, next.points[1].p, next.points[2].p, next.points[3].p),
-                |v| a.support(v) - b.support(-v));
+                (
+                    next.points[0].p,
+                    next.points[1].p,
+                    next.points[2].p,
+                    next.points[3].p,
+                ),
+                |v| a.support(v) - b.support(-v),
+            );
 
-            let mp = M4x4::from_cols(V4::expand(next.points[0].p, 1.0),
-                                     V4::expand(next.points[1].p, 1.0),
-                                     V4::expand(next.points[2].p, 1.0),
-                                     V4::expand(next.points[3].p, 1.0));
+            let mp = M4x4::from_cols(
+                V4::expand(next.points[0].p, 1.0),
+                V4::expand(next.points[1].p, 1.0),
+                V4::expand(next.points[2].p, 1.0),
+                V4::expand(next.points[3].p, 1.0),
+            );
 
-            let ma = M4x4::from_cols(V4::expand(next.points[0].a, 1.0),
-                                     V4::expand(next.points[1].a, 1.0),
-                                     V4::expand(next.points[2].a, 1.0),
-                                     V4::expand(next.points[3].a, 1.0));
+            let ma = M4x4::from_cols(
+                V4::expand(next.points[0].a, 1.0),
+                V4::expand(next.points[1].a, 1.0),
+                V4::expand(next.points[2].a, 1.0),
+                V4::expand(next.points[3].a, 1.0),
+            );
 
-            let mb = M4x4::from_cols(V4::expand(next.points[0].b, 1.0),
-                                     V4::expand(next.points[1].b, 1.0),
-                                     V4::expand(next.points[2].b, 1.0),
-                                     V4::expand(next.points[3].b, 1.0));
+            let mb = M4x4::from_cols(
+                V4::expand(next.points[0].b, 1.0),
+                V4::expand(next.points[1].b, 1.0),
+                V4::expand(next.points[2].b, 1.0),
+                V4::expand(next.points[3].b, 1.0),
+            );
 
             let b = mp.inverse().unwrap().w; // just unwrap directly? (no chance this can't be inverted, right?)
 
@@ -312,7 +400,7 @@ pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
                 separation: min_penetration_plane.offset.min(0.0),
                 points: (p0, p1),
                 impact: (p0 + p1) * 0.5,
-                .. Default::default()
+                ..Default::default()
             };
             hit_info.fill_simplex(&last);
             assert!(hit_info.separation <= 0.0);
@@ -355,15 +443,19 @@ impl ContactPatch {
             let wiggle_angle = 4.0f32.to_radians();
             let wiggle = Quat::from_axis_angle(raxis, wiggle_angle).must_norm();
             let pivot = result.hit_info[0].points.0;
-            let ar = Pose::new(n * 0.2, quat(0.0, 0.0, 0.0, 1.0)) *
-                     Pose::new(-pivot, quat(0.0, 0.0, 0.0, 1.0)) *
-                     Pose::new(vec3(0.0, 0.0, 0.0), wiggle) *
-                     Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
+            let ar = Pose::new(n * 0.2, quat(0.0, 0.0, 0.0, 1.0))
+                * Pose::new(-pivot, quat(0.0, 0.0, 0.0, 1.0))
+                * Pose::new(vec3(0.0, 0.0, 0.0), wiggle)
+                * Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
 
             let mut next = separated(
-                &TransformedSupport { pose: ar, object: s0 },
+                &TransformedSupport {
+                    pose: ar,
+                    object: s0,
+                },
                 s1,
-                true);
+                true,
+            );
 
             next.plane.normal = n;
             {
@@ -374,8 +466,9 @@ impl ContactPatch {
 
             let mut matched = false;
             for j in 0..result.count {
-                if (next.points.0-result.hit_info[j].points.0).length() < 0.05 ||
-                   (next.points.1-result.hit_info[j].points.1).length() < 0.05 {
+                if (next.points.0 - result.hit_info[j].points.0).length() < 0.05
+                    || (next.points.1 - result.hit_info[j].points.1).length() < 0.05
+                {
                     matched = true;
                     break;
                 }

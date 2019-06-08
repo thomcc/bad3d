@@ -1,8 +1,8 @@
-use crate::math::vec::*;
+use crate::math::geom;
 use crate::math::mat::*;
 use crate::math::plane::*;
 use crate::math::traits::*;
-use crate::math::geom;
+use crate::math::vec::*;
 
 use std::iter;
 
@@ -74,11 +74,17 @@ impl Tri {
 }
 
 impl From<Tri> for (V3, V3, V3) {
-    #[inline] fn from(t: Tri) -> Self { t.tup() }
+    #[inline]
+    fn from(t: Tri) -> Self {
+        t.tup()
+    }
 }
 
 impl From<(V3, V3, V3)> for Tri {
-    #[inline] fn from(t: (V3, V3, V3)) -> Self { Tri(t.0, t.1, t.2) }
+    #[inline]
+    fn from(t: (V3, V3, V3)) -> Self {
+        Tri(t.0, t.1, t.2)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -90,7 +96,10 @@ pub struct TriIter<'a, V: 'a, I> {
 impl<'a, Tri: TriIndices, V, I: Iterator<Item = Tri>> TriIter<'a, V, I> {
     #[inline]
     pub fn new(vs: &'a [V], iter: I) -> Self {
-        Self { verts: vs, wrapped: iter }
+        Self {
+            verts: vs,
+            wrapped: iter,
+        }
     }
 }
 
@@ -107,23 +116,25 @@ pub fn de_index<V: Clone, I: TriIndices>(verts: &[V], tris: &[I]) -> Vec<(V, V, 
 }
 
 #[inline]
-pub fn tri_ref_iter<'a, 'b, V, I: TriIndices>(verts: &'a [V], tris: &'b [I])
--> TriIter<'a, V, impl Iterator<Item = I> + 'b>
-{
+pub fn tri_ref_iter<'a, 'b, V, I: TriIndices>(
+    verts: &'a [V],
+    tris: &'b [I],
+) -> TriIter<'a, V, impl Iterator<Item = I> + 'b> {
     TriIter::new(verts, tris.iter().cloned())
 }
 
 #[inline]
-pub fn tri_iter<'a, V: Clone, I: TriIndices>(verts: &'a [V], tris: &'a [I])
-    -> impl Iterator<Item = (V, V, V)> + 'a
-{
+pub fn tri_iter<'a, V: Clone, I: TriIndices>(
+    verts: &'a [V],
+    tris: &'a [I],
+) -> impl Iterator<Item = (V, V, V)> + 'a {
     TriIter::new(verts, tris.iter().cloned()).copied()
 }
 
 impl<'a, Vert, Tri, Iter> Iterator for TriIter<'a, Vert, Iter>
 where
     Tri: TriIndices,
-    Iter: Iterator<Item = Tri>
+    Iter: Iterator<Item = Tri>,
 {
     type Item = (&'a Vert, &'a Vert, &'a Vert);
 
@@ -157,7 +168,7 @@ where
 impl<'a, Vert, Tri, Iter> iter::ExactSizeIterator for TriIter<'a, Vert, Iter>
 where
     Tri: TriIndices,
-    Iter: Iterator<Item = Tri> + iter::ExactSizeIterator
+    Iter: Iterator<Item = Tri> + iter::ExactSizeIterator,
 {
     #[inline]
     fn len(&self) -> usize {
@@ -168,10 +179,12 @@ where
 impl<'a, Vert, Tri, Iter> iter::DoubleEndedIterator for TriIter<'a, Vert, Iter>
 where
     Tri: TriIndices,
-    Iter: Iterator<Item = Tri> + iter::DoubleEndedIterator
+    Iter: Iterator<Item = Tri> + iter::DoubleEndedIterator,
 {
     #[inline]
     fn next_back(&mut self) -> Option<<Self as Iterator>::Item> {
-        self.wrapped.next_back().map(|tri| tri.tri_vert_ref(self.verts))
+        self.wrapped
+            .next_back()
+            .map(|tri| tri.tri_vert_ref(self.verts))
     }
 }

@@ -13,11 +13,17 @@ pub struct TripleIndices {
 }
 
 impl PairIndices {
-    #[inline] pub fn len(&self) -> usize { self.end.wrapping_sub(self.pos) }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.end.wrapping_sub(self.pos)
+    }
 }
 
 impl TripleIndices {
-    #[inline] pub fn len(&self) -> usize { self.end.wrapping_sub(self.pos) }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.end.wrapping_sub(self.pos)
+    }
 }
 
 impl Iterator for PairIndices {
@@ -79,11 +85,23 @@ pub fn triple_indices(len: usize) -> TripleIndices {
     }
 }
 
-pub struct Pairs<'a, T: 'a> { pos: usize, slice: &'a [T] }
-pub struct Triples<'a, T: 'a> { pos: usize, slice: &'a [T] }
+pub struct Pairs<'a, T: 'a> {
+    pos: usize,
+    slice: &'a [T],
+}
+pub struct Triples<'a, T: 'a> {
+    pos: usize,
+    slice: &'a [T],
+}
 
-pub struct ClonedPairs<'a, T: 'a> { pos: usize, slice: &'a [T] }
-pub struct ClonedTriples<'a, T: 'a + Clone> { pos: usize, slice: &'a [T] }
+pub struct ClonedPairs<'a, T: 'a> {
+    pos: usize,
+    slice: &'a [T],
+}
+pub struct ClonedTriples<'a, T: 'a + Clone> {
+    pos: usize,
+    slice: &'a [T],
+}
 
 #[inline]
 pub fn pairs<T>(slice: &[T]) -> Pairs<T> {
@@ -100,7 +118,10 @@ impl<'a, T> Pairs<'a, T> {
     pub fn new(slice: &'a [T]) -> Self {
         debug_warn_if!(slice.len() < 2, "slice is too small: {}", slice.len());
         if slice.len() < 2 {
-            Self { pos: slice.len(), slice }
+            Self {
+                pos: slice.len(),
+                slice,
+            }
         } else {
             Self { pos: 0, slice }
         }
@@ -110,15 +131,17 @@ impl<'a, T> Pairs<'a, T> {
         let len = self.slice.len();
         debug_assert_lt!(p0, len);
         let p1 = if p0 + 1 == len { 0 } else { p0 + 1 };
-        (self.slice.get_unchecked(p0),
-         self.slice.get_unchecked(p1))
+        (self.slice.get_unchecked(p0), self.slice.get_unchecked(p1))
     }
 }
 
 impl<'a, T: Clone> Pairs<'a, T> {
     #[inline]
     pub fn cloned(self) -> ClonedPairs<'a, T> {
-        ClonedPairs { pos: self.pos, slice: self.slice }
+        ClonedPairs {
+            pos: self.pos,
+            slice: self.slice,
+        }
     }
 }
 
@@ -127,7 +150,10 @@ impl<'a, T> Triples<'a, T> {
     pub fn new(slice: &'a [T]) -> Self {
         debug_warn_if!(slice.len() < 3, "slice is too small: {}", slice.len());
         if slice.len() < 3 {
-            Self { pos: slice.len(), slice }
+            Self {
+                pos: slice.len(),
+                slice,
+            }
         } else {
             Self { pos: 0, slice }
         }
@@ -139,40 +165,55 @@ impl<'a, T> Triples<'a, T> {
         debug_assert_lt!(p0, len);
         let p1 = if p0 + 1 == len { 0 } else { p0 + 1 };
         let p2 = if p1 + 1 == len { 0 } else { p1 + 1 };
-        (self.slice.get_unchecked(p0),
-         self.slice.get_unchecked(p1),
-         self.slice.get_unchecked(p2))
+        (
+            self.slice.get_unchecked(p0),
+            self.slice.get_unchecked(p1),
+            self.slice.get_unchecked(p2),
+        )
     }
 }
 
 impl<'a, T: Clone> Triples<'a, T> {
     #[inline]
     pub fn cloned(self) -> ClonedTriples<'a, T> {
-        ClonedTriples { pos: self.pos, slice: self.slice }
+        ClonedTriples {
+            pos: self.pos,
+            slice: self.slice,
+        }
     }
 }
 
-impl<'a, T> ClonedPairs<'a, T> where T: Clone {
+impl<'a, T> ClonedPairs<'a, T>
+where
+    T: Clone,
+{
     #[inline]
     unsafe fn get_at(&self, p0: usize) -> (T, T) {
         let len = self.slice.len();
         debug_assert_lt!(p0, len);
         let p1 = if p0 + 1 == len { 0 } else { p0 + 1 };
-        (self.slice.get_unchecked(p0).clone(),
-         self.slice.get_unchecked(p1).clone())
+        (
+            self.slice.get_unchecked(p0).clone(),
+            self.slice.get_unchecked(p1).clone(),
+        )
     }
 }
 
-impl<'a, T> ClonedTriples<'a, T> where T: Clone {
+impl<'a, T> ClonedTriples<'a, T>
+where
+    T: Clone,
+{
     #[inline]
     unsafe fn get_at(&self, p0: usize) -> (T, T, T) {
         let len = self.slice.len();
         debug_assert_lt!(p0, len);
         let p1 = if p0 + 1 == len { 0 } else { p0 + 1 };
         let p2 = if p1 + 1 == len { 0 } else { p1 + 1 };
-        (self.slice.get_unchecked(p0).clone(),
-         self.slice.get_unchecked(p1).clone(),
-         self.slice.get_unchecked(p2).clone())
+        (
+            self.slice.get_unchecked(p0).clone(),
+            self.slice.get_unchecked(p1).clone(),
+            self.slice.get_unchecked(p2).clone(),
+        )
     }
 }
 
@@ -270,13 +311,10 @@ mod test {
 
         let s1 = &[1, 2, 3, 4, 5];
         let p1 = triples(s1).cloned().collect::<Vec<_>>();
-        assert_eq!(&p1, &[
-            (1, 2, 3),
-            (2, 3, 4),
-            (3, 4, 5),
-            (4, 5, 1),
-            (5, 1, 2)
-        ]);
+        assert_eq!(
+            &p1,
+            &[(1, 2, 3), (2, 3, 4), (3, 4, 5), (4, 5, 1), (5, 1, 2)]
+        );
 
         let s2 = &[1, 2];
         let p2 = triples(s2).cloned().collect::<Vec<_>>();
@@ -289,7 +327,10 @@ mod test {
         assert_eq!(&p0, &[(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]);
 
         let p1 = triple_indices(5).collect::<Vec<_>>();
-        assert_eq!(&p1, &[(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 0), (4, 0, 1)]);
+        assert_eq!(
+            &p1,
+            &[(0, 1, 2), (1, 2, 3), (2, 3, 4), (3, 4, 0), (4, 0, 1)]
+        );
 
         let p2 = pair_indices(1).collect::<Vec<_>>();
         assert_eq!(&p2, &[]);

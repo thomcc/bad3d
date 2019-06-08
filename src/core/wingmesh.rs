@@ -1,7 +1,7 @@
-use crate::math::prelude::*;
-use std::{i32, u16, f32};
-use crate::core::support;
 use crate::core::bsp;
+use crate::core::support;
+use crate::math::prelude::*;
+use std::{f32, i32, u16};
 // TODO: this is a gnarly mess
 
 #[derive(Copy, Clone, Debug)]
@@ -11,12 +11,20 @@ pub struct HalfEdge {
     pub adj: i32,
     pub next: i32,
     pub prev: i32,
-    pub face: i32
+    pub face: i32,
 }
 
 impl Default for HalfEdge {
-    #[inline] fn default() -> HalfEdge {
-        HalfEdge { id: -1, v: -1, adj: -1, next: -1, prev: -1, face: -1 }
+    #[inline]
+    fn default() -> HalfEdge {
+        HalfEdge {
+            id: -1,
+            v: -1,
+            adj: -1,
+            next: -1,
+            prev: -1,
+            face: -1,
+        }
     }
 }
 
@@ -32,12 +40,36 @@ impl HalfEdge {
         }
     }
 
-    #[inline] pub fn idx(&self) -> usize { debug_assert!(self.id >= 0); self.id as usize }
-    #[inline] pub fn adj_idx(&self) -> usize { debug_assert!(self.adj >= 0); self.adj as usize }
-    #[inline] pub fn vert_idx(&self) -> usize { debug_assert!(self.v >= 0); self.v as usize }
-    #[inline] pub fn next_idx(&self) -> usize { debug_assert!(self.next >= 0); self.next as usize }
-    #[inline] pub fn prev_idx(&self) -> usize { debug_assert!(self.prev >= 0); self.prev as usize }
-    #[inline] pub fn face_idx(&self) -> usize { debug_assert!(self.face >= 0); self.face as usize }
+    #[inline]
+    pub fn idx(&self) -> usize {
+        debug_assert!(self.id >= 0);
+        self.id as usize
+    }
+    #[inline]
+    pub fn adj_idx(&self) -> usize {
+        debug_assert!(self.adj >= 0);
+        self.adj as usize
+    }
+    #[inline]
+    pub fn vert_idx(&self) -> usize {
+        debug_assert!(self.v >= 0);
+        self.v as usize
+    }
+    #[inline]
+    pub fn next_idx(&self) -> usize {
+        debug_assert!(self.next >= 0);
+        self.next as usize
+    }
+    #[inline]
+    pub fn prev_idx(&self) -> usize {
+        debug_assert!(self.prev >= 0);
+        self.prev as usize
+    }
+    #[inline]
+    pub fn face_idx(&self) -> usize {
+        debug_assert!(self.face >= 0);
+        self.face as usize
+    }
 
     #[inline]
     pub fn cull(&mut self) {
@@ -66,7 +98,9 @@ pub struct WingMesh {
 }
 
 impl Default for WingMesh {
-    fn default() -> WingMesh { WingMesh::new() }
+    fn default() -> WingMesh {
+        WingMesh::new()
+    }
 }
 
 pub struct FaceViewIterator<'a> {
@@ -92,11 +126,12 @@ impl<'a> Iterator for FaceViewIterator<'a> {
 }
 
 impl WingMesh {
-
     #[inline]
-    pub fn with_capacities(verts: impl Into<Option<usize>>,
-                           faces: impl Into<Option<usize>>,
-                           edges: impl Into<Option<usize>>) -> Self {
+    pub fn with_capacities(
+        verts: impl Into<Option<usize>>,
+        faces: impl Into<Option<usize>>,
+        edges: impl Into<Option<usize>>,
+    ) -> Self {
         let mut wm = WingMesh::new();
         wm.reserve(verts, faces, edges);
         wm
@@ -115,13 +150,23 @@ impl WingMesh {
     }
 
     #[inline]
-    pub fn reserve(&mut self,
-                   verts: impl Into<Option<usize>>,
-                   faces: impl Into<Option<usize>>,
-                   edges: impl Into<Option<usize>>) {
-        if let Some(vs) = verts.into() { self.verts.reserve(vs); self.vback.reserve(vs); }
-        if let Some(fs) = faces.into() { self.faces.reserve(fs); self.fback.reserve(fs); }
-        if let Some(es) = edges.into() { self.edges.reserve(es); }
+    pub fn reserve(
+        &mut self,
+        verts: impl Into<Option<usize>>,
+        faces: impl Into<Option<usize>>,
+        edges: impl Into<Option<usize>>,
+    ) {
+        if let Some(vs) = verts.into() {
+            self.verts.reserve(vs);
+            self.vback.reserve(vs);
+        }
+        if let Some(fs) = faces.into() {
+            self.faces.reserve(fs);
+            self.fback.reserve(fs);
+        }
+        if let Some(es) = edges.into() {
+            self.edges.reserve(es);
+        }
     }
 
     #[inline]
@@ -184,15 +229,23 @@ impl WingMesh {
             let k1 = int(k + 1);
             let k2 = int(k + 2);
 
-            e0.id = k0; e1.prev = k0; e2.next = k0;
-            e1.id = k1; e2.prev = k1; e0.next = k1;
-            e2.id = k2; e0.prev = k2; e1.next = k2;
+            e0.id = k0;
+            e1.prev = k0;
+            e2.next = k0;
+            e1.id = k1;
+            e2.prev = k1;
+            e0.next = k1;
+            e2.id = k2;
+            e0.prev = k2;
+            e1.next = k2;
 
             m.edges.extend(&[e0, e1, e2]);
 
-            m.faces.push(Plane::from_tri(m.verts[t[0] as usize],
-                                         m.verts[t[1] as usize],
-                                         m.verts[t[2] as usize]));
+            m.faces.push(Plane::from_tri(
+                m.verts[t[0] as usize],
+                m.verts[t[1] as usize],
+                m.verts[t[2] as usize],
+            ));
         }
 
         m.finish();
@@ -211,7 +264,12 @@ impl WingMesh {
         }
 
         for i in 0..sides {
-            let indices = [i*2, ((i+1)%sides)*2, ((i+1)%sides)*2+1, i*2+1];
+            let indices = [
+                i * 2,
+                ((i + 1) % sides) * 2,
+                ((i + 1) % sides) * 2 + 1,
+                i * 2 + 1,
+            ];
             mesh.add_face(&indices[..]);
         }
 
@@ -234,7 +292,8 @@ impl WingMesh {
         for i in 0..sides {
             let progress = (i as f32) / (sides as f32);
             let a = 2.0 * f32::consts::PI * progress;
-            mesh.verts.push(vec3(a.cos() * radius, a.sin() * radius, 0.0));
+            mesh.verts
+                .push(vec3(a.cos() * radius, a.sin() * radius, 0.0));
         }
 
         mesh.verts.push(vec3(0.0, 0.0, height));
@@ -246,7 +305,7 @@ impl WingMesh {
         let mut bottom = Vec::new();
 
         for i in 0..sides {
-            bottom.push(sides-i-1);
+            bottom.push(sides - i - 1);
         }
         mesh.add_face(&bottom[..]);
         mesh.finish();
@@ -257,12 +316,10 @@ impl WingMesh {
         assert_gt!(bands.0, 2);
         assert_gt!(bands.1, 2);
 
-        let mut mesh = WingMesh::with_capacities(
-            bands.0 * bands.1 * 4, bands.0 * bands.1, None);
+        let mut mesh = WingMesh::with_capacities(bands.0 * bands.1 * 4, bands.0 * bands.1, None);
 
         let lat_step = f32::consts::PI / (bands.0 as f32);
         let lng_step = f32::consts::PI * 2.0 / (bands.1 as f32);
-
 
         for j in 0..(bands.0 - 1) {
             let polar = ((j + 1) as f32) * lat_step;
@@ -306,7 +363,6 @@ impl WingMesh {
         mesh.finish();
         mesh
     }
-
 
     pub fn vertex_degree(&self, v: usize) -> i32 {
         let e0 = self.vback[v];
@@ -376,7 +432,11 @@ impl WingMesh {
     #[inline]
     pub fn iter_face<'a>(&'a self, face: usize) -> FaceViewIterator<'a> {
         let fb = self.fback[face];
-        FaceViewIterator { wm: self, start: fb, current: fb }
+        FaceViewIterator {
+            wm: self,
+            start: fb,
+            current: fb,
+        }
     }
 
     pub fn face_verts(&self, face: usize) -> Vec<V3> {
@@ -384,7 +444,8 @@ impl WingMesh {
     }
 
     pub fn iter_face_verts<'a>(&'a self, face: usize) -> impl Iterator<Item = V3> + 'a {
-        self.iter_face(face).map(move |edge| self.verts[edge.vert_idx()])
+        self.iter_face(face)
+            .map(move |edge| self.verts[edge.vert_idx()])
     }
 
     #[inline]
@@ -402,8 +463,7 @@ impl WingMesh {
 
     pub fn link_mesh(&mut self) {
         let mut edge_v: Vec<usize> = (0..self.edges.len()).collect();
-        edge_v.sort_by(|&a, &b|
-            self.edges[a].v.cmp(&self.edges[b].v));
+        edge_v.sort_by(|&a, &b| self.edges[a].v.cmp(&self.edges[b].v));
 
         let mut ve_back = vec![0i32; self.verts.len()];
         for i in (0..self.edges.len()).rev() {
@@ -438,7 +498,7 @@ impl WingMesh {
         // for i in (0..self.edges.len()).rev() {
         // let mut i = self.edges.len();
         // while i != 0 {
-            // i -= 1;
+        // i -= 1;
         for (i, edge) in self.edges.iter().enumerate().rev() {
             if !self.is_packed && edge.v == -1 {
                 continue;
@@ -449,9 +509,25 @@ impl WingMesh {
     }
 
     pub fn build_edge(&mut self, ea: usize, eb: usize) -> usize {
-        debug_assert_ne!(self.edges[ea].next, int(eb), "already an edge (ea: {}, eb: {})", ea, eb);
-        debug_assert_ne!(self.edges[eb].next, int(ea), "already an edge (ea: {}, eb: {})", ea, eb);
-        debug_assert_eq!(self.edges[ea].face, self.edges[eb].face, "can't build edge to different face (ea: {}, eb: {})", ea, eb);
+        debug_assert_ne!(
+            self.edges[ea].next,
+            int(eb),
+            "already an edge (ea: {}, eb: {})",
+            ea,
+            eb
+        );
+        debug_assert_ne!(
+            self.edges[eb].next,
+            int(ea),
+            "already an edge (ea: {}, eb: {})",
+            ea,
+            eb
+        );
+        debug_assert_eq!(
+            self.edges[ea].face, self.edges[eb].face,
+            "can't build edge to different face (ea: {}, eb: {})",
+            ea, eb
+        );
 
         if cfg!(debug_assertions) {
             let mut e = ea;
@@ -473,7 +549,7 @@ impl WingMesh {
             next: int(eb),
             v: self.edges[ea].v,
             prev: self.edges[ea].prev,
-            face: new_face
+            face: new_face,
         };
         let sb = HalfEdge {
             id: id_b,
@@ -481,7 +557,7 @@ impl WingMesh {
             next: int(ea),
             v: self.edges[eb].v,
             prev: self.edges[eb].prev,
-            face: self.edges[ea].face // yes, ea
+            face: self.edges[ea].face, // yes, ea
         };
 
         // let sa = HalfEdge::new(id_a, self.edges[ea].vert_idx(), id_b, eb, self.edges[ea].prev_idx(), new_face);
@@ -527,10 +603,10 @@ impl WingMesh {
         let sa_id = int(self.edges.len() + 1);
 
         let s0 = HalfEdge {
-            id:  s0_id,
+            id: s0_id,
             adj: sa_id,
             prev: int(edge),
-            v:    new_vert_id,
+            v: new_vert_id,
             next: self.edges[edge].next,
             face: self.edges[edge].face,
         };
@@ -540,7 +616,7 @@ impl WingMesh {
             adj: s0_id,
             next: self.edges[edge].adj,
 
-            v:    self.edges[e_adj].v,
+            v: self.edges[e_adj].v,
             prev: self.edges[e_adj].prev,
             face: self.edges[e_adj].face,
         };
@@ -615,8 +691,11 @@ impl WingMesh {
         self.split_edges(slice);
         let mut result = Vec::new();
         let v0 = {
-            let find = self.verts.iter().enumerate().find(|&(_, &v)|
-                slice.test(v) == PlaneTestResult::Coplanar);
+            let find = self
+                .verts
+                .iter()
+                .enumerate()
+                .find(|&(_, &v)| slice.test(v) == PlaneTestResult::Coplanar);
             match find {
                 Some((i, _)) => i,
                 None => return result,
@@ -642,8 +721,12 @@ impl WingMesh {
         debug_assert_lt!(s, self.edges.len());
         debug_assert_ge!(e.v, 0);
 
-        if !self.vback.is_empty() && self.vback[e.vert_idx()] == e.id { self.vback[e.vert_idx()] = int(s); }
-        if !self.fback.is_empty() && self.fback[e.face_idx()] == e.id { self.fback[e.face_idx()] = int(s); }
+        if !self.vback.is_empty() && self.vback[e.vert_idx()] == e.id {
+            self.vback[e.vert_idx()] = int(s);
+        }
+        if !self.fback.is_empty() && self.fback[e.face_idx()] == e.id {
+            self.fback[e.face_idx()] = int(s);
+        }
 
         e.id = int(s);
         self.edges[s] = e;
@@ -673,7 +756,7 @@ impl WingMesh {
             let eu = e as usize;
             debug_assert_eq!(self.edges[eu].vert_idx(), last);
             self.edges[eu].v = int(s);
-            e = self.adj_edge(eu).next;// self.edges[self.edges[eu].adj_idx()].next;
+            e = self.adj_edge(eu).next; // self.edges[self.edges[eu].adj_idx()].next;
             if e == self.vback[s] {
                 break;
             }
@@ -785,11 +868,15 @@ impl WingMesh {
         debug_assert_eq!(self.edges[eid].id, ei);
         debug_assert_ne!(self.edges[eid].prev, ei);
 
-        debug_assert_eq!(self.edges[self.edges[self.edges[eid].prev_idx()].adj_idx()].v,
-                         self.edges[eid].v);
+        debug_assert_eq!(
+            self.edges[self.edges[self.edges[eid].prev_idx()].adj_idx()].v,
+            self.edges[eid].v
+        );
 
-        debug_assert_eq!(self.edges[self.edges[eid].prev_idx()].face,
-                         self.edges[eid].face);
+        debug_assert_eq!(
+            self.edges[self.edges[eid].prev_idx()].face,
+            self.edges[eid].face
+        );
 
         if self.vback[self.edges[eid].vert_idx()] == ei {
             let nv = self.edges[self.edges[eid].prev_idx()].adj;
@@ -814,8 +901,14 @@ impl WingMesh {
         let ebp = self.edges[eb].prev_idx();
         let ebn = self.edges[eb].next_idx();
 
-        { let eai = self.edges[ea].idx(); self.avoid_back_refs(eai); }
-        { let ebi = self.edges[eb].idx(); self.avoid_back_refs(ebi); }
+        {
+            let eai = self.edges[ea].idx();
+            self.avoid_back_refs(eai);
+        }
+        {
+            let ebi = self.edges[eb].idx();
+            self.avoid_back_refs(ebi);
+        }
 
         let old_v = self.edges[ea].v as usize;
         let new_v = self.edges[eb].v as usize;
@@ -846,10 +939,22 @@ impl WingMesh {
             }
         }
 
-        { let i = self.edges[ean].id; self.edges[eap].next = i; }
-        { let i = self.edges[eap].id; self.edges[ean].prev = i; }
-        { let i = self.edges[ebn].id; self.edges[ebp].next = i; }
-        { let i = self.edges[ebp].id; self.edges[ebn].prev = i; }
+        {
+            let i = self.edges[ean].id;
+            self.edges[eap].next = i;
+        }
+        {
+            let i = self.edges[eap].id;
+            self.edges[ean].prev = i;
+        }
+        {
+            let i = self.edges[ebn].id;
+            self.edges[ebp].next = i;
+        }
+        {
+            let i = self.edges[ebp].id;
+            self.edges[ebn].prev = i;
+        }
 
         self.vback[old_v] = -1;
 
@@ -929,7 +1034,7 @@ impl WingMesh {
         let loop_len = edge_loop.len();
         for i in 0..loop_len {
             // detach verts on loop from edges
-            let i1 = (i+1) % loop_len;
+            let i1 = (i + 1) % loop_len;
             let ec = edge_loop[i];
             let en = edge_loop[i1];
 
@@ -956,8 +1061,8 @@ impl WingMesh {
         let mut kill_stack = Vec::new();
         for i in 0..loop_len {
             let ec = edge_loop[i];
-            let en = edge_loop[(i+1)%loop_len];
-            let ep = edge_loop[(i+loop_len-1)%loop_len];
+            let en = edge_loop[(i + 1) % loop_len];
+            let ep = edge_loop[(i + loop_len - 1) % loop_len];
             if self.edges[ec].next_idx() != en {
                 let nidx = self.edges[ec].next_idx();
                 if self.edges[nidx].id >= 0 {
@@ -993,7 +1098,7 @@ impl WingMesh {
                 kill_stack.push(ei);
                 self.edges[ei].id = -1;
             }
-            if self.edges[k].adj != -1 && self.edges[self.edges[k].adj_idx()].id  != -1 {
+            if self.edges[k].adj != -1 && self.edges[self.edges[k].adj_idx()].id != -1 {
                 let ei = self.edges[k].adj_idx();
                 kill_stack.push(ei);
                 self.edges[ei].id = -1;
@@ -1039,19 +1144,21 @@ impl WingMesh {
                 adj: -1,
                 next: int(base_edge + (i + 1) % indices.len()),
                 prev: int(base_edge + (i + indices.len() - 1) % indices.len()),
-                face: int(fid)
+                face: int(fid),
             })
         }
         self.faces.push(Plane::from_points(&verts[..]));
     }
 
     pub fn generate_tris(&self) -> Vec<[u16; 3]> {
-        assert!(self.edges.len() >= self.faces.len() * 2,
-                "Have more edges than we should (edges = {}, faces = {})",
-                self.edges.len(), self.faces.len());
+        assert!(
+            self.edges.len() >= self.faces.len() * 2,
+            "Have more edges than we should (edges = {}, faces = {})",
+            self.edges.len(),
+            self.faces.len()
+        );
 
-        let mut tris = Vec::with_capacity(
-            self.edges.len() - self.faces.len() * 2);
+        let mut tris = Vec::with_capacity(self.edges.len() - self.faces.len() * 2);
 
         for &e0 in self.fback.iter() {
             if e0 == -1 {
@@ -1136,10 +1243,10 @@ impl WingMesh {
             PlaneTestResult::Over => {
                 self.clear();
                 return self;
-            },
+            }
             PlaneTestResult::Under => {
                 return self;
-            },
+            }
             _ => {}
         }
 
@@ -1162,14 +1269,17 @@ impl WingMesh {
         d.faces.reserve(self.verts.len());
         d.fback.reserve(self.vback.len());
         for (i, &v) in self.verts.iter().enumerate() {
-            d.faces.push(Plane::new(v.norm_or(0.0, 0.0, 1.0), safe_div0(-r*r, v.length())));
+            d.faces.push(Plane::new(
+                v.norm_or(0.0, 0.0, 1.0),
+                safe_div0(-r * r, v.length()),
+            ));
             d.fback.push(self.vback[i]);
         }
 
         d.verts.reserve(self.faces.len());
         d.vback.reserve(self.fback.len());
         for (i, f) in self.faces.iter().enumerate() {
-            d.verts.push(f.normal * safe_div0(-r*r, f.offset));
+            d.verts.push(f.normal * safe_div0(-r * r, f.offset));
             d.vback.push(self.edges[self.fback[i] as usize].adj);
         }
 
@@ -1177,10 +1287,10 @@ impl WingMesh {
         for e in self.edges.iter() {
             d.edges.push(HalfEdge {
                 face: e.v,
-                v:    self.edges[e.adj_idx()].face,
+                v: self.edges[e.adj_idx()].face,
                 next: self.edges[e.prev_idx()].adj,
                 prev: self.edges[e.adj_idx()].next,
-                .. *e
+                ..*e
             });
         }
         d.update_face_planes();
@@ -1208,30 +1318,42 @@ impl WingMesh {
             vec3(max.x, min.y, min.z),
             vec3(max.x, min.y, max.z),
             vec3(max.x, max.y, min.z),
-            vec3(max.x, max.y, max.z)
+            vec3(max.x, max.y, max.z),
         ];
         result.faces = vec![
             plane(-1.0, 0.0, 0.0, min.x),
-            plane( 1.0, 0.0, 0.0,-max.x),
-            plane( 0.0,-1.0, 0.0, min.y),
-            plane( 0.0, 1.0, 0.0,-max.y),
-            plane( 0.0, 0.0,-1.0, min.z),
-            plane( 0.0, 0.0, 1.0,-max.z)
+            plane(1.0, 0.0, 0.0, -max.x),
+            plane(0.0, -1.0, 0.0, min.y),
+            plane(0.0, 1.0, 0.0, -max.y),
+            plane(0.0, 0.0, -1.0, min.z),
+            plane(0.0, 0.0, 1.0, -max.z),
         ];
 
         result.edges = vec![
-            HalfEdge::new( 0,0,11, 1, 3,0), HalfEdge::new( 1,1,23, 2, 0,0),
-            HalfEdge::new( 2,3,15, 3, 1,0), HalfEdge::new( 3,2,16, 0, 2,0),
-            HalfEdge::new( 4,6,13, 5, 7,1), HalfEdge::new( 5,7,21, 6, 4,1),
-            HalfEdge::new( 6,5, 9, 7, 5,1), HalfEdge::new( 7,4,18, 4, 6,1),
-            HalfEdge::new( 8,0,19, 9,11,2), HalfEdge::new( 9,4, 6,10, 8,2),
-            HalfEdge::new(10,5,20,11, 9,2), HalfEdge::new(11,1, 0, 8,10,2),
-            HalfEdge::new(12,3,22,13,15,3), HalfEdge::new(13,7, 4,14,12,3),
-            HalfEdge::new(14,6,17,15,13,3), HalfEdge::new(15,2, 2,12,14,3),
-            HalfEdge::new(16,0, 3,17,19,4), HalfEdge::new(17,2,14,18,16,4),
-            HalfEdge::new(18,6, 7,19,17,4), HalfEdge::new(19,4, 8,16,18,4),
-            HalfEdge::new(20,1,10,21,23,5), HalfEdge::new(21,5, 5,22,20,5),
-            HalfEdge::new(22,7,12,23,21,5), HalfEdge::new(23,3, 1,20,22,5),
+            HalfEdge::new(0, 0, 11, 1, 3, 0),
+            HalfEdge::new(1, 1, 23, 2, 0, 0),
+            HalfEdge::new(2, 3, 15, 3, 1, 0),
+            HalfEdge::new(3, 2, 16, 0, 2, 0),
+            HalfEdge::new(4, 6, 13, 5, 7, 1),
+            HalfEdge::new(5, 7, 21, 6, 4, 1),
+            HalfEdge::new(6, 5, 9, 7, 5, 1),
+            HalfEdge::new(7, 4, 18, 4, 6, 1),
+            HalfEdge::new(8, 0, 19, 9, 11, 2),
+            HalfEdge::new(9, 4, 6, 10, 8, 2),
+            HalfEdge::new(10, 5, 20, 11, 9, 2),
+            HalfEdge::new(11, 1, 0, 8, 10, 2),
+            HalfEdge::new(12, 3, 22, 13, 15, 3),
+            HalfEdge::new(13, 7, 4, 14, 12, 3),
+            HalfEdge::new(14, 6, 17, 15, 13, 3),
+            HalfEdge::new(15, 2, 2, 12, 14, 3),
+            HalfEdge::new(16, 0, 3, 17, 19, 4),
+            HalfEdge::new(17, 2, 14, 18, 16, 4),
+            HalfEdge::new(18, 6, 7, 19, 17, 4),
+            HalfEdge::new(19, 4, 8, 16, 18, 4),
+            HalfEdge::new(20, 1, 10, 21, 23, 5),
+            HalfEdge::new(21, 5, 5, 22, 20, 5),
+            HalfEdge::new(22, 7, 12, 23, 21, 5),
+            HalfEdge::new(23, 3, 1, 20, 22, 5),
         ];
         result.init_back_lists();
         // The fact that the validity check fails without update_face_planes
@@ -1256,10 +1378,15 @@ impl WingMesh {
     }
 
     pub fn convex_hit_check(&self, v0: V3, v1: V3) -> Option<geom::HitInfo> {
-        let mut test_info = geom::SegmentTestInfo { w0: v0, w1: v1, nw0: V3::zero() };
+        let mut test_info = geom::SegmentTestInfo {
+            w0: v0,
+            w1: v1,
+            nw0: V3::zero(),
+        };
 
         for &face in &self.faces {
-            if let Some(next) = geom::segment_under(face, test_info.w0, test_info.w1, test_info.nw0) {
+            if let Some(next) = geom::segment_under(face, test_info.w0, test_info.w1, test_info.nw0)
+            {
                 test_info = next;
             } else {
                 return None;
@@ -1276,6 +1403,3 @@ impl support::Support for WingMesh {
         self.verts.as_slice().support(dir)
     }
 }
-
-
-

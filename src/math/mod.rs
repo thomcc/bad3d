@@ -1,13 +1,11 @@
-
-pub mod traits;
-pub mod scalar;
-pub mod vec;
-pub mod quat;
+pub mod geom;
 pub mod mat;
 pub mod plane;
 pub mod pose;
-pub mod geom;
+pub mod quat;
+pub mod scalar;
+pub mod traits;
 pub mod tri;
+pub mod vec;
 
 pub mod prelude;
-

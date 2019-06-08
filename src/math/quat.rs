@@ -1,10 +1,10 @@
-use crate::math::vec::*;
 use crate::math::mat::*;
-use crate::math::traits::*;
 use crate::math::plane::*;
+use crate::math::traits::*;
+use crate::math::vec::*;
 
 use std::ops::*;
-use std::{mem, fmt, f32};
+use std::{f32, fmt, mem};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -17,54 +17,112 @@ pub fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
 
 impl fmt::Display for Quat {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "quat({}, {}, {}, {})", self.0.x, self.0.y, self.0.z, self.0.w)
+        write!(
+            f,
+            "quat({}, {}, {}, {})",
+            self.0.x, self.0.y, self.0.z, self.0.w
+        )
     }
 }
 
-impl From<V4> for Quat { #[inline] fn from(v: V4) -> Quat { Quat(v) } }
-impl From<Quat> for V4 { #[inline] fn from(q: Quat) -> V4 { q.0 } }
+impl From<V4> for Quat {
+    #[inline]
+    fn from(v: V4) -> Quat {
+        Quat(v)
+    }
+}
+impl From<Quat> for V4 {
+    #[inline]
+    fn from(q: Quat) -> V4 {
+        q.0
+    }
+}
 
-impl AsRef<V4> for Quat { #[inline] fn as_ref(&    self) -> &    V4 { &    self.0 } }
-impl AsMut<V4> for Quat { #[inline] fn as_mut(&mut self) -> &mut V4 { &mut self.0 } }
+impl AsRef<V4> for Quat {
+    #[inline]
+    fn as_ref(&self) -> &V4 {
+        &self.0
+    }
+}
+impl AsMut<V4> for Quat {
+    #[inline]
+    fn as_mut(&mut self) -> &mut V4 {
+        &mut self.0
+    }
+}
 
-impl AsRef<Quat> for V4 { #[inline] fn as_ref(&    self) -> &    Quat { unsafe { mem::transmute(self) } } }
-impl AsMut<Quat> for V4 { #[inline] fn as_mut(&mut self) -> &mut Quat { unsafe { mem::transmute(self) } } }
+impl AsRef<Quat> for V4 {
+    #[inline]
+    fn as_ref(&self) -> &Quat {
+        unsafe { mem::transmute(self) }
+    }
+}
+impl AsMut<Quat> for V4 {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Quat {
+        unsafe { mem::transmute(self) }
+    }
+}
 
 impl From<Quat> for (f32, f32, f32, f32) {
-    #[inline] fn from(q: Quat) -> Self { (q.0.x, q.0.y, q.0.z, q.0.w) }
+    #[inline]
+    fn from(q: Quat) -> Self {
+        (q.0.x, q.0.y, q.0.z, q.0.w)
+    }
 }
 
 impl From<(f32, f32, f32, f32)> for Quat {
-    #[inline] fn from(q: (f32, f32, f32, f32)) -> Self { Quat(q.into()) }
+    #[inline]
+    fn from(q: (f32, f32, f32, f32)) -> Self {
+        Quat(q.into())
+    }
 }
 
 impl Default for Quat {
-    #[inline] fn default() -> Quat { quat(0.0, 0.0, 0.0, 1.0) }
+    #[inline]
+    fn default() -> Quat {
+        quat(0.0, 0.0, 0.0, 1.0)
+    }
 }
 
 impl Mul<f32> for Quat {
     type Output = Quat;
-    #[inline] fn mul(self, o: f32) -> Quat { Quat(self.0 * o) }
+    #[inline]
+    fn mul(self, o: f32) -> Quat {
+        Quat(self.0 * o)
+    }
 }
 
 impl Div<f32> for Quat {
     type Output = Quat;
-    #[inline] fn div(self, o: f32) -> Quat { Quat(self.0 * (1.0 / o)) }
+    #[inline]
+    fn div(self, o: f32) -> Quat {
+        Quat(self.0 * (1.0 / o))
+    }
 }
 
 impl Add for Quat {
     type Output = Quat;
-    #[inline] fn add(self, o: Quat) -> Quat { Quat(self.0 + o.0) }
+    #[inline]
+    fn add(self, o: Quat) -> Quat {
+        Quat(self.0 + o.0)
+    }
 }
 
 impl Sub for Quat {
     type Output = Quat;
-    #[inline] fn sub(self, o: Quat) -> Quat { Quat(self.0 - o.0) }
+    #[inline]
+    fn sub(self, o: Quat) -> Quat {
+        Quat(self.0 - o.0)
+    }
 }
 
 impl Neg for Quat {
     type Output = Quat;
-    #[inline] fn neg(self) -> Quat { Quat(-self.0) }
+    #[inline]
+    fn neg(self) -> Quat {
+        Quat(-self.0)
+    }
 }
 
 impl Mul<Quat> for Quat {
@@ -73,10 +131,12 @@ impl Mul<Quat> for Quat {
     fn mul(self, other: Quat) -> Quat {
         let (sx, sy, sz, sw) = self.tup();
         let (ox, oy, oz, ow) = other.tup();
-        Quat::new(sx * ow + sw * ox + sy * oz - sz * oy,
-                  sy * ow + sw * oy + sz * ox - sx * oz,
-                  sz * ow + sw * oz + sx * oy - sy * ox,
-                  sw * ow - sx * ox - sy * oy - sz * oz)
+        Quat::new(
+            sx * ow + sw * ox + sy * oz - sz * oy,
+            sy * ow + sw * oy + sz * ox - sx * oz,
+            sz * ow + sw * oz + sx * oy - sy * ox,
+            sw * ow - sx * ox - sy * oy - sz * oz,
+        )
     }
 }
 
@@ -136,9 +196,18 @@ impl DivAssign<f32> for Quat {
 }
 
 impl Quat {
-    #[inline] pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quat { quat(x, y, z, w) }
-    #[inline] pub fn angle(self) -> f32 { self.0.w.acos() * 2.0 }
-    #[inline] pub fn axis(self) -> V3 { self.axis_angle().0 }
+    #[inline]
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quat {
+        quat(x, y, z, w)
+    }
+    #[inline]
+    pub fn angle(self) -> f32 {
+        self.0.w.acos() * 2.0
+    }
+    #[inline]
+    pub fn axis(self) -> V3 {
+        self.axis_angle().0
+    }
 
     #[inline]
     pub fn axis_angle(self) -> (V3, f32) {
@@ -152,7 +221,7 @@ impl Quat {
 
     #[inline]
     pub fn from_axis_angle(axis: V3, angle: f32) -> Quat {
-        Quat(V4::expand(axis*(angle*0.5).sin(), (angle*0.5).cos()))
+        Quat(V4::expand(axis * (angle * 0.5).sin(), (angle * 0.5).cos()))
     }
 
     #[inline]
@@ -164,7 +233,7 @@ impl Quat {
     pub fn normalize(self) -> Option<Quat> {
         match self.0.normalize() {
             Some(n) => Some(Quat(n)),
-            None => None
+            None => None,
         }
     }
 
@@ -198,9 +267,18 @@ impl Quat {
         Quat(self.0.norm_or(x, y, z, w))
     }
 
-    #[inline] pub fn length_sq(self) -> f32 { self.0.length_sq() }
-    #[inline] pub fn length(self) -> f32 { self.0.length() }
-    #[inline] pub fn dot(self, o: Quat) -> f32 { self.0.dot(o.0) }
+    #[inline]
+    pub fn length_sq(self) -> f32 {
+        self.0.length_sq()
+    }
+    #[inline]
+    pub fn length(self) -> f32 {
+        self.0.length()
+    }
+    #[inline]
+    pub fn dot(self, o: Quat) -> f32 {
+        self.0.dot(o.0)
+    }
 
     #[inline]
     pub fn tup(self) -> (f32, f32, f32, f32) {
@@ -209,26 +287,32 @@ impl Quat {
 
     #[inline]
     pub fn x_dir(self) -> V3 {
-        let Quat(V4{x, y, z, w}) = self;
-        vec3(w*w + x*x - y*y - z*z,
-             x*y + z*w + x*y + z*w,
-             z*x - y*w + z*x - y*w)
+        let Quat(V4 { x, y, z, w }) = self;
+        vec3(
+            w * w + x * x - y * y - z * z,
+            x * y + z * w + x * y + z * w,
+            z * x - y * w + z * x - y * w,
+        )
     }
 
     #[inline]
     pub fn y_dir(self) -> V3 {
         let Quat(V4 { x, y, z, w }) = self;
-        vec3(x*y - z*w + x*y - z*w,
-             w*w - x*x + y*y - z*z,
-             y*z + x*w + y*z + x*w)
+        vec3(
+            x * y - z * w + x * y - z * w,
+            w * w - x * x + y * y - z * z,
+            y * z + x * w + y * z + x * w,
+        )
     }
 
     #[inline]
     pub fn z_dir(self) -> V3 {
         let Quat(V4 { x, y, z, w }) = self;
-        vec3(z*x + y*w + z*x + y*w,
-             y*z - x*w + y*z - x*w,
-             w*w - x*x - y*y + z*z)
+        vec3(
+            z * x + y * w + z * x + y * w,
+            y * z - x * w + y * z - x * w,
+            w * w - x * x - y * y + z * z,
+        )
     }
 
     #[inline]
@@ -249,9 +333,17 @@ impl Quat {
         let wy = self.0.w * y2;
         let wz = self.0.w * z2;
 
-        mat3(1.0 - yy - zz, yx + wz, zx - wy,
-             yx - wz, 1.0 - xx - zz, zy + wx,
-             zx + wy, zy - wx, 1.0 - xx - yy)
+        mat3(
+            1.0 - yy - zz,
+            yx + wz,
+            zx - wy,
+            yx - wz,
+            1.0 - xx - zz,
+            zy + wx,
+            zx + wy,
+            zy - wx,
+            1.0 - xx - yy,
+        )
     }
 
     #[inline]
@@ -271,7 +363,10 @@ impl Quat {
 
     #[inline]
     pub fn slerp_closer(self, o: Quat, t: f32) -> Quat {
-        Quat(self.0.slerp(if self.0.dot(o.0) < 0.0 { -o.0 } else { o.0 }, t))
+        Quat(
+            self.0
+                .slerp(if self.0.dot(o.0) < 0.0 { -o.0 } else { o.0 }, t),
+        )
     }
 
     #[inline]
@@ -303,20 +398,30 @@ impl Quat {
         let normal = normal.norm_or(0.0, 0.0, 1.0);
         let plane = Plane::from_norm_and_point(normal, cor);
 
-        let u = (plane.intersect_with_line(cop, cop+dir1) - cor) * fudge;
-        let v = (plane.intersect_with_line(cop, cop+dir2) - cor) * fudge;
+        let u = (plane.intersect_with_line(cop, cop + dir1) - cor) * fudge;
+        let v = (plane.intersect_with_line(cop, cop + dir2) - cor) * fudge;
 
         let mu = u.length();
         let mv = v.length();
-        Quat::shortest_arc(if mu > 1.0 { u / mu } else { u - normal * (1.0 - mu*mu).sqrt() },
-                           if mv > 1.0 { v / mv } else { v - normal * (1.0 - mv*mv).sqrt() })
+        Quat::shortest_arc(
+            if mu > 1.0 {
+                u / mu
+            } else {
+                u - normal * (1.0 - mu * mu).sqrt()
+            },
+            if mv > 1.0 {
+                v / mv
+            } else {
+                v - normal * (1.0 - mv * mv).sqrt()
+            },
+        )
     }
 
     #[inline]
     pub fn from_yaw_pitch_roll(yaw: f32, pitch: f32, roll: f32) -> Quat {
-        Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), yaw) *
-        Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), pitch) *
-        Quat::from_axis_angle(vec3(0.0, 1.0, 0.0), roll)
+        Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), yaw)
+            * Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), pitch)
+            * Quat::from_axis_angle(vec3(0.0, 1.0, 0.0), roll)
     }
 
     #[inline]
@@ -328,14 +433,17 @@ impl Quat {
     #[inline]
     pub fn yaw(self) -> f32 {
         let v = self.y_dir();
-        if v.x == 0.0 && v.y == 0.0 { 0.0 }
-        else { (-v.x).atan2(v.y) }
+        if v.x == 0.0 && v.y == 0.0 {
+            0.0
+        } else {
+            (-v.x).atan2(v.y)
+        }
     }
 
     #[inline]
     pub fn pitch(self) -> f32 {
         let v = self.y_dir();
-        v.z.atan2((v.x*v.x + v.y*v.y).sqrt())
+        v.z.atan2((v.x * v.x + v.y * v.y).sqrt())
     }
 
     #[inline]
@@ -364,17 +472,28 @@ impl Quat {
 }
 
 impl Lerp for Quat {
-    #[inline] fn lerp(self, o: Self, t: f32) -> Self {
+    #[inline]
+    fn lerp(self, o: Self, t: f32) -> Self {
         Quat(self.0.lerp(o.0, t))
     }
 }
 
 impl Identity for Quat {
-    const IDENTITY: Quat = Quat(V4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 });
+    const IDENTITY: Quat = Quat(V4 {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+        w: 1.0,
+    });
 }
 
 impl Zero for Quat {
-    const ZERO: Quat = Quat(V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 });
+    const ZERO: Quat = Quat(V4 {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+        w: 0.0,
+    });
 }
 
 impl Mul<V3> for Quat {
@@ -383,13 +502,15 @@ impl Mul<V3> for Quat {
     fn mul(self, o: V3) -> V3 {
         let (vx, vy, vz) = o.tup();
         let (qx, qy, qz, qw) = self.tup();
-        let ix =  qw*vx + qy*vz - qz*vy;
-        let iy =  qw*vy + qz*vx - qx*vz;
-        let iz =  qw*vz + qx*vy - qy*vx;
-        let iw = -qx*vx - qy*vy - qz*vz;
-        vec3(ix * qw + iw * -qx + iy * -qz - iz * -qy,
-             iy * qw + iw * -qy + iz * -qx - ix * -qz,
-             iz * qw + iw * -qz + ix * -qy - iy * -qx)
+        let ix = qw * vx + qy * vz - qz * vy;
+        let iy = qw * vy + qz * vx - qx * vz;
+        let iz = qw * vz + qx * vy - qy * vx;
+        let iw = -qx * vx - qy * vy - qz * vz;
+        vec3(
+            ix * qw + iw * -qx + iy * -qz - iz * -qy,
+            iy * qw + iw * -qy + iz * -qx - ix * -qz,
+            iz * qw + iw * -qz + ix * -qy - iy * -qx,
+        )
         // this is slow and bad...
         // self.to_mat3() * o
     }

@@ -2,16 +2,20 @@ use crate::math::prelude::*;
 
 use crate::core::{gjk, shape, support::TransformedSupport};
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::RefCell;
 use std::collections::HashSet;
-use std::rc::Rc;
 use std::f32;
+use std::rc::Rc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub use crate::core::shape::Shape;
 
 pub const RESTITUTION: f32 = 0.4;
-pub const GRAVITY: V3 = V3 { x: 0.0, y: 0.0, z: -10.0 };
+pub const GRAVITY: V3 = V3 {
+    x: 0.0,
+    y: 0.0,
+    z: -10.0,
+};
 pub const COLOUMB: f32 = 0.6;
 
 pub const BIAS_FACTOR_JOINT: f32 = 0.3;
@@ -137,10 +141,16 @@ impl RigidBody {
         res.inv_tensor = res.inv_tensor_massless * mi;
 
         let bounds = compute_bounds_i(
-            &mut res.shapes.iter().flat_map(|shape|
-                shape.vertices.iter().cloned())).unwrap();
+            &mut res
+                .shapes
+                .iter()
+                .flat_map(|shape| shape.vertices.iter().cloned()),
+        )
+        .unwrap();
 
-        let radius = res.shapes.iter()
+        let radius = res
+            .shapes
+            .iter()
             .flat_map(|shape| shape.vertices.iter())
             .fold(0.0, |a, &b| f32::max(a, b.dot(b)));
 
@@ -196,19 +206,19 @@ impl RigidBody {
     fn calc_next_pose(&mut self, dt: f32) {
         self.next_pose.position = self.pose.position + self.linear_momentum * self.inv_mass * dt;
         self.next_pose.orientation = if EULER_PHYSICS {
-            (self.pose.orientation +
-                diff_q(
+            (self.pose.orientation
+                + diff_q(
                     self.pose.orientation,
                     &(self.inv_tensor_massless * self.inv_mass),
-                    self.angular_momentum
-                ) * dt
-            ).must_norm()
+                    self.angular_momentum,
+                ) * dt)
+                .must_norm()
         } else {
             rk_update(
                 self.pose.orientation,
                 self.inv_tensor_massless * self.inv_mass,
                 self.angular_momentum,
-                dt
+                dt,
             )
         };
         for i in 0..4 {
@@ -238,12 +248,12 @@ fn diff_q(orientation: Quat, tensor_inv: &M3x3, angular: V3) -> Quat {
 
 #[inline]
 fn rk_update(s: Quat, tensor_inv: M3x3, angular: V3, dt: f32) -> Quat {
-    let (ht, tt, st) = (dt/2.0, dt/3.0, dt/6.0);
-    let d1 = diff_q(s,           &tensor_inv, angular);
+    let (ht, tt, st) = (dt / 2.0, dt / 3.0, dt / 6.0);
+    let d1 = diff_q(s, &tensor_inv, angular);
     let d2 = diff_q(s + d1 * ht, &tensor_inv, angular);
     let d3 = diff_q(s + d2 * ht, &tensor_inv, angular);
     let d4 = diff_q(s + d3 * dt, &tensor_inv, angular);
-    (s + d1*st + d2*tt + d3*tt + d4*st).must_norm()//norm_or_q(s)
+    (s + d1 * st + d2 * tt + d3 * tt + d4 * st).must_norm() //norm_or_q(s)
 }
 
 #[inline]
@@ -254,7 +264,6 @@ fn rb_map_or<T>(o: &Option<RigidBodyRef>, default: T, f: impl Fn(&RigidBody) -> 
         default
     }
 }
-
 
 pub struct AngularConstraint {
     pub bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>),
@@ -270,7 +279,7 @@ impl AngularConstraint {
         bodies: (Option<RigidBodyRef>, Option<RigidBodyRef>),
         axis: V3,
         target_spin: f32,
-        torque_bounds: (f32, f32)
+        torque_bounds: (f32, f32),
     ) -> AngularConstraint {
         AngularConstraint {
             bodies: bodies,
@@ -283,8 +292,11 @@ impl AngularConstraint {
 
     #[inline]
     fn remove_bias(&mut self) {
-        let target_spin = if self.torque_bounds.0 < 0.0 { 0.0 }
-                          else { self.target_spin.min(0.0) };
+        let target_spin = if self.torque_bounds.0 < 0.0 {
+            0.0
+        } else {
+            self.target_spin.min(0.0)
+        };
         self.target_spin = target_spin;
     }
 
@@ -294,13 +306,14 @@ impl AngularConstraint {
             return;
         }
 
-        let current_spin =
-            rb_map_or(&self.bodies.1, 0.0, |rbr| dot(rbr.spin(), self.axis)) -
-            rb_map_or(&self.bodies.0, 0.0, |rbr| dot(rbr.spin(), self.axis));
+        let current_spin = rb_map_or(&self.bodies.1, 0.0, |rbr| dot(rbr.spin(), self.axis))
+            - rb_map_or(&self.bodies.0, 0.0, |rbr| dot(rbr.spin(), self.axis));
 
-        let spin_to_torque_inv =
-            rb_map_or(&self.bodies.0, 0.0, |rbr| dot(self.axis, rbr.inv_tensor * self.axis)) +
-            rb_map_or(&self.bodies.1, 0.0, |rbr| dot(self.axis, rbr.inv_tensor * self.axis));
+        let spin_to_torque_inv = rb_map_or(&self.bodies.0, 0.0, |rbr| {
+            dot(self.axis, rbr.inv_tensor * self.axis)
+        }) + rb_map_or(&self.bodies.1, 0.0, |rbr| {
+            dot(self.axis, rbr.inv_tensor * self.axis)
+        });
 
         debug_assert!(spin_to_torque_inv != 0.0);
 
@@ -309,14 +322,16 @@ impl AngularConstraint {
         let delta_spin = self.target_spin - current_spin;
 
         let delta_torque = (delta_spin * spin_to_torque).clamp(
-            dt*self.torque_bounds.0-self.torque, dt*self.torque_bounds.1-self.torque);
+            dt * self.torque_bounds.0 - self.torque,
+            dt * self.torque_bounds.1 - self.torque,
+        );
 
         if let Some(ref mut rb0) = self.bodies.0 {
-            rb0.borrow_mut().angular_momentum -= self.axis*delta_torque;
+            rb0.borrow_mut().angular_momentum -= self.axis * delta_torque;
         }
 
         if let Some(ref mut rb1) = self.bodies.1 {
-            rb1.borrow_mut().angular_momentum += self.axis*delta_torque;
+            rb1.borrow_mut().angular_momentum += self.axis * delta_torque;
         }
 
         self.torque += delta_torque;
@@ -348,7 +363,7 @@ impl LinearConstraint {
         normal: V3,
         dist: f32,
         targ_speed_nobias: Option<f32>,
-        force_lim: Option<(f32, f32)>
+        force_lim: Option<(f32, f32)>,
     ) -> LinearConstraint {
         let lim = force_lim.unwrap_or((-f32::MAX, f32::MAX));
         LinearConstraint {
@@ -392,42 +407,58 @@ impl LinearConstraint {
             let f0 = rb_map_or(&self.bodies.0, 0.0, |rb| rb.friction);
             let f1 = rb_map_or(&self.bodies.1, 0.0, |rb| rb.friction);
             let limit = f0.max(f1) * friction_impulse / dt;
-            self.force_limit.1 =  limit;
+            self.force_limit.1 = limit;
             self.force_limit.0 = -limit;
         }
 
-        let r0 = rb_map_or(&self.bodies.0, self.positions.0, |rb| rb.pose.orientation * self.positions.0);
-        let r1 = rb_map_or(&self.bodies.1, self.positions.1, |rb| rb.pose.orientation * self.positions.1);
+        let r0 = rb_map_or(&self.bodies.0, self.positions.0, |rb| {
+            rb.pose.orientation * self.positions.0
+        });
+        let r1 = rb_map_or(&self.bodies.1, self.positions.1, |rb| {
+            rb.pose.orientation * self.positions.1
+        });
 
-        let v0 = rb_map_or(&self.bodies.0, V3::zero(), |rb|
-            cross(rb.spin(), r0) + rb.linear_momentum*rb.inv_mass);
+        let v0 = rb_map_or(&self.bodies.0, V3::zero(), |rb| {
+            cross(rb.spin(), r0) + rb.linear_momentum * rb.inv_mass
+        });
 
-        let v1 = rb_map_or(&self.bodies.1, V3::zero(), |rb|
-            cross(rb.spin(), r1) + rb.linear_momentum*rb.inv_mass);
+        let v1 = rb_map_or(&self.bodies.1, V3::zero(), |rb| {
+            cross(rb.spin(), r1) + rb.linear_momentum * rb.inv_mass
+        });
 
+        let vn = dot(v1 - v0, self.normal);
 
-        let vn = dot(v1-v0, self.normal);
+        let impulse_n = -self.target_speed - vn;
 
-        let impulse_n  = -self.target_speed - vn;
+        let impulse_d0 = rb_map_or(&self.bodies.0, 0.0, |rb| {
+            rb.inv_mass
+                + dot(
+                    cross(rb.inv_tensor * cross(r0, self.normal), r0),
+                    self.normal,
+                )
+        });
 
-        let impulse_d0 = rb_map_or(&self.bodies.0, 0.0, |rb|
-            rb.inv_mass + dot(cross(rb.inv_tensor * cross(r0, self.normal), r0), self.normal));
-
-        let impulse_d1 = rb_map_or(&self.bodies.1, 0.0, |rb|
-            rb.inv_mass + dot(cross(rb.inv_tensor * cross(r1, self.normal), r1), self.normal));
+        let impulse_d1 = rb_map_or(&self.bodies.1, 0.0, |rb| {
+            rb.inv_mass
+                + dot(
+                    cross(rb.inv_tensor * cross(r1, self.normal), r1),
+                    self.normal,
+                )
+        });
 
         let impulse_d = impulse_d0 + impulse_d1;
 
         let impulse = safe_div0(impulse_n, impulse_d).clamp(
-            self.force_limit.0*dt - self.impulse_sum,
-            self.force_limit.1*dt - self.impulse_sum);
+            self.force_limit.0 * dt - self.impulse_sum,
+            self.force_limit.1 * dt - self.impulse_sum,
+        );
 
         if let Some(ref mut rb0) = self.bodies.0 {
             rb0.borrow_mut().apply_impulse(r0, self.normal * -impulse);
         }
 
         if let Some(ref mut rb1) = self.bodies.1 {
-            rb1.borrow_mut().apply_impulse(r1, self.normal *  impulse);
+            rb1.borrow_mut().apply_impulse(r1, self.normal * impulse);
         }
 
         self.impulse_sum += impulse;
@@ -437,7 +468,7 @@ impl LinearConstraint {
 pub struct ConstraintSet {
     pub linears: Vec<LinearConstraint>,
     pub angulars: Vec<AngularConstraint>,
-    pub dt: f32
+    pub dt: f32,
 }
 
 impl ConstraintSet {
@@ -446,7 +477,7 @@ impl ConstraintSet {
         ConstraintSet {
             linears: Vec::new(),
             angulars: Vec::new(),
-            dt: if dt == 0.0 { 1.0 / 60.0 } else { dt }
+            dt: if dt == 0.0 { 1.0 / 60.0 } else { dt },
         }
     }
 
@@ -465,14 +496,22 @@ impl ConstraintSet {
     #[inline]
     pub fn along_direction(
         &mut self,
-        r0: Option<RigidBodyRef>, p0: V3,
-        r1: Option<RigidBodyRef>, p1: V3,
+        r0: Option<RigidBodyRef>,
+        p0: V3,
+        r1: Option<RigidBodyRef>,
+        p1: V3,
         axis: V3,
-        force_bounds: (f32, f32)
+        force_bounds: (f32, f32),
     ) -> &mut ConstraintSet {
-        let target = rb_map_or(&r1, p1, |rb| rb.pose*p1) -
-                     rb_map_or(&r0, p0, |rb| rb.pose*p0);
-        self.linear(LinearConstraint::new((r0, r1), (p0, p1), axis, dot(target, axis), None, Some(force_bounds)))
+        let target = rb_map_or(&r1, p1, |rb| rb.pose * p1) - rb_map_or(&r0, p0, |rb| rb.pose * p0);
+        self.linear(LinearConstraint::new(
+            (r0, r1),
+            (p0, p1),
+            axis,
+            dot(target, axis),
+            None,
+            Some(force_bounds),
+        ))
     }
 
     #[inline]
@@ -480,7 +519,7 @@ impl ConstraintSet {
         &mut self,
         rbr: RigidBodyRef,
         plane: Plane,
-        max_force: Option<f32>
+        max_force: Option<f32>,
     ) -> &mut ConstraintSet {
         // @@TODO: all vertices
         let pos = {
@@ -491,10 +530,13 @@ impl ConstraintSet {
         };
 
         self.along_direction(
-            None, plane.normal*-plane.offset,
-            Some(rbr), pos,
+            None,
+            plane.normal * -plane.offset,
+            Some(rbr),
+            pos,
             -plane.normal,
-            (0.0, max_force.unwrap_or(f32::MAX)))
+            (0.0, max_force.unwrap_or(f32::MAX)),
+        )
     }
 
     #[inline]
@@ -503,13 +545,33 @@ impl ConstraintSet {
         r0: Option<RigidBodyRef>,
         p0: V3,
         r1: Option<RigidBodyRef>,
-        p1: V3
+        p1: V3,
     ) -> &mut ConstraintSet {
-        let d = rb_map_or(&r1, p1, |rb| rb.pose*p1) -
-                rb_map_or(&r0, p0, |rb| rb.pose*p0);
-        self.linear(LinearConstraint::new((r0.clone(), r1.clone()), (p0, p1), vec3(1.0, 0.0, 0.0), d.x, None, None));
-        self.linear(LinearConstraint::new((r0.clone(), r1.clone()), (p0, p1), vec3(0.0, 1.0, 0.0), d.y, None, None));
-        self.linear(LinearConstraint::new((r0,         r1),         (p0, p1), vec3(0.0, 0.0, 1.0), d.z, None, None))
+        let d = rb_map_or(&r1, p1, |rb| rb.pose * p1) - rb_map_or(&r0, p0, |rb| rb.pose * p0);
+        self.linear(LinearConstraint::new(
+            (r0.clone(), r1.clone()),
+            (p0, p1),
+            vec3(1.0, 0.0, 0.0),
+            d.x,
+            None,
+            None,
+        ));
+        self.linear(LinearConstraint::new(
+            (r0.clone(), r1.clone()),
+            (p0, p1),
+            vec3(0.0, 1.0, 0.0),
+            d.y,
+            None,
+            None,
+        ));
+        self.linear(LinearConstraint::new(
+            (r0, r1),
+            (p0, p1),
+            vec3(0.0, 0.0, 1.0),
+            d.z,
+            None,
+            None,
+        ))
     }
 
     pub fn range_w(
@@ -519,46 +581,89 @@ impl ConstraintSet {
         rb1: Option<RigidBodyRef>,
         jb1: Quat,
         joint_min: V3,
-        joint_max: V3
+        joint_max: V3,
     ) -> &mut ConstraintSet {
         let joint_min = joint_min.map(|f| f.to_radians());
         let joint_max = joint_max.map(|f| f.to_radians());
 
-        if joint_min.x == 0.0 && joint_max.x == 0.0 &&
-           joint_min.y == 0.0 && joint_max.y == 0.0 &&
-           joint_min.z < joint_max.z {
+        if joint_min.x == 0.0
+            && joint_max.x == 0.0
+            && joint_min.y == 0.0
+            && joint_max.y == 0.0
+            && joint_min.z < joint_max.z
+        {
             let cb = quat(0.0, -1.0, 0.0, 1.0).must_norm();
-            return self.range_w(rb0, jb0*cb, rb1, jb1*cb,
+            return self.range_w(
+                rb0,
+                jb0 * cb,
+                rb1,
+                jb1 * cb,
                 vec3(joint_min.z.to_degrees(), 0.0, 0.0),
-                vec3(joint_max.z.to_degrees(), 0.0, 0.0));
+                vec3(joint_max.z.to_degrees(), 0.0, 0.0),
+            );
         }
 
         let r = jb0.conj() * jb1;
         let s = Quat::shortest_arc(vec3(0.0, 0.0, 1.0), r.z_dir());
         let t = s.conj() * r;
 
-        let M3x3 { x: xd1, y: yd1, z: zd1 } = jb1.to_mat3();
+        let M3x3 {
+            x: xd1,
+            y: yd1,
+            z: zd1,
+        } = jb1.to_mat3();
         let inv_dt = 1.0 / self.dt;
 
         if joint_max.x == joint_min.x {
-            let spin = 2.0 * (-s.0.x + (joint_min.x*0.5).sin()) * inv_dt;
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  xd1,  spin, (-f32::MAX, f32::MAX)));
+            let spin = 2.0 * (-s.0.x + (joint_min.x * 0.5).sin()) * inv_dt;
+            self.angular(AngularConstraint::new(
+                (rb0.clone(), rb1.clone()),
+                xd1,
+                spin,
+                (-f32::MAX, f32::MAX),
+            ));
         } else if joint_max.x - joint_min.x < 360.0_f32.to_radians() {
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  xd1, 2.0 * (-s.0.x + (joint_min.x*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()), -xd1, 2.0 * ( s.0.x - (joint_max.x*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
+            self.angular(AngularConstraint::new(
+                (rb0.clone(), rb1.clone()),
+                xd1,
+                2.0 * (-s.0.x + (joint_min.x * 0.5).sin()) * inv_dt,
+                (0.0, f32::MAX),
+            ));
+            self.angular(AngularConstraint::new(
+                (rb0.clone(), rb1.clone()),
+                -xd1,
+                2.0 * (s.0.x - (joint_max.x * 0.5).sin()) * inv_dt,
+                (0.0, f32::MAX),
+            ));
         }
 
         if joint_max.y == joint_min.y {
             self.angular(AngularConstraint::new(
-                (rb0.clone(), rb1.clone()), yd1,
+                (rb0.clone(), rb1.clone()),
+                yd1,
                 BIAS_FACTOR_JOINT * 2.0 * (-s.0.y + joint_min.y) * inv_dt,
-                (-f32::MAX, f32::MAX)));
+                (-f32::MAX, f32::MAX),
+            ));
         } else {
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()),  yd1, 2.0 * (-s.0.y + (joint_min.y*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
-            self.angular(AngularConstraint::new((rb0.clone(), rb1.clone()), -yd1, 2.0 * ( s.0.y - (joint_max.y*0.5).sin()) * inv_dt, (0.0, f32::MAX)));
+            self.angular(AngularConstraint::new(
+                (rb0.clone(), rb1.clone()),
+                yd1,
+                2.0 * (-s.0.y + (joint_min.y * 0.5).sin()) * inv_dt,
+                (0.0, f32::MAX),
+            ));
+            self.angular(AngularConstraint::new(
+                (rb0.clone(), rb1.clone()),
+                -yd1,
+                2.0 * (s.0.y - (joint_max.y * 0.5).sin()) * inv_dt,
+                (0.0, f32::MAX),
+            ));
         }
-        self.angular(AngularConstraint::new((rb0, rb1), zd1,
-            BIAS_FACTOR_JOINT * 2.0 * -t.0.z * inv_dt, (-f32::MAX, f32::MAX)))
+        self.angular(AngularConstraint::new(
+            (rb0, rb1),
+            zd1,
+            BIAS_FACTOR_JOINT * 2.0 * -t.0.z * inv_dt,
+            (-f32::MAX, f32::MAX),
+        ))
     }
 
     pub fn range(
@@ -567,9 +672,9 @@ impl ConstraintSet {
         rb1: Option<RigidBodyRef>,
         frame: Quat,
         min_lim: V3,
-        max_lim: V3
+        max_lim: V3,
     ) -> &mut ConstraintSet {
-        let q0 = rb_map_or(&rb0, frame, |rb| rb.pose.orientation*frame);
+        let q0 = rb_map_or(&rb0, frame, |rb| rb.pose.orientation * frame);
         let q1 = rb_map_or(&rb1, Quat::identity(), |rb| rb.pose.orientation);
         self.range_w(rb0, q0, rb1, q1, min_lim, max_lim)
     }
@@ -579,13 +684,17 @@ impl ConstraintSet {
         r0: Option<RigidBodyRef>,
         r1: Option<RigidBodyRef>,
         target: Quat,
-        max_torque: f32
+        max_torque: f32,
     ) -> &mut ConstraintSet {
         let q0 = rb_map_or(&r0, Quat::identity(), |rb| rb.pose.orientation);
         let q1 = rb_map_or(&r1, Quat::identity(), |rb| rb.pose.orientation);
         let dq = {
             let r = q1 * (q0 * target).conj();
-            if r.0.w < 0.0 { -r } else { r }
+            if r.0.w < 0.0 {
+                -r
+            } else {
+                r
+            }
         };
         // hm... should this be the actual basis for the quat instead?
 
@@ -595,17 +704,26 @@ impl ConstraintSet {
         // let (axis, binormal, normal) = dq.0.xyz().basis();
         let inv_dt = 1.0 / self.dt;
         self.angular(AngularConstraint::new(
-            (r0.clone(), r1.clone()), axis,
-            -BIAS_FACTOR_JOINT*dq.0.w.clamp(-1.0, 1.0).acos()*2.0 * inv_dt,
-            (-max_torque, max_torque)));
+            (r0.clone(), r1.clone()),
+            axis,
+            -BIAS_FACTOR_JOINT * dq.0.w.clamp(-1.0, 1.0).acos() * 2.0 * inv_dt,
+            (-max_torque, max_torque),
+        ));
 
         self.angular(AngularConstraint::new(
-            (r0.clone(), r1.clone()), binormal, 0.0, (-max_torque, max_torque)));
+            (r0.clone(), r1.clone()),
+            binormal,
+            0.0,
+            (-max_torque, max_torque),
+        ));
 
         self.angular(AngularConstraint::new(
-            (r0.clone(), r1.clone()), normal, 0.0, (-max_torque, max_torque)))
+            (r0.clone(), r1.clone()),
+            normal,
+            0.0,
+            (-max_torque, max_torque),
+        ))
     }
-
 
     pub fn cone_angle(
         &mut self,
@@ -613,7 +731,7 @@ impl ConstraintSet {
         n0: V3,
         r1: RigidBodyRef,
         n1: V3,
-        angle_degrees: f32
+        angle_degrees: f32,
     ) -> &mut ConstraintSet {
         let equality = angle_degrees == 0.0;
         let a0 = rb_map_or(&r0, n0, |rb| rb.pose.orientation * n0);
@@ -624,7 +742,11 @@ impl ConstraintSet {
         let target_spin = (if equality { BIAS_FACTOR_JOINT } else { 1.0 }) * delta_angle / self.dt;
         let torque_min = if angle_degrees > 0.0 { 0.0 } else { -f32::MAX };
         self.angular(AngularConstraint::new(
-            (r0, Some(r1)), axis, target_spin, (torque_min, f32::MAX)))
+            (r0, Some(r1)),
+            axis,
+            target_spin,
+            (torque_min, f32::MAX),
+        ))
     }
 
     fn constrain_contacts(&mut self, contacts: &[PhysicsContact]) {
@@ -634,8 +756,12 @@ impl ConstraintSet {
             let r0 = rb_map_or(&c.bodies.0, V3::zero(), |rb| cc.points.0 - rb.pose.position);
             let r1 = rb_map_or(&c.bodies.1, V3::zero(), |rb| cc.points.1 - rb.pose.position);
 
-            let v0 = rb_map_or(&c.bodies.0, V3::zero(), |rb| cross(rb.spin(), r0) + rb.linear_momentum * rb.inv_mass);
-            let v1 = rb_map_or(&c.bodies.1, V3::zero(), |rb| cross(rb.spin(), r1) + rb.linear_momentum * rb.inv_mass);
+            let v0 = rb_map_or(&c.bodies.0, V3::zero(), |rb| {
+                cross(rb.spin(), r0) + rb.linear_momentum * rb.inv_mass
+            });
+            let v1 = rb_map_or(&c.bodies.1, V3::zero(), |rb| {
+                cross(rb.spin(), r1) + rb.linear_momentum * rb.inv_mass
+            });
 
             let v = v0 - v1;
 
@@ -643,10 +769,10 @@ impl ConstraintSet {
             let sep = cc.separation;
 
             let bounce_vel = 0.0f32.max(
-                (-dot(cc.plane.normal, v) - GRAVITY.length() * BALLISTIC_FALLTIME) * RESTITUTION);
+                (-dot(cc.plane.normal, v) - GRAVITY.length() * BALLISTIC_FALLTIME) * RESTITUTION,
+            );
 
             let q = Quat::shortest_arc(vec3(0.0, 0.0, 1.0), -cc.plane.normal);
-
 
             // let normal = q.z_dir();
             let tangent = q.x_dir();
@@ -658,13 +784,27 @@ impl ConstraintSet {
                 -cc.plane.normal,
                 sep.min((sep - min_sep) * BIAS_FACTOR_POS),
                 Some(-bounce_vel),
-                Some((0.0, f32::MAX))
+                Some((0.0, f32::MAX)),
             ));
 
-            self.linears.push(LinearConstraint::new(c.bodies.clone(), c.positions, binormal, 0.0, Some(0.0), Some((0.0, 0.0))));
+            self.linears.push(LinearConstraint::new(
+                c.bodies.clone(),
+                c.positions,
+                binormal,
+                0.0,
+                Some(0.0),
+                Some((0.0, 0.0)),
+            ));
             self.linears.last_mut().unwrap().friction_control(-1);
 
-            self.linears.push(LinearConstraint::new(c.bodies.clone(), c.positions, tangent, 0.0, Some(0.0), Some((0.0, 0.0))));
+            self.linears.push(LinearConstraint::new(
+                c.bodies.clone(),
+                c.positions,
+                tangent,
+                0.0,
+                Some(0.0),
+                Some((0.0, 0.0)),
+            ));
             self.linears.last_mut().unwrap().friction_control(-2);
         }
     }
@@ -678,7 +818,11 @@ pub struct PhysicsContact {
 }
 
 impl PhysicsContact {
-    pub fn new(b0: Option<RigidBodyRef>, b1: Option<RigidBodyRef>, c: gjk::ContactInfo) -> PhysicsContact {
+    pub fn new(
+        b0: Option<RigidBodyRef>,
+        b1: Option<RigidBodyRef>,
+        c: gjk::ContactInfo,
+    ) -> PhysicsContact {
         let p0 = rb_map_or(&b0, c.points.0, |rb| rb.pose.inverse() * c.points.0);
         let p1 = rb_map_or(&b1, c.points.1, |rb| rb.pose.inverse() * c.points.1);
         PhysicsContact {
@@ -692,7 +836,7 @@ impl PhysicsContact {
 fn find_world_contacts(
     bodies: &[RigidBodyRef],
     world_cells: &[Vec<V3>],
-    dt: f32
+    dt: f32,
 ) -> Vec<PhysicsContact> {
     let mut result = Vec::new();
     for body_ref in bodies.iter() {
@@ -704,12 +848,12 @@ fn find_world_contacts(
         for shape in body.shapes.iter() {
             for cell in world_cells.iter() {
                 let patch = gjk::ContactPatch::new(
-                    &TransformedSupport{
+                    &TransformedSupport {
                         pose: body.pose,
-                        object: &&shape.vertices[..]
+                        object: &&shape.vertices[..],
                     },
                     &&cell[..],
-                    distance_range
+                    distance_range,
                 );
                 for contact in &patch.hit_info[0..patch.count] {
                     result.push(PhysicsContact::new(Some(body_ref.clone()), None, *contact));
@@ -719,7 +863,6 @@ fn find_world_contacts(
     }
     result
 }
-
 
 fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32) -> Vec<PhysicsContact> {
     let mut result = Vec::new();
@@ -739,19 +882,28 @@ fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32) -> Vec<PhysicsContact> {
             if b0.ignored.contains(&b1.id) || b1.ignored.contains(&b0.id) {
                 continue;
             }
-            let distance_range = MAX_DRIFT.max(b0.linear_momentum.length() * dt * b0.inv_mass)
-                                          .max(b1.linear_momentum.length() * dt * b1.inv_mass);
+            let distance_range = MAX_DRIFT
+                .max(b0.linear_momentum.length() * dt * b0.inv_mass)
+                .max(b1.linear_momentum.length() * dt * b1.inv_mass);
             for s0 in b0.shapes.iter() {
                 for s1 in b1.shapes.iter() {
                     let patch = gjk::ContactPatch::new(
-                        &TransformedSupport { pose: b0.pose, object: &&s0.vertices[..] },
-                        &TransformedSupport { pose: b1.pose, object: &&s1.vertices[..] },
-                        distance_range);
+                        &TransformedSupport {
+                            pose: b0.pose,
+                            object: &&s0.vertices[..],
+                        },
+                        &TransformedSupport {
+                            pose: b1.pose,
+                            object: &&s1.vertices[..],
+                        },
+                        distance_range,
+                    );
                     for contact in &patch.hit_info[0..patch.count] {
                         result.push(PhysicsContact::new(
                             Some(bodies[i].clone()),
                             Some(bodies[j].clone()),
-                            *contact));
+                            *contact,
+                        ));
                     }
                 }
             }
@@ -767,7 +919,7 @@ pub fn update_physics(
     rbs: &mut [RigidBodyRef],
     constraints: &mut ConstraintSet,
     world_geom: &[Vec<V3>],
-    dt: f32
+    dt: f32,
 ) {
     for rb in rbs.iter_mut() {
         rb.borrow_mut().init_velocity(dt);

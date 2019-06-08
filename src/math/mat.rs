@@ -1,7 +1,7 @@
-use crate::math::vec::*;
-use crate::math::traits::*;
 use crate::math::quat::*;
-use std::{ops::*, mem, fmt, f32};
+use crate::math::traits::*;
+use crate::math::vec::*;
+use std::{f32, fmt, mem, ops::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(C)]
@@ -36,18 +36,50 @@ impl Identity for M2x2 {
 
 impl Identity for M3x3 {
     const IDENTITY: M3x3 = M3x3 {
-        x: V3 { x: 1.0, y: 0.0, z: 0.0 },
-        y: V3 { x: 0.0, y: 1.0, z: 0.0 },
-        z: V3 { x: 0.0, y: 0.0, z: 1.0 },
+        x: V3 {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        y: V3 {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+        },
+        z: V3 {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+        },
     };
 }
 
 impl Identity for M4x4 {
     const IDENTITY: M4x4 = M4x4 {
-        x: V4 { x: 1.0, y: 0.0, z: 0.0, w: 0.0 },
-        y: V4 { x: 0.0, y: 1.0, z: 0.0, w: 0.0 },
-        z: V4 { x: 0.0, y: 0.0, z: 1.0, w: 0.0 },
-        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+        x: V4 {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            w: 0.0,
+        },
+        y: V4 {
+            x: 0.0,
+            y: 1.0,
+            z: 0.0,
+            w: 0.0,
+        },
+        z: V4 {
+            x: 0.0,
+            y: 0.0,
+            z: 1.0,
+            w: 0.0,
+        },
+        w: V4 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 1.0,
+        },
     };
 }
 
@@ -60,18 +92,50 @@ impl Zero for M2x2 {
 
 impl Zero for M3x3 {
     const ZERO: M3x3 = M3x3 {
-        x: V3 { x: 0.0, y: 0.0, z: 0.0 },
-        y: V3 { x: 0.0, y: 0.0, z: 0.0 },
-        z: V3 { x: 0.0, y: 0.0, z: 0.0 },
+        x: V3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        y: V3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        z: V3 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        },
     };
 }
 
 impl Zero for M4x4 {
     const ZERO: M4x4 = M4x4 {
-        x: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
-        y: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
-        z: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
-        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        x: V4 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 0.0,
+        },
+        y: V4 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 0.0,
+        },
+        z: V4 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 0.0,
+        },
+        w: V4 {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            w: 0.0,
+        },
     };
 }
 
@@ -93,10 +157,24 @@ impl fmt::Display for M4x4 {
     }
 }
 
-
-impl Default for M2x2 { #[inline] fn default() -> Self { <Self as Identity>::IDENTITY } }
-impl Default for M3x3 { #[inline] fn default() -> Self { <Self as Identity>::IDENTITY } }
-impl Default for M4x4 { #[inline] fn default() -> Self { <Self as Identity>::IDENTITY } }
+impl Default for M2x2 {
+    #[inline]
+    fn default() -> Self {
+        <Self as Identity>::IDENTITY
+    }
+}
+impl Default for M3x3 {
+    #[inline]
+    fn default() -> Self {
+        <Self as Identity>::IDENTITY
+    }
+}
+impl Default for M4x4 {
+    #[inline]
+    fn default() -> Self {
+        <Self as Identity>::IDENTITY
+    }
+}
 
 #[inline]
 pub fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
@@ -104,23 +182,42 @@ pub fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
 }
 
 #[inline]
-pub fn mat3(m00: f32, m01: f32, m02: f32,
-            m10: f32, m11: f32, m12: f32,
-            m20: f32, m21: f32, m22: f32) -> M3x3 {
-    M3x3::new(m00, m01, m02,
-              m10, m11, m12,
-              m20, m21, m22)
+pub fn mat3(
+    m00: f32,
+    m01: f32,
+    m02: f32,
+    m10: f32,
+    m11: f32,
+    m12: f32,
+    m20: f32,
+    m21: f32,
+    m22: f32,
+) -> M3x3 {
+    M3x3::new(m00, m01, m02, m10, m11, m12, m20, m21, m22)
 }
 
 #[inline]
-pub fn mat4(m00: f32, m01: f32, m02: f32, m03: f32,
-            m10: f32, m11: f32, m12: f32, m13: f32,
-            m20: f32, m21: f32, m22: f32, m23: f32,
-            m30: f32, m31: f32, m32: f32, m33: f32) -> M4x4 {
-    M4x4::new(m00, m01, m02, m03,
-              m10, m11, m12, m13,
-              m20, m21, m22, m23,
-              m30, m31, m32, m33)
+pub fn mat4(
+    m00: f32,
+    m01: f32,
+    m02: f32,
+    m03: f32,
+    m10: f32,
+    m11: f32,
+    m12: f32,
+    m13: f32,
+    m20: f32,
+    m21: f32,
+    m22: f32,
+    m23: f32,
+    m30: f32,
+    m31: f32,
+    m32: f32,
+    m33: f32,
+) -> M4x4 {
+    M4x4::new(
+        m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33,
+    )
 }
 
 impl<'a> Mul<V2> for &'a M2x2 {
@@ -147,9 +244,27 @@ impl<'a> Mul<V4> for &'a M4x4 {
     }
 }
 
-impl Mul<V2> for M2x2 { type Output = V2; #[inline] fn mul(self, v: V2) -> V2 { (&self) * v } }
-impl Mul<V3> for M3x3 { type Output = V3; #[inline] fn mul(self, v: V3) -> V3 { (&self) * v } }
-impl Mul<V4> for M4x4 { type Output = V4; #[inline] fn mul(self, v: V4) -> V4 { (&self) * v } }
+impl Mul<V2> for M2x2 {
+    type Output = V2;
+    #[inline]
+    fn mul(self, v: V2) -> V2 {
+        (&self) * v
+    }
+}
+impl Mul<V3> for M3x3 {
+    type Output = V3;
+    #[inline]
+    fn mul(self, v: V3) -> V3 {
+        (&self) * v
+    }
+}
+impl Mul<V4> for M4x4 {
+    type Output = V4;
+    #[inline]
+    fn mul(self, v: V4) -> V4 {
+        (&self) * v
+    }
+}
 
 macro_rules! define_conversions {
     ($src_type: ty, $dst_type: ty) => {
@@ -196,7 +311,7 @@ macro_rules! define_conversions {
                 *r
             }
         }
-    }
+    };
 }
 
 macro_rules! impl_ref_operators {
@@ -212,7 +327,8 @@ macro_rules! impl_ref_operators {
         impl<'a> $OperTrait<&'a $rhs> for $lhs {
             type Output = <$lhs as $OperTrait<$rhs>>::Output;
 
-            #[inline] fn $func(self, other: &'a $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
+            #[inline]
+            fn $func(self, other: &'a $rhs) -> <$lhs as $OperTrait<$rhs>>::Output {
                 $OperTrait::$func(self, *other)
             }
         }
@@ -225,7 +341,7 @@ macro_rules! impl_ref_operators {
                 $OperTrait::$func(*self, *other)
             }
         }
-    }
+    };
 }
 
 macro_rules! do_mat_boilerplate {
@@ -366,14 +482,27 @@ macro_rules! do_mat_boilerplate {
     }
 }
 
-do_mat_boilerplate!(M2x2 { x: 0, y: 1             }, V2, 2, 4);
-do_mat_boilerplate!(M3x3 { x: 0, y: 1, z: 2       }, V3, 3, 9);
-do_mat_boilerplate!(M4x4 { x: 0, y: 1, z: 2, w: 3 }, V4, 4, 16);
+do_mat_boilerplate!(M2x2 { x: 0, y: 1 }, V2, 2, 4);
+do_mat_boilerplate!(M3x3 { x: 0, y: 1, z: 2 }, V3, 3, 9);
+do_mat_boilerplate!(
+    M4x4 {
+        x: 0,
+        y: 1,
+        z: 2,
+        w: 3
+    },
+    V4,
+    4,
+    16
+);
 
 impl M2x2 {
     #[inline]
     pub fn new(xx: f32, xy: f32, yx: f32, yy: f32) -> M2x2 {
-        M2x2 { x: V2 { x: xx, y: xy }, y: V2 { x: yx, y: yy } }
+        M2x2 {
+            x: V2 { x: xx, y: xy },
+            y: V2 { x: yx, y: yy },
+        }
     }
 
     #[inline]
@@ -441,15 +570,34 @@ impl M2x2 {
 }
 
 impl M3x3 {
-
     #[inline]
-    pub fn new(xx: f32, xy: f32, xz: f32,
-               yx: f32, yy: f32, yz: f32,
-               zx: f32, zy: f32, zz: f32) -> Self {
+    pub fn new(
+        xx: f32,
+        xy: f32,
+        xz: f32,
+        yx: f32,
+        yy: f32,
+        yz: f32,
+        zx: f32,
+        zy: f32,
+        zz: f32,
+    ) -> Self {
         Self {
-            x: V3 { x: xx, y: xy, z: xz },
-            y: V3 { x: yx, y: yy, z: yz },
-            z: V3 { x: zx, y: zy, z: zz }
+            x: V3 {
+                x: xx,
+                y: xy,
+                z: xz,
+            },
+            y: V3 {
+                x: yx,
+                y: yy,
+                z: yz,
+            },
+            z: V3 {
+                x: zx,
+                y: zy,
+                z: zz,
+            },
         }
     }
 
@@ -460,53 +608,50 @@ impl M3x3 {
 
     #[inline]
     pub fn from_rows(x: V3, y: V3, z: V3) -> M3x3 {
-        M3x3::new(x.x, y.x, z.x,
-                  x.y, y.y, z.y,
-                  x.z, y.z, z.z)
+        M3x3::new(x.x, y.x, z.x, x.y, y.y, z.y, x.z, y.z, z.z)
     }
 
     #[inline]
     pub fn to_quat(&self) -> Quat {
         let mag_w = self.x.x + self.y.y + self.z.z;
 
-        let (mag_zw, pre_zw, post_zw) =
-            if mag_w > self.z.z {
-                (mag_w,    vec3( 1.0,  1.0, 1.0), quat(0.0, 0.0, 0.0, 1.0))
-            } else {
-                (self.z.z, vec3(-1.0, -1.0, 1.0), quat(0.0, 0.0, 1.0, 0.0))
-            };
+        let (mag_zw, pre_zw, post_zw) = if mag_w > self.z.z {
+            (mag_w, vec3(1.0, 1.0, 1.0), quat(0.0, 0.0, 0.0, 1.0))
+        } else {
+            (self.z.z, vec3(-1.0, -1.0, 1.0), quat(0.0, 0.0, 1.0, 0.0))
+        };
 
-        let (mag_xy, pre_xy, post_xy) =
-            if self.x.x > self.y.y {
-                (self.x.x, vec3( 1.0, -1.0, -1.0), quat(1.0, 0.0, 0.0, 0.0))
-            } else {
-                (self.y.y, vec3(-1.0,  1.0, -1.0), quat(0.0, 1.0, 0.0, 0.0))
-            };
+        let (mag_xy, pre_xy, post_xy) = if self.x.x > self.y.y {
+            (self.x.x, vec3(1.0, -1.0, -1.0), quat(1.0, 0.0, 0.0, 0.0))
+        } else {
+            (self.y.y, vec3(-1.0, 1.0, -1.0), quat(0.0, 1.0, 0.0, 0.0))
+        };
 
-        let (pre, post) =
-            if mag_zw > mag_xy {
-                (pre_zw, post_zw)
-            } else {
-                (pre_xy, post_xy)
-            };
+        let (pre, post) = if mag_zw > mag_xy {
+            (pre_zw, post_zw)
+        } else {
+            (pre_xy, post_xy)
+        };
 
-        let t = pre.x*self.x.x + pre.y*self.y.y + pre.z*self.z.z + 1.0;
+        let t = pre.x * self.x.x + pre.y * self.y.y + pre.z * self.z.z + 1.0;
         let s = 0.5 / t.sqrt();
-        let qp = quat((pre.y * self.y.z - pre.z * self.z.y) * s,
-                      (pre.z * self.z.x - pre.x * self.x.z) * s,
-                      (pre.x * self.x.y - pre.y * self.y.x) * s,
-                      t * s);
+        let qp = quat(
+            (pre.y * self.y.z - pre.z * self.z.y) * s,
+            (pre.z * self.z.x - pre.x * self.x.z) * s,
+            (pre.x * self.x.y - pre.y * self.y.x) * s,
+            t * s,
+        );
         debug_assert!(approx_eq(qp.length(), 1.0));
         qp * post
     }
 
     #[inline]
     pub fn to_mat4(&self) -> M4x4 {
-        M4x4{
+        M4x4 {
             x: V4::expand(self.x, 0.0),
             y: V4::expand(self.y, 0.0),
             z: V4::expand(self.z, 0.0),
-            w: vec4(0.0, 0.0, 0.0, 1.0)
+            w: vec4(0.0, 0.0, 0.0, 1.0),
         }
     }
 
@@ -522,23 +667,29 @@ impl M3x3 {
 
     #[inline]
     pub fn determinant(&self) -> f32 {
-        self.x.x * (self.y.y * self.z.z - self.z.y * self.y.z) +
-        self.x.y * (self.y.z * self.z.x - self.z.z * self.y.x) +
-        self.x.z * (self.y.x * self.z.y - self.z.x * self.y.y)
+        self.x.x * (self.y.y * self.z.z - self.z.y * self.y.z)
+            + self.x.y * (self.y.z * self.z.x - self.z.z * self.y.x)
+            + self.x.z * (self.y.x * self.z.y - self.z.x * self.y.y)
     }
 
     #[inline]
     pub fn adjugate(&self) -> M3x3 {
         M3x3 {
-            x: vec3(self.y.y*self.z.z - self.z.y*self.y.z,
-                    self.z.y*self.x.z - self.x.y*self.z.z,
-                    self.x.y*self.y.z - self.y.y*self.x.z),
-            y: vec3(self.y.z*self.z.x - self.z.z*self.y.x,
-                    self.z.z*self.x.x - self.x.z*self.z.x,
-                    self.x.z*self.y.x - self.y.z*self.x.x),
-            z: vec3(self.y.x*self.z.y - self.z.x*self.y.y,
-                    self.z.x*self.x.y - self.x.x*self.z.y,
-                    self.x.x*self.y.y - self.y.x*self.x.y),
+            x: vec3(
+                self.y.y * self.z.z - self.z.y * self.y.z,
+                self.z.y * self.x.z - self.x.y * self.z.z,
+                self.x.y * self.y.z - self.y.y * self.x.z,
+            ),
+            y: vec3(
+                self.y.z * self.z.x - self.z.z * self.y.x,
+                self.z.z * self.x.x - self.x.z * self.z.x,
+                self.x.z * self.y.x - self.y.z * self.x.x,
+            ),
+            z: vec3(
+                self.y.x * self.z.y - self.z.x * self.y.y,
+                self.z.x * self.x.y - self.x.x * self.z.y,
+                self.x.x * self.y.y - self.y.x * self.x.y,
+            ),
         }
     }
 
@@ -569,32 +720,26 @@ impl M3x3 {
 
     #[inline]
     pub fn identity() -> Self {
-        mat3(1.0, 0.0, 0.0,
-             0.0, 1.0, 0.0,
-             0.0, 0.0, 1.0)
+        mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
     }
 
     #[inline]
     pub fn zero() -> Self {
-        mat3(0.0, 0.0, 0.0,
-             0.0, 0.0, 0.0,
-             0.0, 0.0, 0.0)
+        mat3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     }
 
     #[inline]
     pub fn is_symmetric(&self) -> bool {
         // Should this be strict comparison?
-        self.x.y == self.y.x &&
-        self.x.z == self.z.x &&
-        self.y.z == self.z.y
+        self.x.y == self.y.x && self.x.z == self.z.x && self.y.z == self.z.y
     }
 
     #[inline]
     pub fn is_approx_symmetric(&self) -> bool {
         // Should this be strict comparison?
-        approx_eq(self.x.y, self.y.x) &&
-        approx_eq(self.x.z, self.z.x) &&
-        approx_eq(self.y.z, self.z.y)
+        approx_eq(self.x.y, self.y.x)
+            && approx_eq(self.x.z, self.z.x)
+            && approx_eq(self.y.z, self.z.y)
     }
 
     /// Returns quat s.t. q.to_mat3() diagonalizes this matrix. Requires `self`
@@ -608,8 +753,11 @@ impl M3x3 {
     /// Then the rows of `q` are the eigenvectors, and `d`'s diagonal are the
     /// eigenvalues.
     pub fn diagonalizer(&self) -> Quat {
-        debug_assert!(self.is_approx_symmetric(),
-            "no diagonalizer for asymmetric matrix {:?}", self);
+        debug_assert!(
+            self.is_approx_symmetric(),
+            "no diagonalizer for asymmetric matrix {:?}",
+            self
+        );
         let max_steps = 24; // Defo won't need this many.
         let mut q = Quat::IDENTITY;
         for _ in 0..max_steps {
@@ -629,10 +777,14 @@ impl M3x3 {
 
             let thet = (diag[k2][k2] - diag[k1][k1]) / (2.0 * off_diag[k]);
 
-            let sgn = thet.signum();// if thet_val > 0.0 { 1.0 } else { -1.0 };
+            let sgn = thet.signum(); // if thet_val > 0.0 { 1.0 } else { -1.0 };
             let thet = thet * sgn;
             // Use the more accurate formula if we're close.
-            let t2p1 = if thet < 1.0e-6 { (thet * thet + 1.0).sqrt() } else { thet };
+            let t2p1 = if thet < 1.0e-6 {
+                (thet * thet + 1.0).sqrt()
+            } else {
+                thet
+            };
             // sign(t) / (abs(t) * sqrt(t^2 + 1))
             let t = sgn / (thet + t2p1);
 
@@ -664,28 +816,74 @@ impl M3x3 {
             es[a] < es[b]
         };
 
-        if eigen_cmp(q, 0, 2) { q *= quat(0.0, h, 0.0, h); }
-        if eigen_cmp(q, 1, 2) { q *= quat(h, 0.0, 0.0, h); }
-        if eigen_cmp(q, 0, 1) { q *= quat(0.0, 0.0, h, h); }
+        if eigen_cmp(q, 0, 2) {
+            q *= quat(0.0, h, 0.0, h);
+        }
+        if eigen_cmp(q, 1, 2) {
+            q *= quat(h, 0.0, 0.0, h);
+        }
+        if eigen_cmp(q, 0, 1) {
+            q *= quat(0.0, 0.0, h, h);
+        }
 
-        if q.x_dir().z < 0.0 { q *= quat(1.0, 0.0, 0.0, 0.0); }
-        if q.y_dir().y < 0.0 { q *= quat(0.0, 0.0, 1.0, 0.0); }
-        if q.0.w < 0.0 { q = -q; }
+        if q.x_dir().z < 0.0 {
+            q *= quat(1.0, 0.0, 0.0, 0.0);
+        }
+        if q.y_dir().y < 0.0 {
+            q *= quat(0.0, 0.0, 1.0, 0.0);
+        }
+        if q.0.w < 0.0 {
+            q = -q;
+        }
         q
     }
 }
 
 impl M4x4 {
     #[inline]
-    pub fn new(xx: f32, xy: f32, xz: f32, xw: f32,
-               yx: f32, yy: f32, yz: f32, yw: f32,
-               zx: f32, zy: f32, zz: f32, zw: f32,
-               wx: f32, wy: f32, wz: f32, ww: f32) -> M4x4 {
+    pub fn new(
+        xx: f32,
+        xy: f32,
+        xz: f32,
+        xw: f32,
+        yx: f32,
+        yy: f32,
+        yz: f32,
+        yw: f32,
+        zx: f32,
+        zy: f32,
+        zz: f32,
+        zw: f32,
+        wx: f32,
+        wy: f32,
+        wz: f32,
+        ww: f32,
+    ) -> M4x4 {
         M4x4 {
-            x: V4 { x: xx, y: xy, z: xz, w: xw },
-            y: V4 { x: yx, y: yy, z: yz, w: yw },
-            z: V4 { x: zx, y: zy, z: zz, w: zw },
-            w: V4 { x: wx, y: wy, z: wz, w: ww }
+            x: V4 {
+                x: xx,
+                y: xy,
+                z: xz,
+                w: xw,
+            },
+            y: V4 {
+                x: yx,
+                y: yy,
+                z: yz,
+                w: yw,
+            },
+            z: V4 {
+                x: zx,
+                y: zy,
+                z: zz,
+                w: zw,
+            },
+            w: V4 {
+                x: wx,
+                y: wy,
+                z: wz,
+                w: ww,
+            },
         }
     }
 
@@ -696,10 +894,9 @@ impl M4x4 {
 
     #[inline]
     pub fn from_rows(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
-        mat4(x.x, y.x, z.x, w.x,
-             x.y, y.y, z.y, w.y,
-             x.z, y.z, z.z, w.z,
-             x.w, y.w, z.w, w.w)
+        mat4(
+            x.x, y.x, z.x, w.x, x.y, y.y, z.y, w.y, x.z, y.z, z.z, w.z, x.w, y.w, z.w, w.w,
+        )
     }
 
     #[inline]
@@ -714,44 +911,113 @@ impl M4x4 {
 
     #[inline]
     pub fn determinant(&self) -> f32 {
-        self.x.x*(self.y.y*self.z.z*self.w.w + self.w.y*self.y.z*self.z.w +
-                  self.z.y*self.w.z*self.y.w - self.y.y*self.w.z*self.z.w -
-                  self.z.y*self.y.z*self.w.w - self.w.y*self.z.z*self.y.w) +
-
-        self.x.y*(self.y.z*self.w.w*self.z.x + self.z.z*self.y.w*self.w.x +
-                  self.w.z*self.z.w*self.y.x - self.y.z*self.z.w*self.w.x -
-                  self.w.z*self.y.w*self.z.x - self.z.z*self.w.w*self.y.x) +
-
-        self.x.z*(self.y.w*self.z.x*self.w.y + self.w.w*self.y.x*self.z.y +
-                  self.z.w*self.w.x*self.y.y - self.y.w*self.w.x*self.z.y -
-                  self.z.w*self.y.x*self.w.y - self.w.w*self.z.x*self.y.y) +
-
-        self.x.w*(self.y.x*self.w.y*self.z.z + self.z.x*self.y.y*self.w.z +
-                  self.w.x*self.z.y*self.y.z - self.y.x*self.z.y*self.w.z -
-                  self.w.x*self.y.y*self.z.z - self.z.x*self.w.y*self.y.z)
+        self.x.x
+            * (self.y.y * self.z.z * self.w.w
+                + self.w.y * self.y.z * self.z.w
+                + self.z.y * self.w.z * self.y.w
+                - self.y.y * self.w.z * self.z.w
+                - self.z.y * self.y.z * self.w.w
+                - self.w.y * self.z.z * self.y.w)
+            + self.x.y
+                * (self.y.z * self.w.w * self.z.x
+                    + self.z.z * self.y.w * self.w.x
+                    + self.w.z * self.z.w * self.y.x
+                    - self.y.z * self.z.w * self.w.x
+                    - self.w.z * self.y.w * self.z.x
+                    - self.z.z * self.w.w * self.y.x)
+            + self.x.z
+                * (self.y.w * self.z.x * self.w.y
+                    + self.w.w * self.y.x * self.z.y
+                    + self.z.w * self.w.x * self.y.y
+                    - self.y.w * self.w.x * self.z.y
+                    - self.z.w * self.y.x * self.w.y
+                    - self.w.w * self.z.x * self.y.y)
+            + self.x.w
+                * (self.y.x * self.w.y * self.z.z
+                    + self.z.x * self.y.y * self.w.z
+                    + self.w.x * self.z.y * self.y.z
+                    - self.y.x * self.z.y * self.w.z
+                    - self.w.x * self.y.y * self.z.z
+                    - self.z.x * self.w.y * self.y.z)
     }
 
     #[inline]
     pub fn adjugate(&self) -> M4x4 {
-        let M4x4{x, y, z, w} = *self;
+        let M4x4 { x, y, z, w } = *self;
         return M4x4 {
-            x: vec4(y.y*z.z*w.w + w.y*y.z*z.w + z.y*w.z*y.w - y.y*w.z*z.w - z.y*y.z*w.w - w.y*z.z*y.w,
-                    x.y*w.z*z.w + z.y*x.z*w.w + w.y*z.z*x.w - w.y*x.z*z.w - z.y*w.z*x.w - x.y*z.z*w.w,
-                    x.y*y.z*w.w + w.y*x.z*y.w + y.y*w.z*x.w - x.y*w.z*y.w - y.y*x.z*w.w - w.y*y.z*x.w,
-                    x.y*z.z*y.w + y.y*x.z*z.w + z.y*y.z*x.w - x.y*y.z*z.w - z.y*x.z*y.w - y.y*z.z*x.w),
-            y: vec4(y.z*w.w*z.x + z.z*y.w*w.x + w.z*z.w*y.x - y.z*z.w*w.x - w.z*y.w*z.x - z.z*w.w*y.x,
-                    x.z*z.w*w.x + w.z*x.w*z.x + z.z*w.w*x.x - x.z*w.w*z.x - z.z*x.w*w.x - w.z*z.w*x.x,
-                    x.z*w.w*y.x + y.z*x.w*w.x + w.z*y.w*x.x - x.z*y.w*w.x - w.z*x.w*y.x - y.z*w.w*x.x,
-                    x.z*y.w*z.x + z.z*x.w*y.x + y.z*z.w*x.x - x.z*z.w*y.x - y.z*x.w*z.x - z.z*y.w*x.x),
-            z: vec4(y.w*z.x*w.y + w.w*y.x*z.y + z.w*w.x*y.y - y.w*w.x*z.y - z.w*y.x*w.y - w.w*z.x*y.y,
-                    x.w*w.x*z.y + z.w*x.x*w.y + w.w*z.x*x.y - x.w*z.x*w.y - w.w*x.x*z.y - z.w*w.x*x.y,
-                    x.w*y.x*w.y + w.w*x.x*y.y + y.w*w.x*x.y - x.w*w.x*y.y - y.w*x.x*w.y - w.w*y.x*x.y,
-                    x.w*z.x*y.y + y.w*x.x*z.y + z.w*y.x*x.y - x.w*y.x*z.y - z.w*x.x*y.y - y.w*z.x*x.y),
-            w: vec4(y.x*w.y*z.z + z.x*y.y*w.z + w.x*z.y*y.z - y.x*z.y*w.z - w.x*y.y*z.z - z.x*w.y*y.z,
-                    x.x*z.y*w.z + w.x*x.y*z.z + z.x*w.y*x.z - x.x*w.y*z.z - z.x*x.y*w.z - w.x*z.y*x.z,
-                    x.x*w.y*y.z + y.x*x.y*w.z + w.x*y.y*x.z - x.x*y.y*w.z - w.x*x.y*y.z - y.x*w.y*x.z,
-                    x.x*y.y*z.z + z.x*x.y*y.z + y.x*z.y*x.z - x.x*z.y*y.z - y.x*x.y*z.z - z.x*y.y*x.z)
-        }
+            x: vec4(
+                y.y * z.z * w.w + w.y * y.z * z.w + z.y * w.z * y.w
+                    - y.y * w.z * z.w
+                    - z.y * y.z * w.w
+                    - w.y * z.z * y.w,
+                x.y * w.z * z.w + z.y * x.z * w.w + w.y * z.z * x.w
+                    - w.y * x.z * z.w
+                    - z.y * w.z * x.w
+                    - x.y * z.z * w.w,
+                x.y * y.z * w.w + w.y * x.z * y.w + y.y * w.z * x.w
+                    - x.y * w.z * y.w
+                    - y.y * x.z * w.w
+                    - w.y * y.z * x.w,
+                x.y * z.z * y.w + y.y * x.z * z.w + z.y * y.z * x.w
+                    - x.y * y.z * z.w
+                    - z.y * x.z * y.w
+                    - y.y * z.z * x.w,
+            ),
+            y: vec4(
+                y.z * w.w * z.x + z.z * y.w * w.x + w.z * z.w * y.x
+                    - y.z * z.w * w.x
+                    - w.z * y.w * z.x
+                    - z.z * w.w * y.x,
+                x.z * z.w * w.x + w.z * x.w * z.x + z.z * w.w * x.x
+                    - x.z * w.w * z.x
+                    - z.z * x.w * w.x
+                    - w.z * z.w * x.x,
+                x.z * w.w * y.x + y.z * x.w * w.x + w.z * y.w * x.x
+                    - x.z * y.w * w.x
+                    - w.z * x.w * y.x
+                    - y.z * w.w * x.x,
+                x.z * y.w * z.x + z.z * x.w * y.x + y.z * z.w * x.x
+                    - x.z * z.w * y.x
+                    - y.z * x.w * z.x
+                    - z.z * y.w * x.x,
+            ),
+            z: vec4(
+                y.w * z.x * w.y + w.w * y.x * z.y + z.w * w.x * y.y
+                    - y.w * w.x * z.y
+                    - z.w * y.x * w.y
+                    - w.w * z.x * y.y,
+                x.w * w.x * z.y + z.w * x.x * w.y + w.w * z.x * x.y
+                    - x.w * z.x * w.y
+                    - w.w * x.x * z.y
+                    - z.w * w.x * x.y,
+                x.w * y.x * w.y + w.w * x.x * y.y + y.w * w.x * x.y
+                    - x.w * w.x * y.y
+                    - y.w * x.x * w.y
+                    - w.w * y.x * x.y,
+                x.w * z.x * y.y + y.w * x.x * z.y + z.w * y.x * x.y
+                    - x.w * y.x * z.y
+                    - z.w * x.x * y.y
+                    - y.w * z.x * x.y,
+            ),
+            w: vec4(
+                y.x * w.y * z.z + z.x * y.y * w.z + w.x * z.y * y.z
+                    - y.x * z.y * w.z
+                    - w.x * y.y * z.z
+                    - z.x * w.y * y.z,
+                x.x * z.y * w.z + w.x * x.y * z.z + z.x * w.y * x.z
+                    - x.x * w.y * z.z
+                    - z.x * x.y * w.z
+                    - w.x * z.y * x.z,
+                x.x * w.y * y.z + y.x * x.y * w.z + w.x * y.y * x.z
+                    - x.x * y.y * w.z
+                    - w.x * x.y * y.z
+                    - y.x * w.y * x.z,
+                x.x * y.y * z.z + z.x * x.y * y.z + y.x * z.y * x.z
+                    - x.x * z.y * y.z
+                    - y.x * x.y * z.z
+                    - z.x * y.y * x.z,
+            ),
+        };
     }
 
     #[inline]
@@ -771,52 +1037,68 @@ impl M4x4 {
 
     #[inline]
     pub fn from_translation(v: V3) -> M4x4 {
-        M4x4::new(1.0, 0.0, 0.0, 0.0,
-                  0.0, 1.0, 0.0, 0.0,
-                  0.0, 0.0, 1.0, 0.0,
-                  v.x, v.y, v.z, 1.0)
+        M4x4::new(
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, v.x, v.y, v.z, 1.0,
+        )
     }
 
     #[inline]
     pub fn from_rotation(q: Quat) -> M4x4 {
-        M4x4::from_cols(V4::expand(q.x_dir(), 0.0),
-                        V4::expand(q.y_dir(), 0.0),
-                        V4::expand(q.z_dir(), 0.0),
-                        V4::new(0.0, 0.0, 0.0, 1.0))
+        M4x4::from_cols(
+            V4::expand(q.x_dir(), 0.0),
+            V4::expand(q.y_dir(), 0.0),
+            V4::expand(q.z_dir(), 0.0),
+            V4::new(0.0, 0.0, 0.0, 1.0),
+        )
     }
 
-     #[inline]
+    #[inline]
     pub fn from_scale(v: V3) -> M4x4 {
-        M4x4::new(v.x, 0.0, 0.0, 0.0,
-                  0.0, v.y, 0.0, 0.0,
-                  0.0, 0.0, v.z, 0.0,
-                  0.0, 0.0, 0.0, 1.0)
+        M4x4::new(
+            v.x, 0.0, 0.0, 0.0, 0.0, v.y, 0.0, 0.0, 0.0, 0.0, v.z, 0.0, 0.0, 0.0, 0.0, 1.0,
+        )
     }
 
     #[inline]
     pub fn from_pose(p: V3, q: Quat) -> M4x4 {
-        M4x4::from_cols(V4::expand(q.x_dir(), 0.0),
-                        V4::expand(q.y_dir(), 0.0),
-                        V4::expand(q.z_dir(), 0.0),
-                        V4::expand(p, 1.0))
+        M4x4::from_cols(
+            V4::expand(q.x_dir(), 0.0),
+            V4::expand(q.y_dir(), 0.0),
+            V4::expand(q.z_dir(), 0.0),
+            V4::expand(p, 1.0),
+        )
     }
 
     #[inline]
     pub fn from_pose_2(p: V3, q: Quat) -> M4x4 {
-        M4x4::from_rotation(q)*M4x4::from_translation(p)
+        M4x4::from_rotation(q) * M4x4::from_translation(p)
     }
 
     #[inline]
     pub fn new_frustum(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) -> M4x4 {
-        M4x4::new(2.0 * n / (r-l),   0.0,               0.0,                    0.0,
-                  0.0,               2.0 * n / (t - b), 0.0,                    0.0,
-                  (r + l) / (r - l), (t + b) / (t - b), -(f + n) / (f - n),    -1.0,
-                  0.0,               0.0,               -2.0 * f * n / (f - n), 0.0)
+        M4x4::new(
+            2.0 * n / (r - l),
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.0 * n / (t - b),
+            0.0,
+            0.0,
+            (r + l) / (r - l),
+            (t + b) / (t - b),
+            -(f + n) / (f - n),
+            -1.0,
+            0.0,
+            0.0,
+            -2.0 * f * n / (f - n),
+            0.0,
+        )
     }
 
     #[inline]
     pub fn perspective(fovy: f32, aspect: f32, n: f32, f: f32) -> M4x4 {
-        let y = n * (fovy*0.5).tan();
+        let y = n * (fovy * 0.5).tan();
         let x = y * aspect;
         M4x4::new_frustum(-x, x, -y, y, n, f)
     }
@@ -826,10 +1108,9 @@ impl M4x4 {
         let f = fwd.norm_or(1.0, 0.0, 0.0);
         let s = f.cross(up).norm_or(0.0, 1.0, 0.0);
         let u = s.cross(f);
-        M4x4::new(s.x, u.x, -f.x, 0.0,
-                  s.y, u.y, -f.y, 0.0,
-                  s.z, u.z, -f.z, 0.0,
-                  0.0, 0.0,  0.0, 1.0)
+        M4x4::new(
+            s.x, u.x, -f.x, 0.0, s.y, u.y, -f.y, 0.0, s.z, u.z, -f.z, 0.0, 0.0, 0.0, 0.0, 1.0,
+        )
     }
 
     #[inline]
@@ -839,18 +1120,16 @@ impl M4x4 {
 
     #[inline]
     pub fn identity() -> Self {
-        mat4(1.0, 0.0, 0.0, 0.0,
-             0.0, 1.0, 0.0, 0.0,
-             0.0, 0.0, 1.0, 0.0,
-             0.0, 0.0, 0.0, 1.0)
+        mat4(
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        )
     }
 
     #[inline]
     pub fn zero() -> Self {
-        mat4(0.0, 0.0, 0.0, 0.0,
-             0.0, 0.0, 0.0, 0.0,
-             0.0, 0.0, 0.0, 0.0,
-             0.0, 0.0, 0.0, 0.0)
+        mat4(
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        )
     }
 
     pub fn inverse(&self) -> Option<Self> {
@@ -863,8 +1142,8 @@ impl M4x4 {
     }
 }
 
-pub trait MatType
-    : Copy
+pub trait MatType:
+    Copy
     + Clone
     + Add<Output = Self>
     + Sub<Output = Self>
@@ -873,9 +1152,9 @@ pub trait MatType
     + Div<f32, Output = Self>
     + Identity
     + Zero
-    // + Mul<Self::Vec, Output = Self::Vec>
-    // + Index<usize, Output = Self::Vec>
-    // + IndexMut<usize>
+// + Mul<Self::Vec, Output = Self::Vec>
+// + Index<usize, Output = Self::Vec>
+// + IndexMut<usize>
 {
     type Vec: VecType;
 
