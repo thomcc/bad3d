@@ -1,20 +1,16 @@
+
 pub trait ApproxEq {
     fn approx_zero_e(&self, e: f32) -> bool;
     fn approx_eq_e(&self, o: &Self, e: f32) -> bool;
 
     #[inline]
-    fn default_epsilon() -> f32 {
-        1.0e-6_f32
-    }
-
-    #[inline]
     fn approx_zero(&self) -> bool {
-        self.approx_zero_e(Self::default_epsilon())
+        self.approx_zero_e(crate::math::scalar::DEFAULT_EPSILON)
     }
 
     #[inline]
     fn approx_eq(&self, o: &Self) -> bool {
-        self.approx_eq_e(o, Self::default_epsilon())
+        self.approx_eq_e(o, crate::math::scalar::DEFAULT_EPSILON)
     }
 }
 
@@ -22,14 +18,17 @@ pub trait ApproxEq {
 pub fn approx_zero<T: ApproxEq>(n: T) -> bool {
     n.approx_zero()
 }
+
 #[inline]
 pub fn approx_eq<T: ApproxEq>(a: T, b: T) -> bool {
     a.approx_eq(&b)
 }
+
 #[inline]
 pub fn approx_zero_e<T: ApproxEq>(n: T, e: f32) -> bool {
     n.approx_zero_e(e)
 }
+
 #[inline]
 pub fn approx_eq_e<T: ApproxEq>(a: T, b: T, e: f32) -> bool {
     a.approx_eq_e(&b, e)
@@ -37,10 +36,6 @@ pub fn approx_eq_e<T: ApproxEq>(a: T, b: T, e: f32) -> bool {
 
 pub trait Lerp: Copy + Clone {
     fn lerp(self, _: Self, _: f32) -> Self;
-}
-
-pub trait Clamp: Copy + Clone {
-    fn clamp(self, min: Self, max: Self) -> Self;
 }
 
 pub trait Zero: Copy + Clone {
@@ -170,8 +165,14 @@ pub fn dot<T: Dot>(a: T, b: T) -> f32 {
 }
 
 #[inline]
-pub fn clamp<T: Clamp>(a: T, min: T, max: T) -> T {
-    a.clamp(min, max)
+pub fn clamp(a: f32, min: f32, max: f32) -> f32 {
+    if a < min {
+        min
+    } else if a > max {
+        max
+    } else {
+        a
+    }
 }
 
 #[inline]

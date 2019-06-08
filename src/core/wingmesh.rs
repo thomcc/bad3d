@@ -962,10 +962,10 @@ impl WingMesh {
         self.edges[eb].cull();
 
         if pack && self.is_packed {
-            let edge0 = max!(self.edges[ea].idx(), self.edges[eb].idx());
+            let edge0 = self.edges[ea].idx().max(self.edges[eb].idx());
             self.pack_slot_edge(edge0);
 
-            let edge1 = min!(self.edges[ea].idx(), self.edges[eb].idx());
+            let edge1 = self.edges[ea].idx().min(self.edges[eb].idx());
             self.pack_slot_edge(edge1);
 
             self.pack_slot_vert(old_v);

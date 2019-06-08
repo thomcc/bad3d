@@ -52,13 +52,13 @@ impl FlyCam {
         let look_len = self.look.length();
         let up_len = self.up.length();
         debug_assert!(
-            approx_eq_e(look_len, 1.0, 1.0e-6),
+            approx_eq(look_len, 1.0),
             "look not normalized: {} (len = {})",
             self.look,
             look_len
         );
         debug_assert!(
-            approx_eq_e(up_len, 1.0, 1.0e-6),
+            approx_eq(up_len, 1.0),
             "up not normalized: {} (len = {})",
             self.up,
             look_len

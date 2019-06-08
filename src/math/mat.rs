@@ -780,7 +780,7 @@ impl M3x3 {
             let sgn = thet.signum(); // if thet_val > 0.0 { 1.0 } else { -1.0 };
             let thet = thet * sgn;
             // Use the more accurate formula if we're close.
-            let t2p1 = if thet < 1.0e-6 {
+            let t2p1 = if thet < crate::math::scalar::DEFAULT_EPSILON {
                 (thet * thet + 1.0).sqrt()
             } else {
                 thet

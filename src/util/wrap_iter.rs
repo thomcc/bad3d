@@ -1,4 +1,3 @@
-use std::iter;
 
 #[derive(Debug, Copy, Clone)]
 pub struct PairIndices {
@@ -64,8 +63,8 @@ impl Iterator for TripleIndices {
     }
 }
 
-impl iter::ExactSizeIterator for PairIndices {}
-impl iter::ExactSizeIterator for TripleIndices {}
+impl std::iter::ExactSizeIterator for PairIndices {}
+impl std::iter::ExactSizeIterator for TripleIndices {}
 
 #[inline]
 pub fn pair_indices(len: usize) -> PairIndices {
@@ -272,7 +271,7 @@ macro_rules! impl_wrap_iter {
                 }
             }
         }
-        impl<'a, T> iter::ExactSizeIterator for $name $($clause)*  {}
+        impl<'a, T> std::iter::ExactSizeIterator for $name $($clause)*  {}
     };
 }
 

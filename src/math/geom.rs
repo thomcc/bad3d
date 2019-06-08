@@ -151,7 +151,7 @@ pub fn inertia<Idx: TriIndices>(verts: &[V3], tris: &[Idx], com: V3) -> M3x3 {
 
 /// returns (sq dist, (pt on line1, t for line1), (pt on line2, t for line2))
 pub fn closest_points_on_lines(line1: (V3, V3), line2: (V3, V3)) -> (f32, (V3, f32), (V3, f32)) {
-    let epsilon = 1.0e-6;
+    let epsilon = DEFAULT_EPSILON;
     let d1 = line1.1 - line1.0;
     let d2 = line2.1 - line2.0;
     let r = line1.0 - line2.0;

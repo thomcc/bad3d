@@ -321,7 +321,8 @@ impl AngularConstraint {
 
         let delta_spin = self.target_spin - current_spin;
 
-        let delta_torque = (delta_spin * spin_to_torque).clamp(
+        let delta_torque = clamp(
+            delta_spin * spin_to_torque,
             dt * self.torque_bounds.0 - self.torque,
             dt * self.torque_bounds.1 - self.torque,
         );
@@ -448,7 +449,8 @@ impl LinearConstraint {
 
         let impulse_d = impulse_d0 + impulse_d1;
 
-        let impulse = safe_div0(impulse_n, impulse_d).clamp(
+        let impulse = clamp(
+            safe_div0(impulse_n, impulse_d),
             self.force_limit.0 * dt - self.impulse_sum,
             self.force_limit.1 * dt - self.impulse_sum,
         );
@@ -706,7 +708,7 @@ impl ConstraintSet {
         self.angular(AngularConstraint::new(
             (r0.clone(), r1.clone()),
             axis,
-            -BIAS_FACTOR_JOINT * dq.0.w.clamp(-1.0, 1.0).acos() * 2.0 * inv_dt,
+            -BIAS_FACTOR_JOINT * clamp(dq.0.w, -1.0, 1.0).acos() * 2.0 * inv_dt,
             (-max_torque, max_torque),
         ));
 
@@ -737,7 +739,7 @@ impl ConstraintSet {
         let a0 = rb_map_or(&r0, n0, |rb| rb.pose.orientation * n0);
         let a1 = r1.borrow().pose.orientation * n1;
         let axis = cross(a1, a0).norm_or(0.0, 0.0, 1.0);
-        let rb_angle = clamp(dot(a0, a1), 0.0, 1.0).acos();
+        let rb_angle = clamp01(dot(a0, a1)).acos();
         let delta_angle = rb_angle - angle_degrees.to_radians();
         let target_spin = (if equality { BIAS_FACTOR_JOINT } else { 1.0 }) * delta_angle / self.dt;
         let torque_min = if angle_degrees > 0.0 { 0.0 } else { -f32::MAX };

@@ -107,40 +107,7 @@ pub trait VecType:
         self.map2(o, |a, b| a.max(b))
     }
 
-    // #[inline] fn len(&self) -> usize { self.as_ref().len() }
-
-    // fn floor(self) -> Self;
-    // fn ceil(self) -> Self;
-    // fn round(self) -> Self;
-
-    // fn min(self, o: Self) -> Self;
-    // fn max(self, o: Self) -> Self;
-
-    // fn length_sq(self) -> f32;
-    // fn length(self) -> f32;
-
-    // fn towards(self, o: Self) -> Self;
-    // fn dir_towards(self, o: Self) -> Self;
-
-    // fn dist_sq(self, o: Self) -> f32;
-    // fn dist(self, o: Self) -> f32;
-
-    // fn same_dir(self, o: Self) -> bool;
 }
-
-// impl<T: Map> Clamp for T {
-//     #[inline]
-//     fn clamp(self, min: Self, max: Self) -> Self {
-//         self.map3(min, max, |v, l, h| v.clamp(l, h))
-//     }
-// }
-
-// impl<T: Map> Lerp for T {
-//     #[inline]
-//     fn lerp(self, b: T, t: f32) -> T {
-//         self.map2(b, |x, y| x.lerp(y, t))
-//     }
-// }
 
 impl Fold for V2 {
     #[inline]
@@ -401,6 +368,7 @@ impl<T: VecType> Iterator for VecIter<T> {
 }
 
 impl<T: VecType> iter::ExactSizeIterator for VecIter<T> {}
+
 impl<T: VecType> iter::DoubleEndedIterator for VecIter<T> {
     #[inline]
     fn next_back(&mut self) -> Option<f32> {
@@ -667,7 +635,7 @@ macro_rules! do_vec_boilerplate {
 
             #[inline]
             pub fn clamp(self, min: Self, max: Self) -> Self {
-                self.map3(min, max, |v, l, h| v.clamp(l, h))
+                self.map3(min, max, |v, l, h| clamp(v, l, h))
             }
 
             #[inline]
@@ -858,7 +826,9 @@ macro_rules! do_vec_boilerplate {
 }
 
 do_vec_boilerplate!(V2 { x: 0, y: 1 }, 2, (f32, f32));
+
 do_vec_boilerplate!(V3 { x: 0, y: 1, z: 2 }, 3, (f32, f32, f32));
+
 do_vec_boilerplate!(
     V4 {
         x: 0,
@@ -1146,6 +1116,7 @@ impl From<V3> for V2 {
         V2 { x: v.x, y: v.y }
     }
 }
+
 impl From<V2> for V3 {
     #[inline]
     fn from(v: V2) -> V3 {
@@ -1156,6 +1127,7 @@ impl From<V2> for V3 {
         }
     }
 }
+
 impl From<V4> for V3 {
     #[inline]
     fn from(v: V4) -> V3 {
@@ -1166,6 +1138,7 @@ impl From<V4> for V3 {
         }
     }
 }
+
 impl From<V3> for V4 {
     #[inline]
     fn from(v: V3) -> V4 {
@@ -1177,12 +1150,14 @@ impl From<V3> for V4 {
         }
     }
 }
+
 impl From<V4> for V2 {
     #[inline]
     fn from(v: V4) -> V2 {
         V2 { x: v.x, y: v.y }
     }
 }
+
 impl From<V2> for V4 {
     #[inline]
     fn from(v: V2) -> V4 {
@@ -1201,12 +1176,14 @@ impl AsRef<V2> for V3 {
         unsafe { mem::transmute(self) }
     }
 }
+
 impl AsRef<V2> for V4 {
     #[inline]
     fn as_ref(&self) -> &V2 {
         unsafe { mem::transmute(self) }
     }
 }
+
 impl AsRef<V3> for V4 {
     #[inline]
     fn as_ref(&self) -> &V3 {
@@ -1220,12 +1197,14 @@ impl AsMut<V2> for V3 {
         unsafe { mem::transmute(self) }
     }
 }
+
 impl AsMut<V2> for V4 {
     #[inline]
     fn as_mut(&mut self) -> &mut V2 {
         unsafe { mem::transmute(self) }
     }
 }
+
 impl AsMut<V3> for V4 {
     #[inline]
     fn as_mut(&mut self) -> &mut V3 {
