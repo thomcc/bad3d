@@ -1,4 +1,5 @@
-#![allow(dead_code)]
+#![allow(dead_code, unstable_name_collision)]
+// XXX unstable_name_collision is for `clamp` :(
 
 #[macro_use]
 extern crate log;
