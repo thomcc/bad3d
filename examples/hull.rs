@@ -22,6 +22,7 @@ use bad3d::prelude::*;
 use std::{cell::RefCell, rc::Rc};
 
 fn main() -> Result<()> {
+    env_logger::init();
     let mut win = DemoWindow::new(
         DemoOptions {
             title: "Hull test",

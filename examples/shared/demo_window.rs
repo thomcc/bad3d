@@ -160,14 +160,15 @@ impl DemoWindow {
     pub fn grab_cursor(&mut self) {
         // use glium::glutin::CursorState;
         let gl_window = self.display.gl_window();
+        let window = gl_window.window();
         if !self.grabbed_cursor {
             self.grabbed_cursor = true;
             self.input.mouse_grabbed = true;
-            gl_window.hide_cursor(true); //.ok().expect("Could not grab mouse cursor");
+            window.hide_cursor(true); //.ok().expect("Could not grab mouse cursor");
         }
         // let dpi = gl_window.hidpi_factor();
         let dims = self.input.dims(); // / dpi;
-        gl_window
+        window
             .set_cursor_position(glium::glutin::dpi::LogicalPosition {
                 x: (dims.x / 2.0).trunc() as f64,
                 y: (dims.y / 2.0).trunc() as f64,
@@ -190,7 +191,7 @@ impl DemoWindow {
         // use glium::glutin::CursorState;
         self.grabbed_cursor = false;
         self.input.mouse_grabbed = false;
-        self.display.gl_window().hide_cursor(false);
+        self.display.gl_window().window().hide_cursor(false);
     }
 
     pub fn draw_lit_mesh(&self, mat: M4x4, mesh: &DemoMesh) -> Result<(), Error> {
@@ -408,14 +409,15 @@ impl DemoWindow {
 
     pub fn get_ui<'ui>(&self, gui: &'ui mut imgui::ImGui) -> Ui<'ui> {
         let gl_window = self.display.gl_window();
+        let window = gl_window.window();
         // let size_points = gl_window.get_inner_size_points().unwrap();
         // let size_pixels = gl_window.get_inner_size_pixels().unwrap();
         // let dpi = gl_window.hidpi_factor();
         // let size = gl_window.get_inner_size().unwrap();
         // let size_points = ((size.width as f32) as u32,
         // (size.height as f32) as u32);
-        let size = gl_window.get_inner_size().unwrap();
-        let hidpi_factor = gl_window.get_hidpi_factor();
+        let size = window.get_inner_size().unwrap();
+        let hidpi_factor = window.get_hidpi_factor();
         let frame_size = imgui::FrameSize {
             logical_size: (size.width, size.height),
             hidpi_factor,

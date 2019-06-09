@@ -11,10 +11,8 @@ log = "0.4"
 
 [dev-dependencies]
 rand = "0.4"
-glium = "0.22.0"
+glium = "0.25.0"
 failure = "0.1"
-imgui = "0.0.21"
-imgui-glium-renderer = "0.0.21"
-
-[patch.crates-io]
-glium = { git = "https://github.com/thomcc/glium", branch = "glutin-0.19.0" }
+imgui = { git = "https://github.com/thomcc/imgui-rs", branch = "update-glium-0.25" }
+imgui-glium-renderer = { git = "https://github.com/thomcc/imgui-rs", branch = "update-glium-0.25" }
+env_logger = "0.6.1"

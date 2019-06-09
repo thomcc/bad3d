@@ -21,6 +21,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 fn main() -> Result<()> {
+    env_logger::init();
     let body_sizes = [
         vec3(0.25, 0.50, 0.10), // torso
         vec3(0.25, 0.05, 0.05), // limb upper bones

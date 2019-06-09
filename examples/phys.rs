@@ -104,6 +104,7 @@ fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
 }
 
 fn main() -> Result<()> {
+    env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
     gui.borrow_mut().set_ini_filename(None);
 

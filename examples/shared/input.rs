@@ -104,15 +104,15 @@ fn init_gui(gui: &mut ImGui) {
     style.colors[ImGuiCol::ResizeGrip as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
     style.colors[ImGuiCol::ResizeGripHovered as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
     style.colors[ImGuiCol::ResizeGripActive as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::CloseButton as usize] = ImVec4::new(0.59, 0.59, 0.59, 1.00);
-    style.colors[ImGuiCol::CloseButtonHovered as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
-    style.colors[ImGuiCol::CloseButtonActive as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
+    // style.colors[ImGuiCol::CloseButton as usize] = ImVec4::new(0.59, 0.59, 0.59, 1.00);
+    // style.colors[ImGuiCol::CloseButtonHovered as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
+    // style.colors[ImGuiCol::CloseButtonActive as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
     style.colors[ImGuiCol::PlotLines as usize] = ImVec4::new(0.39, 0.39, 0.39, 1.00);
     style.colors[ImGuiCol::PlotLinesHovered as usize] = ImVec4::new(1.00, 0.43, 0.35, 1.00);
     style.colors[ImGuiCol::PlotHistogram as usize] = ImVec4::new(0.90, 0.70, 0.00, 1.00);
     style.colors[ImGuiCol::PlotHistogramHovered as usize] = ImVec4::new(1.00, 0.60, 0.00, 1.00);
     style.colors[ImGuiCol::TextSelectedBg as usize] = ImVec4::new(0.32, 0.52, 0.65, 1.00);
-    style.colors[ImGuiCol::ModalWindowDarkening as usize] = ImVec4::new(0.20, 0.20, 0.20, 0.50);
+    // style.colors[ImGuiCol::ModalWindowDarkening as usize] = ImVec4::new(0.20, 0.20, 0.20, 0.50);
 }
 
 fn update_keyboard(imgui: &mut ImGui, vk: VirtualKeyCode, pressed: bool) {
@@ -304,6 +304,7 @@ impl InputState {
                             let dims = self.dims();
                             // let dpi_dims = dims / dpi;
                             gl_window
+                                .window()
                                 .set_cursor_position(glium::glutin::dpi::LogicalPosition {
                                     x: (dims.x / 2.0).trunc() as f64,
                                     y: (dims.y / 2.0).trunc() as f64,
@@ -356,11 +357,11 @@ impl InputState {
             // let dpi = gl_window.get_hidpi_factor();
             let dims = self.dims(); // / dpi;
             gl_window
+                .window()
                 .set_cursor_position(glium::glutin::dpi::LogicalPosition {
                     x: (dims.x / 2.0).trunc() as f64,
                     y: (dims.y / 2.0).trunc() as f64,
                 })
-                .ok()
                 .expect("Could not set mouse cursor position");
             self.mouse.pos = vec2(0.0, 0.0);
             self.mouse_prev.pos = self.dims() / 2.0;
@@ -370,7 +371,8 @@ impl InputState {
         let mut gui = self.gui.borrow_mut();
         let scale = gui.display_framebuffer_scale();
 
-        gui.set_mouse_pos(self.mouse.pos.x / scale.0, self.mouse.pos.y / scale.1);
+        // gui.set_mouse_pos(self.mouse.pos.x / scale.0, self.mouse.pos.y / scale.1);
+        gui.set_mouse_pos(self.mouse.pos.x, self.mouse.pos.y);
 
         gui.set_mouse_down([
             self.mouse.down.0,

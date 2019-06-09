@@ -97,6 +97,7 @@ impl GjkTestState {
 }
 
 fn main() -> Result<()> {
+    env_logger::init();
     let mut win = DemoWindow::new(
         DemoOptions {
             title: "Hull test",

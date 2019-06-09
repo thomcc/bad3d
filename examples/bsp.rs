@@ -56,8 +56,11 @@ impl<'a> ImguiExt for imgui::Ui<'a> {
         let items_storage = choices
             .iter()
             .map(|choice| im_str!("{:?}", choice).clone())
-            .collect::<Vec<_>>();
-        let items = items_storage.iter().map(|r| r.as_ref()).collect::<Vec<_>>();
+            .collect::<Vec<imgui::ImString>>();
+        let items = items_storage
+            .iter()
+            .map(|r| r.as_ref())
+            .collect::<Vec<&imgui::ImStr>>();
 
         let mut cur_item = choices
             .iter()
@@ -79,10 +82,10 @@ impl<'a> ImguiExt for imgui::Ui<'a> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum DrawMode {
     Faces,
-    Cells,
+    ConvexCells,
 }
 
-implement_pickable!(DrawMode { Faces, Cells });
+implement_pickable!(DrawMode { Faces, ConvexCells });
 
 #[derive(Debug, Clone, Copy)]
 struct UiOptions {
@@ -218,6 +221,9 @@ impl BspScene {
             self.drag_mode = None;
             return;
         }
+        if input.shift_down() {
+            self.drag_mode = Some(DragMode::Scene);
+        }
         let dm = self.drag_mode.clone();
         match dm {
             Some(DragMode::Scene) => {
@@ -296,6 +302,7 @@ fn duration_ms(d: Duration) -> f32 {
 }
 
 pub fn main() -> Result<()> {
+    env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
     gui.borrow_mut().set_ini_filename(None);
 
@@ -325,6 +332,7 @@ pub fn main() -> Result<()> {
         collider_wires: true,
         collider_solids: false,
     };
+    let mut last_rebuild_ms: f32 = 0.0;
 
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
@@ -340,7 +348,8 @@ pub fn main() -> Result<()> {
         // XXX hack
         scene.cam.position = scene.cam.orientation.z_dir() * scene.cam_dist;
         if let Some(dur) = scene.maybe_update_bsp() {
-            println!("Rebuilt bsp in {:.3}ms", duration_ms(dur));
+            last_rebuild_ms = duration_ms(dur);
+            println!("Rebuilt bsp in {:.3}ms", last_rebuild_ms);
         }
 
         win.view = scene.cam.inverse().to_mat4();
@@ -374,7 +383,7 @@ pub fn main() -> Result<()> {
             DrawMode::Faces => {
                 win.draw_faces(M4x4::identity(), &scene.faces)?;
             }
-            DrawMode::Cells => {
+            DrawMode::ConvexCells => {
                 let mut stack = vec![scene.bsp.as_ref().unwrap().as_ref()];
                 while let Some(n) = stack.pop() {
                     if n.leaf_type == bsp::LeafType::Under {
@@ -420,13 +429,14 @@ pub fn main() -> Result<()> {
                     ui.text(im_str!("  debug_assertions enabled (slow)"));
                 }
                 ui.text(im_str!("render_ms: {:.3}", render_time));
+                ui.text(im_str!("last_rebuild_ms: {:.3}", last_rebuild_ms));
                 ui.separator();
                 let e = ui.enum_picker("draw mode", &mut ui_opts.draw_mode).1;
                 match e {
                     DrawMode::Faces => {
                         // No special options
                     }
-                    DrawMode::Cells => {
+                    DrawMode::ConvexCells => {
                         ui.checkbox(im_str!("cell wireframe?"), &mut ui_opts.cell_wireframe);
                         if ui_opts.cell_wireframe {
                             ui.checkbox(
@@ -442,6 +452,10 @@ pub fn main() -> Result<()> {
                 ui.text(im_str!("intersected objects"));
                 ui.checkbox(im_str!("show solid"), &mut ui_opts.collider_solids);
                 ui.checkbox(im_str!("show wires"), &mut ui_opts.collider_wires);
+
+                ui.separator();
+                ui.text(im_str!("click and drag to move items or camera"));
+                ui.text(im_str!("  hold shift to force camera"));
             });
 
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
