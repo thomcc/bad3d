@@ -82,12 +82,20 @@ fn main() -> Result<()> {
     let mut demo_objects = Vec::with_capacity(body_sizes.len() + 2);
 
     for size in body_sizes.iter() {
-        demo_objects.push(DemoObject::new_box(
+        let obj = DemoObject::new_box(
             &window.display,
             *size,
             V3::zero(),
             None,
-        )?);
+        )?;
+        {
+            // Mass is based on volume by default on DemoObjects, but for this
+            // demo that's the wrong call. Hackily fix it up.
+            let mut body = obj.body.borrow_mut();
+            let mass = body.mass;
+            body.scale_mass(1.0 / mass);
+        }
+        demo_objects.push(obj);
         for m in demo_objects.last_mut().unwrap().meshes.iter_mut() {
             m.color = vec4(0.8, 0.4, 0.2, 1.0);
         }

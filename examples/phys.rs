@@ -190,7 +190,7 @@ fn main() -> Result<()> {
             Shape::new_box(vec3(0.2, 0.2, 1.0)),
         ],
         vec3(-5.5, 0.5, 7.5),
-        1.0,
+        RbMass::FromVolume,
     );
     jack.borrow_mut()
         .apply_impulse(jack_push_pos, jack_momentum);
@@ -339,7 +339,7 @@ fn main() -> Result<()> {
             + mouse_ray
                 * (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
         if running {
-            let dt = 1.0 / 60.0;
+            let dt = win.last_frame_time;
             let mut cs = phys::ConstraintSet::new(dt);
 
             if win.input.shift_down() && win.input.mouse.down.0 {

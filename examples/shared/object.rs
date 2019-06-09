@@ -192,7 +192,7 @@ impl DemoObject {
         com: V3,
         orient: Option<Quat>,
     ) -> Result<DemoObject> {
-        let body = RigidBody::new_ref(vec![s], com, 1.0);
+        let body = RigidBody::new_ref(vec![s], com, RbMass::FromVolume);
         if let Some(p) = orient {
             body.borrow_mut().pose.orientation = p;
             body.borrow_mut().start_pose.orientation = p;
@@ -212,7 +212,7 @@ impl DemoObject {
     }
 
     pub fn from_wingmesh<F: Facade>(facade: &F, m: WingMesh, com: V3) -> Result<DemoObject> {
-        let body = RigidBody::new_ref(vec![m.into()], com, 1.0);
+        let body = RigidBody::new_ref(vec![m.into()], com, RbMass::FromVolume);
         let meshes = body
             .borrow()
             .shapes

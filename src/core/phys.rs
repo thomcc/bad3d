@@ -28,6 +28,20 @@ pub const MAX_DRIFT: f32 = 0.03;
 pub const DAMPING: f32 = 0.15;
 pub const EULER_PHYSICS: bool = false;
 
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub enum RbMass {
+    Specific(f32),
+    FromVolume,
+    Infinite,
+}
+
+impl From<f32> for RbMass {
+    #[inline]
+    fn from(f: f32) -> Self {
+        RbMass::Specific(f)
+    }
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct RigidBodyID(usize);
 
@@ -77,11 +91,16 @@ static RIGIDBODY_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl RigidBody {
     #[inline]
-    pub fn new_ref(shapes: Vec<Shape>, posn: V3, mass: f32) -> RigidBodyRef {
+    pub fn new_ref(shapes: Vec<Shape>, posn: V3, mass: RbMass) -> RigidBodyRef {
         Rc::new(RefCell::new(RigidBody::new(shapes, posn, mass)))
     }
 
-    pub fn new(shapes: Vec<Shape>, posn: V3, mass: f32) -> RigidBody {
+    pub fn new(shapes: Vec<Shape>, posn: V3, mass: RbMass) -> RigidBody {
+        let mass = match mass {
+            RbMass::Specific(m) => m,
+            RbMass::Infinite => 0.0,
+            RbMass::FromVolume => shape::combined_volume(&shapes),
+        };
         let mut res = RigidBody {
             id: RigidBodyID(RIGIDBODY_ID_COUNTER.fetch_add(1, Ordering::SeqCst)),
             pose: Pose::from_translation(posn),
