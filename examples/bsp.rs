@@ -107,6 +107,18 @@ enum Shape {
     Sphere { lat: usize, lng: usize, r: f32 },
 }
 
+impl Shape {
+    fn name(&self) -> &'static str {
+        match self {
+            Shape::Rect(_) => "Rect",
+            Shape::Octahedron(_) => "Octahedron",
+            Shape::Cylinder { .. } => "Cylinder",
+            Shape::Cone { .. } => "Cone",
+            Shape::Sphere { .. } => "Sphere",
+        }
+    }
+}
+
 #[derive(Copy, Debug, Clone)]
 enum CsgOp {
     Intersect,
@@ -325,7 +337,7 @@ pub fn main() -> Result<()> {
     let mut scene = BspScene::new();
 
     let mut ui_opts = UiOptions {
-        draw_mode: DrawMode::Faces,
+        draw_mode: DrawMode::ConvexCells,
         cell_wireframe: false,
         cell_wires_respect_depth: false,
         cell_scale: 0.95,
@@ -456,6 +468,12 @@ pub fn main() -> Result<()> {
                 ui.separator();
                 ui.text(im_str!("click and drag to move items or camera"));
                 ui.text(im_str!("  hold shift to force camera"));
+                ui.separator();
+                ui.text(im_str!("Scene:"));
+                ui.text(im_str!("  2x2x2 Box"));
+                for (obj, op) in &scene.objects {
+                    ui.text(im_str!("  {:?} {}", op, obj.shape.name()));
+                }
             });
 
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
