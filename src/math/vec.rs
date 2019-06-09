@@ -234,20 +234,6 @@ macro_rules! define_transmute_conversions {
                 unsafe { mem::transmute(self) }
             }
         }
-
-        impl<'a> From<&'a $dst_type> for &'a $src_type {
-            #[inline]
-            fn from(v: &'a $dst_type) -> &'a $src_type {
-                unsafe { mem::transmute(v) }
-            }
-        }
-
-        impl<'a> From<&'a mut $dst_type> for &'a mut $src_type {
-            #[inline]
-            fn from(v: &'a mut $dst_type) -> &'a mut $src_type {
-                unsafe { mem::transmute(v) }
-            }
-        }
     };
 }
 

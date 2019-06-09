@@ -282,33 +282,17 @@ macro_rules! define_conversions {
             }
         }
 
-        impl<'a> From<&'a $dst_type> for &'a $src_type {
-            #[inline]
-            fn from(v: &'a $dst_type) -> &'a $src_type {
-                unsafe { mem::transmute(v) }
-            }
-        }
-
-        impl<'a> From<&'a mut $dst_type> for &'a mut $src_type {
-            #[inline]
-            fn from(v: &'a mut $dst_type) -> &'a mut $src_type {
-                unsafe { mem::transmute(v) }
-            }
-        }
-
         impl From<$src_type> for $dst_type {
             #[inline]
             fn from(m: $src_type) -> $dst_type {
-                let r: &$dst_type = m.as_ref();
-                *r
+                unsafe { mem::transmute(m) }
             }
         }
 
         impl From<$dst_type> for $src_type {
             #[inline]
             fn from(m: $dst_type) -> $src_type {
-                let r: &$src_type = (&m).into();
-                *r
+                unsafe { mem::transmute(m) }
             }
         }
     };

@@ -4,7 +4,7 @@ use crate::math::scalar::*;
 use crate::math::traits::*;
 use crate::math::vec::*;
 
-use std::{fmt, mem, ops};
+use std::{fmt, ops};
 
 pub const DEFAULT_PLANE_WIDTH: f32 = 0.0001_f32;
 
@@ -32,38 +32,13 @@ impl fmt::Display for Plane {
     }
 }
 
-impl AsRef<Plane> for V4 {
-    #[inline]
-    fn as_ref(&self) -> &Plane {
-        unsafe { mem::transmute(self) }
-    }
-}
-impl AsRef<V4> for Plane {
-    #[inline]
-    fn as_ref(&self) -> &V4 {
-        unsafe { mem::transmute(self) }
-    }
-}
-
-impl AsMut<Plane> for V4 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut Plane {
-        unsafe { mem::transmute(self) }
-    }
-}
-impl AsMut<V4> for Plane {
-    #[inline]
-    fn as_mut(&mut self) -> &mut V4 {
-        unsafe { mem::transmute(self) }
-    }
-}
-
 impl From<Plane> for V4 {
     #[inline]
     fn from(p: Plane) -> Self {
         p.to_v4()
     }
 }
+
 impl From<V4> for Plane {
     #[inline]
     fn from(v: V4) -> Self {
