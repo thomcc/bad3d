@@ -84,31 +84,31 @@ pub fn triple_indices(len: usize) -> TripleIndices {
     }
 }
 
-pub struct Pairs<'a, T: 'a> {
+pub struct Pairs<'a, T> {
     pos: usize,
     slice: &'a [T],
 }
-pub struct Triples<'a, T: 'a> {
+pub struct Triples<'a, T> {
     pos: usize,
     slice: &'a [T],
 }
 
-pub struct ClonedPairs<'a, T: 'a> {
+pub struct ClonedPairs<'a, T> {
     pos: usize,
     slice: &'a [T],
 }
-pub struct ClonedTriples<'a, T: 'a + Clone> {
+pub struct ClonedTriples<'a, T: Clone> {
     pos: usize,
     slice: &'a [T],
 }
 
 #[inline]
-pub fn pairs<T>(slice: &[T]) -> Pairs<T> {
+pub fn pairs<T>(slice: &[T]) -> Pairs<'_, T> {
     Pairs::new(slice)
 }
 
 #[inline]
-pub fn triples<T>(slice: &[T]) -> Triples<T> {
+pub fn triples<T>(slice: &[T]) -> Triples<'_, T> {
     Triples::new(slice)
 }
 

@@ -44,19 +44,19 @@ pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
 }
 
 impl fmt::Display for V2 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "vec2({}, {})", self.x, self.y)
     }
 }
 
 impl fmt::Display for V3 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "vec3({}, {}, {})", self.x, self.y, self.z)
     }
 }
 
 impl fmt::Display for V4 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "vec4({}, {}, {}, {})", self.x, self.y, self.z, self.w)
     }
 }

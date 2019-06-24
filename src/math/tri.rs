@@ -88,7 +88,7 @@ impl From<(V3, V3, V3)> for Tri {
 }
 
 #[derive(Debug, Clone)]
-pub struct TriIter<'a, V: 'a, I> {
+pub struct TriIter<'a, V, I> {
     verts: &'a [V],
     wrapped: I,
 }

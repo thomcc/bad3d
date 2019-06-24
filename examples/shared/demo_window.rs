@@ -98,7 +98,7 @@ fn compile_shader<F: glium::backend::Facade>(
 }
 
 impl DemoWindow {
-    pub fn new(opts: DemoOptions, gui: Rc<RefCell<imgui::ImGui>>) -> Result<DemoWindow, Error> {
+    pub fn new(opts: DemoOptions<'_>, gui: Rc<RefCell<imgui::ImGui>>) -> Result<DemoWindow, Error> {
         let context = ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
 
         let window = WindowBuilder::new()
@@ -178,12 +178,12 @@ impl DemoWindow {
     }
 
     #[inline]
-    pub fn target(&self) -> Ref<glium::Frame> {
+    pub fn target(&self) -> Ref<'_, glium::Frame> {
         self.targ.as_ref().unwrap().borrow()
     }
 
     #[inline]
-    pub fn target_mut(&self) -> RefMut<glium::Frame> {
+    pub fn target_mut(&self) -> RefMut<'_, glium::Frame> {
         self.targ.as_ref().unwrap().borrow_mut()
     }
 

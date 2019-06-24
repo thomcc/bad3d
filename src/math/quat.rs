@@ -16,7 +16,7 @@ pub fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
 }
 
 impl fmt::Display for Quat {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "quat({}, {}, {}, {})",

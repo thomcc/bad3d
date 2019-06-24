@@ -42,39 +42,8 @@ impl IndexMut<usize> for I3 {
 
 impl I3 {
     #[inline]
-    fn rev(self) -> I3 {
-        int3(self[2], self[1], self[0])
-    }
-
-    #[inline]
-    fn roll(self) -> I3 {
-        int3(self[1], self[2], self[0])
-    }
-
-    #[inline]
-    fn is(self, o: I3) -> bool {
-        self == o || self == o.roll() || self.roll() == o
-    }
-
-    #[inline]
-    fn back_to_back(self, o: I3) -> bool {
-        self.is(o.rev())
-    }
-
-    #[inline]
-    fn has_edge(self, a: i32, b: i32) -> bool {
-        (self[0] == a && self[1] == b)
-            || (self[1] == a && self[2] == b)
-            || (self[2] == a && self[0] == b)
-    }
-
-    #[inline]
     fn has_vert(self, a: i32) -> bool {
         self[0] == a || self[1] == a || self[2] == a
-    }
-
-    fn share_edge(self, o: I3) -> bool {
-        self.has_edge(o[1], o[0]) || self.has_edge(o[2], o[1]) || self.has_edge(o[0], o[2])
     }
 }
 
@@ -84,15 +53,6 @@ fn tri(verts: &[V3], t: I3) -> (V3, V3, V3) {
         verts[t[0] as usize],
         verts[t[1] as usize],
         verts[t[2] as usize],
-    )
-}
-
-#[inline]
-fn tri_ref(verts: &[V3], t: I3) -> (&V3, &V3, &V3) {
-    (
-        &verts[t[0] as usize],
-        &verts[t[1] as usize],
-        &verts[t[2] as usize],
     )
 }
 

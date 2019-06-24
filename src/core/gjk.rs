@@ -124,19 +124,15 @@ impl Point {
         }
     }
 
-    fn on_sum(a: &Support, b: &Support, n: V3) -> Point {
+    fn on_sum(a: &dyn Support, b: &dyn Support, n: V3) -> Point {
         let pa = a.support(n);
         let pb = b.support(-n);
         Point::new(pa, pb, pa - pb)
     }
+
     #[inline]
     fn with_t(&self, t: f32) -> Point {
         Point { t: t, ..*self }
-    }
-
-    #[inline]
-    fn same_as(&self, o: &Point) -> bool {
-        self.a == o.a && self.b == o.b
     }
 }
 
@@ -322,7 +318,7 @@ impl Simplex {
     }
 }
 
-pub fn separated(a: &Support, b: &Support, find_closest: bool) -> ContactInfo {
+pub fn separated(a: &dyn Support, b: &dyn Support, find_closest: bool) -> ContactInfo {
     let eps = 0.00001_f32;
 
     let mut v = Point::on_sum(a, b, vec3(0.0, 0.0, 1.0)).p;
@@ -423,7 +419,7 @@ pub struct ContactPatch {
 }
 
 impl ContactPatch {
-    pub fn new(s0: &Support, s1: &Support, max_sep: f32) -> ContactPatch {
+    pub fn new(s0: &dyn Support, s1: &dyn Support, max_sep: f32) -> ContactPatch {
         let mut result: ContactPatch = Default::default();
         result.hit_info[0] = separated(s0, s1, true);
         if result.hit_info[0].separation > max_sep {

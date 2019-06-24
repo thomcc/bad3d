@@ -140,19 +140,19 @@ impl Zero for M4x4 {
 }
 
 impl fmt::Display for M2x2 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "mat2({}, {})", self.x, self.y)
     }
 }
 
 impl fmt::Display for M3x3 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "mat3({}, {}, {})", self.x, self.y, self.z)
     }
 }
 
 impl fmt::Display for M4x4 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "mat4({}, {}, {}, {})", self.x, self.y, self.z, self.w)
     }
 }

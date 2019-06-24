@@ -4,7 +4,7 @@ pub trait Support {
     fn support(&self, _: V3) -> V3;
 }
 
-pub struct TransformedSupport<'a, T: 'a + Support + ?Sized> {
+pub struct TransformedSupport<'a, T: Support + ?Sized> {
     pub pose: Pose,
     pub object: &'a T,
 }

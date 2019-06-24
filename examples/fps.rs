@@ -2,14 +2,14 @@
 #![allow(unused_imports)]
 #[macro_use]
 extern crate glium;
-extern crate rand;
+use rand;
 
 #[macro_use]
 extern crate bad3d;
 
 #[macro_use]
 extern crate imgui;
-extern crate imgui_glium_renderer;
+use imgui_glium_renderer;
 
 #[macro_use]
 extern crate more_asserts;

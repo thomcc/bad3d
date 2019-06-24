@@ -344,11 +344,11 @@ impl BspNode {
         self.over_mut().derive_convex(co);
     }
 
-    pub fn iter(&self) -> BspPreorder {
+    pub fn iter(&self) -> BspPreorder<'_> {
         BspPreorder { stack: vec![self] }
     }
 
-    pub fn iter_back_to_front(&self, p: V3) -> BspBackToFront {
+    pub fn iter_back_to_front(&self, p: V3) -> BspBackToFront<'_> {
         BspBackToFront {
             stack: vec![self],
             p,
