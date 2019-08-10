@@ -13,7 +13,6 @@ extern crate failure;
 
 use imgui;
 
-
 mod shared;
 use crate::shared::{object, DemoMesh, DemoOptions, DemoWindow, Result};
 use failure::Error;
@@ -35,7 +34,7 @@ fn main() -> Result<()> {
             near_far: (0.01, 50.0),
             ..Default::default()
         },
-        Rc::new(RefCell::new(imgui::ImGui::init())),
+        Rc::new(RefCell::new(imgui::Context::create())),
     )?;
 
     let (vertices, triangles) = object::random_point_cloud(64);

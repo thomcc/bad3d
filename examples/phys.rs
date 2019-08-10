@@ -105,7 +105,7 @@ fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
 
 fn main() -> Result<()> {
     env_logger::init();
-    let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
+    let gui = Rc::new(RefCell::new(imgui::Context::create()));
     gui.borrow_mut().set_ini_filename(None);
 
     let mut win = DemoWindow::new(
@@ -279,7 +279,7 @@ fn main() -> Result<()> {
     let mut running = false;
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
-        let ui = win.get_ui(&mut *imgui);
+        let ui = imgui.frame();
         for &(key, down) in win.input.key_changes.iter() {
             if !down {
                 continue;
@@ -381,12 +381,9 @@ fn main() -> Result<()> {
             }
         }
 
-        // win.ui(|ui| {
-        let framerate = ui.framerate();
+        let framerate = ui.io().framerate;
         ui.window(im_str!("test"))
-            // .size((200.0, 300.0), imgui::ImGuiCond::Appearing)
-            .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
-            // .size((300.0, 100.0), imgui::ImGuiCond::FirstUseEver)
+            .position([20.0, 20.0], imgui::Condition::Appearing)
             .build(|| {
                 ui.text(im_str!("fps: {:.3}", framerate));
                 ui.separator();
@@ -394,8 +391,6 @@ fn main() -> Result<()> {
                 ui.text(im_str!("  reset: [R]"));
                 ui.text(im_str!("  pause/unpause: [Space]"));
             });
-        // Ok(())
-        // })?;
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
     }
     Ok(())

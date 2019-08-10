@@ -437,7 +437,7 @@ fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<D
 
 fn main() -> Result<()> {
     env_logger::init();
-    let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
+    let gui = Rc::new(RefCell::new(imgui::Context::create()));
     gui.borrow_mut().set_ini_filename(None);
 
     let mut win = DemoWindow::new(
@@ -480,7 +480,7 @@ fn main() -> Result<()> {
 
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
-        let ui = win.get_ui(&mut *imgui);
+        let ui = imgui.frame();
         if win.input.key_hit(Key::Escape) {
             win.end_frame()?;
             return Ok(());
@@ -563,9 +563,9 @@ fn main() -> Result<()> {
             win.draw_lit_mesh(M4x4::identity(), m)?;
         }
         let input_size = win.input.size;
-        let framerate = ui.framerate();
+        let framerate = ui.io().framerate;
         ui.window(im_str!("test"))
-            .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
+            .position([20.0, 20.0], imgui::Condition::Appearing)
             .build(|| {
                 ui.text(im_str!("fps: {:.3}", framerate));
                 ui.text(im_str!("size: {:?}", input_size));

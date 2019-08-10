@@ -5,7 +5,8 @@ use std::rc::Rc;
 use bad3d::{self, prelude::*};
 
 use crate::shared::DemoWindow;
-use imgui::{ImGui, ImGuiKey, Ui};
+use imgui::{Context, StyleColor, Ui};
+use imgui_winit_support::WinitPlatform;
 
 use glium::glutin::{
     ElementState, Event, EventsLoop, KeyboardInput, MouseButton, MouseScrollDelta, TouchPhase,
@@ -36,32 +37,35 @@ pub struct InputState {
     pub keys: HashMap<VirtualKeyCode, KeyState>,
     pub key_changes: Vec<(VirtualKeyCode, bool)>,
     pub closed: bool,
-    pub gui: Rc<RefCell<ImGui>>,
+    pub gui: Rc<RefCell<Context>>,
     pub mouse_grabbed: bool,
     pub dt: f32,
+    pub platform: WinitPlatform,
 }
 
-fn init_gui(gui: &mut ImGui) {
-    gui.set_imgui_key(ImGuiKey::Tab, 0);
-    gui.set_imgui_key(ImGuiKey::LeftArrow, 1);
-    gui.set_imgui_key(ImGuiKey::RightArrow, 2);
-    gui.set_imgui_key(ImGuiKey::UpArrow, 3);
-    gui.set_imgui_key(ImGuiKey::DownArrow, 4);
-    gui.set_imgui_key(ImGuiKey::PageUp, 5);
-    gui.set_imgui_key(ImGuiKey::PageDown, 6);
-    gui.set_imgui_key(ImGuiKey::Home, 7);
-    gui.set_imgui_key(ImGuiKey::End, 8);
-    gui.set_imgui_key(ImGuiKey::Delete, 9);
-    gui.set_imgui_key(ImGuiKey::Backspace, 10);
-    gui.set_imgui_key(ImGuiKey::Enter, 11);
-    gui.set_imgui_key(ImGuiKey::Escape, 12);
-    gui.set_imgui_key(ImGuiKey::A, 13);
-    gui.set_imgui_key(ImGuiKey::C, 14);
-    gui.set_imgui_key(ImGuiKey::V, 15);
-    gui.set_imgui_key(ImGuiKey::X, 16);
-    gui.set_imgui_key(ImGuiKey::Y, 17);
-    gui.set_imgui_key(ImGuiKey::Z, 18);
-    use imgui::{ImGuiCol, ImVec2, ImVec4};
+fn init_style(gui: &mut Context) {
+    {
+        let io = &mut gui.io_mut();
+        io[imgui::Key::Tab] = 0;
+        io[imgui::Key::LeftArrow] = 1;
+        io[imgui::Key::RightArrow] = 2;
+        io[imgui::Key::UpArrow] = 3;
+        io[imgui::Key::DownArrow] = 4;
+        io[imgui::Key::PageUp] = 5;
+        io[imgui::Key::PageDown] = 6;
+        io[imgui::Key::Home] = 7;
+        io[imgui::Key::End] = 8;
+        io[imgui::Key::Delete] = 9;
+        io[imgui::Key::Backspace] = 10;
+        io[imgui::Key::Enter] = 11;
+        io[imgui::Key::Escape] = 12;
+        io[imgui::Key::A] = 13;
+        io[imgui::Key::C] = 14;
+        io[imgui::Key::V] = 15;
+        io[imgui::Key::X] = 16;
+        io[imgui::Key::Y] = 17;
+        io[imgui::Key::Z] = 18;
+    }
 
     let style = gui.style_mut();
     // style.child_window_rounding = 3.0;
@@ -69,85 +73,91 @@ fn init_gui(gui: &mut ImGui) {
     style.grab_rounding = 0.0;
     style.scrollbar_rounding = 3.0;
     style.frame_rounding = 3.0;
-    style.window_title_align = ImVec2::new(0.5, 0.5);
-    style.colors[ImGuiCol::Text as usize] = ImVec4::new(0.73, 0.73, 0.73, 1.00);
-    style.colors[ImGuiCol::TextDisabled as usize] = ImVec4::new(0.50, 0.50, 0.50, 1.00);
-    style.colors[ImGuiCol::WindowBg as usize] = ImVec4::new(0.26, 0.26, 0.26, 0.95);
-    // style.colors[ImGuiCol::ChildWindowBg as usize]        = ImVec4::new(0.28, 0.28, 0.28, 1.00);
-    style.colors[ImGuiCol::PopupBg as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::Border as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::BorderShadow as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::FrameBg as usize] = ImVec4::new(0.16, 0.16, 0.16, 1.00);
-    style.colors[ImGuiCol::FrameBgHovered as usize] = ImVec4::new(0.16, 0.16, 0.16, 1.00);
-    style.colors[ImGuiCol::FrameBgActive as usize] = ImVec4::new(0.16, 0.16, 0.16, 1.00);
-    style.colors[ImGuiCol::TitleBg as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::TitleBgCollapsed as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::TitleBgActive as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::MenuBarBg as usize] = ImVec4::new(0.26, 0.26, 0.26, 1.00);
-    style.colors[ImGuiCol::ScrollbarBg as usize] = ImVec4::new(0.21, 0.21, 0.21, 1.00);
-    style.colors[ImGuiCol::ScrollbarGrab as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ScrollbarGrabHovered as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ScrollbarGrabActive as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    // style.colors[ImGuiCol::ComboBg as usize]              = ImVec4::new(0.32, 0.32, 0.32, 1.00);
-    style.colors[ImGuiCol::CheckMark as usize] = ImVec4::new(0.78, 0.78, 0.78, 1.00);
-    style.colors[ImGuiCol::SliderGrab as usize] = ImVec4::new(0.74, 0.74, 0.74, 1.00);
-    style.colors[ImGuiCol::SliderGrabActive as usize] = ImVec4::new(0.74, 0.74, 0.74, 1.00);
-    style.colors[ImGuiCol::Button as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ButtonHovered as usize] = ImVec4::new(0.43, 0.43, 0.43, 1.00);
-    style.colors[ImGuiCol::ButtonActive as usize] = ImVec4::new(0.11, 0.11, 0.11, 1.00);
-    style.colors[ImGuiCol::Header as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::HeaderHovered as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::HeaderActive as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::Separator as usize] = ImVec4::new(0.39, 0.39, 0.39, 1.00);
-    style.colors[ImGuiCol::SeparatorHovered as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::SeparatorActive as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::ResizeGrip as usize] = ImVec4::new(0.36, 0.36, 0.36, 1.00);
-    style.colors[ImGuiCol::ResizeGripHovered as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    style.colors[ImGuiCol::ResizeGripActive as usize] = ImVec4::new(0.26, 0.59, 0.98, 1.00);
-    // style.colors[ImGuiCol::CloseButton as usize] = ImVec4::new(0.59, 0.59, 0.59, 1.00);
-    // style.colors[ImGuiCol::CloseButtonHovered as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
-    // style.colors[ImGuiCol::CloseButtonActive as usize] = ImVec4::new(0.98, 0.39, 0.36, 1.00);
-    style.colors[ImGuiCol::PlotLines as usize] = ImVec4::new(0.39, 0.39, 0.39, 1.00);
-    style.colors[ImGuiCol::PlotLinesHovered as usize] = ImVec4::new(1.00, 0.43, 0.35, 1.00);
-    style.colors[ImGuiCol::PlotHistogram as usize] = ImVec4::new(0.90, 0.70, 0.00, 1.00);
-    style.colors[ImGuiCol::PlotHistogramHovered as usize] = ImVec4::new(1.00, 0.60, 0.00, 1.00);
-    style.colors[ImGuiCol::TextSelectedBg as usize] = ImVec4::new(0.32, 0.52, 0.65, 1.00);
-    // style.colors[ImGuiCol::ModalWindowDarkening as usize] = ImVec4::new(0.20, 0.20, 0.20, 0.50);
+    style.window_title_align = [0.5, 0.5];
+    style.colors[StyleColor::Text as usize] = [0.73, 0.73, 0.73, 1.00];
+    style.colors[StyleColor::TextDisabled as usize] = [0.50, 0.50, 0.50, 1.00];
+    style.colors[StyleColor::WindowBg as usize] = [0.26, 0.26, 0.26, 0.95];
+    // style.colors[StyleColor::ChildWindowBg as usize]        = [0.28, 0.28, 0.28, 1.00];
+    style.colors[StyleColor::PopupBg as usize] = [0.26, 0.26, 0.26, 1.00];
+    style.colors[StyleColor::Border as usize] = [0.26, 0.26, 0.26, 1.00];
+    style.colors[StyleColor::BorderShadow as usize] = [0.26, 0.26, 0.26, 1.00];
+    style.colors[StyleColor::FrameBg as usize] = [0.16, 0.16, 0.16, 1.00];
+    style.colors[StyleColor::FrameBgHovered as usize] = [0.16, 0.16, 0.16, 1.00];
+    style.colors[StyleColor::FrameBgActive as usize] = [0.16, 0.16, 0.16, 1.00];
+    style.colors[StyleColor::TitleBg as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::TitleBgCollapsed as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::TitleBgActive as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::MenuBarBg as usize] = [0.26, 0.26, 0.26, 1.00];
+    style.colors[StyleColor::ScrollbarBg as usize] = [0.21, 0.21, 0.21, 1.00];
+    style.colors[StyleColor::ScrollbarGrab as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::ScrollbarGrabHovered as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::ScrollbarGrabActive as usize] = [0.36, 0.36, 0.36, 1.00];
+    // style.colors[StyleColor::ComboBg as usize]              = [0.32, 0.32, 0.32, 1.00];
+    style.colors[StyleColor::CheckMark as usize] = [0.78, 0.78, 0.78, 1.00];
+    style.colors[StyleColor::SliderGrab as usize] = [0.74, 0.74, 0.74, 1.00];
+    style.colors[StyleColor::SliderGrabActive as usize] = [0.74, 0.74, 0.74, 1.00];
+    style.colors[StyleColor::Button as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::ButtonHovered as usize] = [0.43, 0.43, 0.43, 1.00];
+    style.colors[StyleColor::ButtonActive as usize] = [0.11, 0.11, 0.11, 1.00];
+    style.colors[StyleColor::Header as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::HeaderHovered as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::HeaderActive as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::Separator as usize] = [0.39, 0.39, 0.39, 1.00];
+    style.colors[StyleColor::SeparatorHovered as usize] = [0.26, 0.59, 0.98, 1.00];
+    style.colors[StyleColor::SeparatorActive as usize] = [0.26, 0.59, 0.98, 1.00];
+    style.colors[StyleColor::ResizeGrip as usize] = [0.36, 0.36, 0.36, 1.00];
+    style.colors[StyleColor::ResizeGripHovered as usize] = [0.26, 0.59, 0.98, 1.00];
+    style.colors[StyleColor::ResizeGripActive as usize] = [0.26, 0.59, 0.98, 1.00];
+    // style.colors[StyleColor::CloseButton as usize] = [0.59, 0.59, 0.59, 1.00];
+    // style.colors[StyleColor::CloseButtonHovered as usize] = [0.98, 0.39, 0.36, 1.00];
+    // style.colors[StyleColor::CloseButtonActive as usize] = [0.98, 0.39, 0.36, 1.00];
+    style.colors[StyleColor::PlotLines as usize] = [0.39, 0.39, 0.39, 1.00];
+    style.colors[StyleColor::PlotLinesHovered as usize] = [1.00, 0.43, 0.35, 1.00];
+    style.colors[StyleColor::PlotHistogram as usize] = [0.90, 0.70, 0.00, 1.00];
+    style.colors[StyleColor::PlotHistogramHovered as usize] = [1.00, 0.60, 0.00, 1.00];
+    style.colors[StyleColor::TextSelectedBg as usize] = [0.32, 0.52, 0.65, 1.00];
+    // style.colors[StyleColor::ModalWindowDarkening as usize] = [0.20, 0.20, 0.20, 0.50];
 }
 
-fn update_keyboard(imgui: &mut ImGui, vk: VirtualKeyCode, pressed: bool) {
+fn init_gui(gui: &mut Context) -> WinitPlatform {
+    init_style(gui);
+    WinitPlatform::init(gui)
+}
+
+fn update_keyboard(imgui: &mut Context, vk: VirtualKeyCode, pressed: bool) {
     use glium::glutin::VirtualKeyCode as Key;
+    let io = imgui.io_mut();
     match vk {
-        Key::Tab => imgui.set_key(0, pressed),
-        Key::Left => imgui.set_key(1, pressed),
-        Key::Right => imgui.set_key(2, pressed),
-        Key::Up => imgui.set_key(3, pressed),
-        Key::Down => imgui.set_key(4, pressed),
-        Key::PageUp => imgui.set_key(5, pressed),
-        Key::PageDown => imgui.set_key(6, pressed),
-        Key::Home => imgui.set_key(7, pressed),
-        Key::End => imgui.set_key(8, pressed),
-        Key::Delete => imgui.set_key(9, pressed),
-        Key::Back => imgui.set_key(10, pressed),
-        Key::Return => imgui.set_key(11, pressed),
-        Key::Escape => imgui.set_key(12, pressed),
-        Key::A => imgui.set_key(13, pressed),
-        Key::C => imgui.set_key(14, pressed),
-        Key::V => imgui.set_key(15, pressed),
-        Key::X => imgui.set_key(16, pressed),
-        Key::Y => imgui.set_key(17, pressed),
-        Key::Z => imgui.set_key(18, pressed),
-        Key::LControl | Key::RControl => imgui.set_key_ctrl(pressed),
-        Key::LShift | Key::RShift => imgui.set_key_shift(pressed),
-        Key::LAlt | Key::RAlt => imgui.set_key_alt(pressed),
-        Key::LWin | Key::RWin => imgui.set_key_super(pressed),
+        Key::Tab => io.keys_down[0] = pressed,
+        Key::Left => io.keys_down[1] = pressed,
+        Key::Right => io.keys_down[2] = pressed,
+        Key::Up => io.keys_down[3] = pressed,
+        Key::Down => io.keys_down[4] = pressed,
+        Key::PageUp => io.keys_down[5] = pressed,
+        Key::PageDown => io.keys_down[6] = pressed,
+        Key::Home => io.keys_down[7] = pressed,
+        Key::End => io.keys_down[8] = pressed,
+        Key::Delete => io.keys_down[9] = pressed,
+        Key::Back => io.keys_down[10] = pressed,
+        Key::Return => io.keys_down[11] = pressed,
+        Key::Escape => io.keys_down[12] = pressed,
+        Key::A => io.keys_down[13] = pressed,
+        Key::C => io.keys_down[14] = pressed,
+        Key::V => io.keys_down[15] = pressed,
+        Key::X => io.keys_down[16] = pressed,
+        Key::Y => io.keys_down[17] = pressed,
+        Key::Z => io.keys_down[18] = pressed,
+        Key::LControl | Key::RControl => io.key_ctrl = pressed,
+        Key::LShift | Key::RShift => io.key_shift = pressed,
+        Key::LAlt | Key::RAlt => io.key_alt = pressed,
+        Key::LWin | Key::RWin => io.key_super = pressed,
         _ => {}
     }
 }
 
 impl InputState {
-    pub fn new(size: (u32, u32), view_angle: f32, gui: Rc<RefCell<ImGui>>) -> InputState {
-        init_gui(&mut gui.borrow_mut());
+    pub fn new(size: (u32, u32), view_angle: f32, gui: Rc<RefCell<Context>>) -> InputState {
+        let platform = init_gui(&mut gui.borrow_mut());
         InputState {
             mouse: Default::default(),
             mouse_prev: Default::default(),
@@ -157,6 +167,7 @@ impl InputState {
             key_changes: Vec::new(),
             closed: false,
             gui,
+            platform,
             mouse_grabbed: false,
             dt: 1.0 / 60.0,
         }
@@ -272,6 +283,11 @@ impl InputState {
         }
 
         events.poll_events(|ev| {
+            {
+                let disp = display.gl_window();
+                self.platform
+                    .handle_event(self.gui.borrow_mut().io_mut(), disp.window(), &ev);
+            }
             if let Event::WindowEvent { event, .. } = ev {
                 match event {
                     WindowEvent::CloseRequested => {
@@ -334,7 +350,7 @@ impl InputState {
                         }
                     }
                     WindowEvent::ReceivedCharacter(c) => {
-                        self.gui.borrow_mut().add_input_character(c);
+                        self.gui.borrow_mut().io_mut().add_input_character(c);
                     }
                     WindowEvent::MouseWheel {
                         delta,
@@ -369,22 +385,17 @@ impl InputState {
 
         self.mouse.vec = self.screen_pos_to_vec(self.mouse.pos);
         let mut gui = self.gui.borrow_mut();
-        let scale = gui.display_framebuffer_scale();
+        let scale = gui.io().display_framebuffer_scale;
 
-        // gui.set_mouse_pos(self.mouse.pos.x / scale.0, self.mouse.pos.y / scale.1);
-        gui.set_mouse_pos(self.mouse.pos.x, self.mouse.pos.y);
+        self.mouse.total_scroll += self.mouse.wheel / scale[1];
+        if self.closed {
+            return false;
+        }
 
-        gui.set_mouse_down([
-            self.mouse.down.0,
-            self.mouse.down.1,
-            self.mouse.down.2,
-            false,
-            false,
-        ]);
-
-        gui.set_mouse_wheel(self.mouse.wheel / scale.1);
-
-        self.mouse.total_scroll += self.mouse.wheel / scale.1;
-        !self.closed
+        let glw = display.gl_window();
+        if let Err(e) = self.platform.prepare_frame(gui.io_mut(), glw.window()) {
+            eprintln!("gui error: {:?}", e);
+        }
+        true
     }
 }

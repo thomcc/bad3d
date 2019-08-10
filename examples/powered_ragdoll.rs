@@ -12,7 +12,6 @@ extern crate failure;
 
 use imgui;
 
-
 mod shared;
 use crate::shared::{object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
 
@@ -65,7 +64,7 @@ fn main() -> Result<()> {
             clear_color: vec4(0.5, 0.6, 1.0, 1.0),
             ..Default::default()
         },
-        Rc::new(RefCell::new(imgui::ImGui::init())),
+        Rc::new(RefCell::new(imgui::Context::create())),
     )?;
     let Shape {
         vertices: ground_verts,
@@ -82,12 +81,7 @@ fn main() -> Result<()> {
     let mut demo_objects = Vec::with_capacity(body_sizes.len() + 2);
 
     for size in body_sizes.iter() {
-        let obj = DemoObject::new_box(
-            &window.display,
-            *size,
-            V3::zero(),
-            None,
-        )?;
+        let obj = DemoObject::new_box(&window.display, *size, V3::zero(), None)?;
         {
             // Mass is based on volume by default on DemoObjects, but for this
             // demo that's the wrong call. Hackily fix it up.

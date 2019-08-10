@@ -12,7 +12,6 @@ extern crate failure;
 
 use imgui;
 
-
 mod shared;
 use crate::shared::{object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
 
@@ -111,7 +110,7 @@ fn main() -> Result<()> {
             light_pos: vec3(1.4, 0.4, 0.7),
             ..Default::default()
         },
-        Rc::new(RefCell::new(imgui::ImGui::init())),
+        Rc::new(RefCell::new(imgui::Context::create())),
     )?;
 
     let mut test_state = GjkTestState::new();

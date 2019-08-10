@@ -69,7 +69,7 @@ impl<'a> ImguiExt for imgui::Ui<'a> {
             .unwrap()
             .0 as i32;
 
-        let res = self.combo(im_str!("{}", label), &mut cur_item, &items, -1);
+        let res = self.combo(&im_str!("{}", label), &mut cur_item, &items, -1);
         if cur_item < 0 || cur_item as usize > choices.len() {
             (false, cur_choice.clone())
         } else {
@@ -315,7 +315,7 @@ fn duration_ms(d: Duration) -> f32 {
 
 pub fn main() -> Result<()> {
     env_logger::init();
-    let gui = Rc::new(RefCell::new(imgui::ImGui::init()));
+    let gui = Rc::new(RefCell::new(imgui::Context::create()));
     gui.borrow_mut().set_ini_filename(None);
 
     let mut win = DemoWindow::new(
@@ -348,13 +348,13 @@ pub fn main() -> Result<()> {
 
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
-        let mut ui = win.get_ui(&mut *imgui);
+        let mut ui = imgui.frame();
         use glium::glutin::VirtualKeyCode as Key;
         if win.input.key_hit(Key::Q) {
             win.end_frame()?;
             break;
         }
-        if !ui.want_capture_mouse() {
+        if !ui.io().want_capture_mouse {
             scene.handle_input(&win.input);
         }
         // XXX hack
@@ -432,9 +432,9 @@ pub fn main() -> Result<()> {
 
         let render_time = duration_ms(render_start.elapsed());
 
-        let framerate = ui.framerate();
+        let framerate = ui.io().framerate;
         ui.window(im_str!("test"))
-            .position((20.0, 20.0), imgui::ImGuiCond::Appearing)
+            .position([20.0, 20.0], imgui::Condition::Appearing)
             .build(|| {
                 ui.text(im_str!("fps: {:.3}", framerate));
                 if cfg!(debug_assertions) {

@@ -98,7 +98,10 @@ fn compile_shader<F: glium::backend::Facade>(
 }
 
 impl DemoWindow {
-    pub fn new(opts: DemoOptions<'_>, gui: Rc<RefCell<imgui::ImGui>>) -> Result<DemoWindow, Error> {
+    pub fn new(
+        opts: DemoOptions<'_>,
+        gui: Rc<RefCell<imgui::Context>>,
+    ) -> Result<DemoWindow, Error> {
         let context = ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
 
         let window = WindowBuilder::new()
@@ -112,12 +115,20 @@ impl DemoWindow {
 
         let display = Display::new(window, context, &events).unwrap();
 
-        let input_state = InputState::new(display.get_framebuffer_dimensions(), opts.fov, gui);
+        let mut input_state = InputState::new(display.get_framebuffer_dimensions(), opts.fov, gui);
 
         let phong_program = compile_shader(&display, "lit", VERT_SRC, FRAG_SRC)?;
         let solid_program = compile_shader(&display, "solid", SOLID_VERT_SRC, SOLID_FRAG_SRC)?;
         //        let tex_program = compile_shader(&display, "tex", TEX_VERT_SRC, TEX_FRAG_SRC)?;
-
+        {
+            let glw = display.gl_window();
+            let mut gui = input_state.gui.borrow_mut();
+            input_state.platform.attach_window(
+                gui.io_mut(),
+                glw.window(),
+                imgui_winit_support::HiDpiMode::Default,
+            );
+        }
         Ok(DemoWindow {
             display,
             events,
@@ -390,9 +401,13 @@ impl DemoWindow {
         Ok(())
     }
 
-    pub fn end_ui<'a>(&self, ui_render: &mut Renderer, ui: Ui<'a>) {
+    fn end_ui<'a>(&self, ui_render: &mut Renderer, ui: Ui<'a>) {
         let mut targ = self.target_mut();
-        let result = ui_render.render(&mut *targ, ui);
+        let glw = self.display.gl_window();
+        self.input.platform.prepare_render(&ui, glw.window());
+
+        let data = ui.render();
+        let result = ui_render.render(&mut *targ, &data);
         if let Err(e) = result {
             println!("Error: {}", e);
         }
@@ -406,44 +421,4 @@ impl DemoWindow {
         self.end_ui(ui_render, ui);
         self.end_frame()
     }
-
-    pub fn get_ui<'ui>(&self, gui: &'ui mut imgui::ImGui) -> Ui<'ui> {
-        let gl_window = self.display.gl_window();
-        let window = gl_window.window();
-        // let size_points = gl_window.get_inner_size_points().unwrap();
-        // let size_pixels = gl_window.get_inner_size_pixels().unwrap();
-        // let dpi = gl_window.hidpi_factor();
-        // let size = gl_window.get_inner_size().unwrap();
-        // let size_points = ((size.width as f32) as u32,
-        // (size.height as f32) as u32);
-        let size = window.get_inner_size().unwrap();
-        let hidpi_factor = window.get_hidpi_factor();
-        let frame_size = imgui::FrameSize {
-            logical_size: (size.width, size.height),
-            hidpi_factor,
-        };
-        gui.frame(frame_size, self.last_frame_time)
-    }
-
-    // pub fn ui<F: FnMut(&Ui) -> Result<(), Error>>(&self, mut ui_callback: F) -> Result<(), Error> {
-    // let gl_window = self.display.gl_window();
-    // // let size_points = gl_window.get_inner_size_points().unwrap();
-    // // let size_pixels = gl_window.get_inner_size_pixels().unwrap();
-    // let dpi = gl_window.hidpi_factor();
-    // let size = gl_window.get_inner_size().unwrap();
-    // let size_points = ((size.0 as f32 * dpi) as u32,
-    //                    (size.1 as f32 * dpi) as u32);
-    // let mut gui = self.gui.borrow_mut();
-    // let ui = self.get_ui(&mut *gui);//gui.frame(size, size_points, self.last_frame_time);
-    // ui_callback(&ui)?;
-    // self.end_ui(ui);
-
-    // let mut targ = self.target_mut();
-    // let mut renderer = self.gui_renderer.borrow_mut();
-    // let result = renderer.render(&mut *targ, ui);
-    // if let Err(e) = result {
-    //     println!("Error: {}", e);
-    // }
-    // Ok(())
-    // }
 }

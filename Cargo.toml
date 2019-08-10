@@ -10,9 +10,12 @@ more-asserts = "0.2"
 log = "0.4"
 
 [dev-dependencies]
-rand = "0.4"
-glium = "0.25.0"
+rand = "0.6"
+glium = "0.25.1"
 failure = "0.1"
-imgui = { git = "https://github.com/thomcc/imgui-rs", branch = "update-glium-0.25" }
-imgui-glium-renderer = { git = "https://github.com/thomcc/imgui-rs", branch = "update-glium-0.25" }
+imgui = "0.1.0"
+#{ git = "https://github.com/thomcc/imgui-rs", branch = "update-glium-0.25" }
+imgui-glium-renderer = "0.1.0"
+imgui-winit-support = "0.1.0"
+#{ git = "https://github.com/thomcc/imgui-rs", branch = "update-glium-0.25" }
 env_logger = "0.6.1"
