@@ -268,6 +268,7 @@ impl DemoWindow {
         let vbo = glium::VertexBuffer::new(&self.display, vertex_slice(verts))?;
         let params = glium::DrawParameters {
             point_size: if solid { Some(5.0) } else { None },
+            line_width: Some(5.0),
             smooth: if solid {
                 None
             } else {
@@ -343,7 +344,7 @@ impl DemoWindow {
             },
             &glium::DrawParameters {
                 point_size: Some(5.0),
-                line_width: Some(2.0),
+                line_width: Some(5.0),
                 backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
                 blend: glium::Blend::alpha_blending(),
                 depth: depth_test,

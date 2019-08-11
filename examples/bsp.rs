@@ -28,6 +28,8 @@ use std::f32;
 use std::fmt::Debug;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
+#[global_allocator]
+static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
 
 pub trait PickableEnum: Debug + Clone + PartialEq {
     fn variants() -> Vec<Self>;

@@ -13,6 +13,8 @@ use imgui_glium_renderer;
 
 #[macro_use]
 extern crate failure;
+#[global_allocator]
+static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
 
 mod shared;
 use crate::shared::{

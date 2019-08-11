@@ -83,10 +83,12 @@ dependencies = [
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "glium 0.25.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "handy 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui-glium-renderer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "imgui-winit-support 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mimallocator 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "more-asserts 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -359,6 +361,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "handy"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "humantime"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -481,6 +488,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.60 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "mimalloc-sys"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cc 1.0.38 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.60 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "mimallocator"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "mimalloc-sys 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1081,6 +1105,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum glutin_gles2_sys 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "89996c30857ae1b4de4b5189abf1ea822a20a9fe9e1c93e5e7b862ff0bdd5cdf"
 "checksum glutin_glx_sys 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "1290a5ca5e46fcfa7f66f949cc9d9194b2cb6f2ed61892c8c2b82343631dba57"
 "checksum glutin_wgl_sys 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "f801bbc91efc22dd1c4818a47814fc72bf74d024510451b119381579bfa39021"
+"checksum handy 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "76929ed6896dfc5409d88da0de404d9d4f0d2aa4d00332ce6762cc136c56b22c"
 "checksum humantime 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3ca7e5f2e110db35f93b837c81797f3714500b81d517bf20c431b16d3ca4f114"
 "checksum imgui 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b0e137a2e2843161f2de8b7acda2e79e60cc67ecb539303fc65b5d76f38d9dc7"
 "checksum imgui-glium-renderer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8e83721a5acc5956d406951c7326499a36ec5d4e8e144d819ad4761feca631d2"
@@ -1097,6 +1122,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum malloc_buf 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "62bb907fe88d54d8d9ce32a3cceab4218ed2f6b7d35617cafe9adf84e43919cb"
 "checksum memchr 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "88579771288728879b57485cc7d6b07d648c9f0141eb955f8ab7f9d45394468e"
 "checksum memmap 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6585fd95e7bb50d6cc31e20d4cf9afb4e2ba16c5846fc76793f11218da9c475b"
+"checksum mimalloc-sys 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "b95f8e6d03de63db3537f5e0b59b9ca5247d8d42b1bd8b7db5f36ec49b885351"
+"checksum mimallocator 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2d44fe4ebf6b538fcf39d9975c2b90bb3232d1ba8e8bffeacd004f27b20c577a"
 "checksum more-asserts 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0debeb9fcf88823ea64d64e4a815ab1643f33127d995978e099942ce38f25238"
 "checksum nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"

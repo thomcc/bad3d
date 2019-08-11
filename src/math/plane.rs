@@ -6,7 +6,7 @@ use crate::math::vec::*;
 
 use std::{fmt, ops};
 
-pub const DEFAULT_PLANE_WIDTH: f32 = 0.0001_f32;
+pub const DEFAULT_PLANE_WIDTH: f32 = 0.0003_f32;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]

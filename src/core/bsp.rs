@@ -7,7 +7,7 @@ const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);
 const FUZZY_WIDTH: f32 = 100.0 * DEFAULT_PLANE_WIDTH;
 
 // const SOLID_BIAS: bool = false;
-const ALLOW_AXIAL: u8 = 0b111;
+const ALLOW_AXIAL: u8 = 0b001;
 const FACE_TEST_LIMIT: usize = 50;
 
 const OVER: usize = PlaneTestResult::Over as usize;
@@ -114,10 +114,10 @@ fn plane_cost_c(input: &[Face], split: Plane, space: &WingMesh) -> (f32, [f32; 4
 
     let vol_total = space.volume();
     let space_under = space.cropped(split);
-    let space_over = space.cropped(-split);
+    // let space_over = space.cropped(-split);
 
-    let vol_over = space_over.volume();
     let vol_under = space_under.volume();
+    let vol_over = vol_total - vol_under; // space_over.volume();
 
     debug_assert_ge!(vol_over / vol_total, -0.01);
     debug_assert_ge!(vol_under / vol_total, -0.01);
@@ -861,7 +861,7 @@ fn hit_check_bevel_cylinder(
         return None;
     }
     for (i, edge_0) in convex.edges.iter().enumerate() {
-        if i as i32 > edge_0.adj {
+        if i as u16 > edge_0.adj {
             continue;
         }
         let edge_a = &convex.edges[edge_0.adj_idx()];

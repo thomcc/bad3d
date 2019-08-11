@@ -10,6 +10,9 @@ extern crate bad3d;
 #[macro_use]
 extern crate failure;
 
+#[global_allocator]
+static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
+
 use imgui;
 
 mod shared;

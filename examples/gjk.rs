@@ -9,6 +9,8 @@ extern crate bad3d;
 
 #[macro_use]
 extern crate failure;
+#[global_allocator]
+static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
 
 use imgui;
 
@@ -153,7 +155,7 @@ fn main() -> Result<()> {
         let scene_matrix = Pose::from_rotation(model_orientation).to_mat4();
 
         test_state.regen();
-        let hit = gjk::separated(&&test_state.a_verts[..], &&test_state.b_verts[..], true);
+        let hit = gjk::separated(&test_state.a_verts[..], &test_state.b_verts[..], true);
         let did_hit = hit.separation <= 0.0;
         if print_hit_info {
             println!(

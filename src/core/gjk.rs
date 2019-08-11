@@ -124,7 +124,7 @@ impl Point {
         }
     }
 
-    fn on_sum(a: &dyn Support, b: &dyn Support, n: V3) -> Point {
+    fn on_sum<A: Support, B: Support>(a: &A, b: &B, n: V3) -> Point {
         let pa = a.support(n);
         let pb = b.support(-n);
         Point::new(pa, pb, pa - pb)
@@ -318,13 +318,13 @@ impl Simplex {
     }
 }
 
-pub fn separated(a: &dyn Support, b: &dyn Support, find_closest: bool) -> ContactInfo {
+pub fn separated<A: Support, B: Support>(a: A, b: B, find_closest: bool) -> ContactInfo {
     let eps = 0.00001_f32;
 
-    let mut v = Point::on_sum(a, b, vec3(0.0, 0.0, 1.0)).p;
+    let mut v = Point::on_sum(&a, &b, vec3(0.0, 0.0, 1.0)).p;
     let mut last = Simplex::initial(v);
 
-    let mut w = Point::on_sum(a, b, -v);
+    let mut w = Point::on_sum(&a, &b, -v);
     let mut next = last.next(&w); //Simplex::from_point(&w);
 
     let mut iter = 0;
@@ -332,7 +332,7 @@ pub fn separated(a: &dyn Support, b: &dyn Support, find_closest: bool) -> Contac
         iter += 1;
         last = next;
         v = last.v;
-        w = Point::on_sum(a, b, -v);
+        w = Point::on_sum(&a, &b, -v);
         if dot(w.p, v) >= dot(v, v) - (eps + eps * dot(v, v)) {
             break;
         }
@@ -345,13 +345,13 @@ pub fn separated(a: &dyn Support, b: &dyn Support, find_closest: bool) -> Contac
             if next.size == 2 {
                 last = next;
                 let n = (next.points[0].p - next.points[1].p).orth();
-                next.points[2] = Point::on_sum(a, b, n);
+                next.points[2] = Point::on_sum(&a, &b, n);
                 next.size = 3;
             }
             if next.size == 3 {
                 last = next;
                 let n = geom::tri_normal(next.points[0].p, next.points[1].p, next.points[2].p);
-                next.points[3] = Point::on_sum(a, b, n);
+                next.points[3] = Point::on_sum(&a, &b, n);
                 next.size = 4;
             }
             assert!(next.size == 4);
@@ -419,9 +419,9 @@ pub struct ContactPatch {
 }
 
 impl ContactPatch {
-    pub fn new(s0: &dyn Support, s1: &dyn Support, max_sep: f32) -> ContactPatch {
+    pub fn new<A: Support, B: Support>(s0: A, s1: B, max_sep: f32) -> ContactPatch {
         let mut result: ContactPatch = Default::default();
-        result.hit_info[0] = separated(s0, s1, true);
+        result.hit_info[0] = separated(&s0, &s1, true);
         if result.hit_info[0].separation > max_sep {
             return result;
         }
@@ -445,11 +445,11 @@ impl ContactPatch {
                 * Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
 
             let mut next = separated(
-                &TransformedSupport {
+                TransformedSupport {
                     pose: ar,
-                    object: s0,
+                    object: &s0,
                 },
-                s1,
+                &s1,
                 true,
             );
 

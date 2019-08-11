@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 more-asserts = "0.2"
 log = "0.4"
+handy = "0.1.2"
 
 [dev-dependencies]
 rand = "0.6"
@@ -19,3 +20,4 @@ imgui-glium-renderer = "0.1.0"
 imgui-winit-support = "0.1.0"
 #{ git = "https://github.com/thomcc/imgui-rs", branch = "update-glium-0.25" }
 env_logger = "0.6.1"
+mimallocator = "0.1.3"
