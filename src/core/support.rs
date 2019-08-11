@@ -4,7 +4,10 @@ pub trait Support {
     fn support(&self, _: V3) -> V3;
 }
 
-impl<'a, T> Support for &'a T where T: Support {
+impl<'a, T> Support for &'a T
+where
+    T: Support,
+{
     #[inline]
     fn support(&self, v: V3) -> V3 {
         <T as Support>::support(*self, v)
@@ -16,7 +19,7 @@ pub struct TransformedSupport<'a, T: Support + ?Sized> {
     pub object: &'a T,
 }
 
-impl<'a, T: Support> TransformedSupport<'a, T> {
+impl<'a, T: Support + ?Sized> TransformedSupport<'a, T> {
     #[inline]
     pub fn new(pose: Pose, object: &'a T) -> TransformedSupport<'a, T> {
         TransformedSupport { pose, object }
@@ -30,16 +33,19 @@ impl<'a, T: Support + ?Sized> Support for TransformedSupport<'a, T> {
     }
 }
 
-impl<'a> Support for &'a [V3] {
+impl Support for [V3] {
     #[inline]
     fn support(&self, dir: V3) -> V3 {
         assert!(self.len() != 0);
-        let mut m = 0;
-        for i in 1..self.len() {
-            if dot(self[i], dir) > dot(self[m], dir) {
-                m = i;
+        let mut best = self[0];
+        let mut best_dot = best.dot(dir);
+        for &v in self.iter() {
+            let new_dot = dot(v, dir);
+            if new_dot > best_dot {
+                best = v;
+                best_dot = new_dot;
             }
         }
-        self[m]
+        best
     }
 }

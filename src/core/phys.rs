@@ -61,7 +61,6 @@ pub struct RigidBody {
     pub inv_tensor: M3x3,
 
     pub radius: f32,
-    pub inner_radius: f32,
 
     pub bounds: (V3, V3),
 
@@ -102,7 +101,7 @@ impl RigidBody {
             RbMass::FromVolume => shape::combined_volume(&shapes),
         };
         let mut res = RigidBody {
-            id: RigidBodyID(RIGIDBODY_ID_COUNTER.fetch_add(1, Ordering::SeqCst)),
+            id: RigidBodyID(RIGIDBODY_ID_COUNTER.fetch_add(1, Ordering::Relaxed)),
             pose: Pose::from_translation(posn),
             mass: mass,
             inv_mass: safe_div0(1.0, mass),
@@ -114,7 +113,6 @@ impl RigidBody {
             inv_tensor: M3x3::identity(),
 
             radius: 0.0,
-            inner_radius: 0.0,
             bounds: (V3::zero(), V3::zero()),
 
             next_pose: Pose::from_translation(posn),
@@ -871,9 +869,9 @@ fn find_world_contacts(
                 let patch = gjk::ContactPatch::new(
                     &TransformedSupport {
                         pose: body.pose,
-                        object: &&shape.vertices[..],
+                        object: &shape.vertices[..],
                     },
-                    &&cell[..],
+                    &cell[..],
                     distance_range,
                 );
                 for contact in &patch.hit_info[0..patch.count] {
@@ -911,11 +909,11 @@ fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32) -> Vec<PhysicsContact> {
                     let patch = gjk::ContactPatch::new(
                         &TransformedSupport {
                             pose: b0.pose,
-                            object: &&s0.vertices[..],
+                            object: &s0.vertices[..],
                         },
                         &TransformedSupport {
                             pose: b1.pose,
-                            object: &&s1.vertices[..],
+                            object: &s1.vertices[..],
                         },
                         distance_range,
                     );
