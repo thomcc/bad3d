@@ -24,4 +24,5 @@ mimallocator = "0.1.3"
 
 [profile.release]
 debug = true
-opt-level = "s"
+# opt-level = "s"
+lto = "thin"

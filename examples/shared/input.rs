@@ -124,36 +124,36 @@ fn init_gui(gui: &mut Context) -> WinitPlatform {
     WinitPlatform::init(gui)
 }
 
-fn update_keyboard(imgui: &mut Context, vk: VirtualKeyCode, pressed: bool) {
-    use glium::glutin::VirtualKeyCode as Key;
-    let io = imgui.io_mut();
-    match vk {
-        Key::Tab => io.keys_down[0] = pressed,
-        Key::Left => io.keys_down[1] = pressed,
-        Key::Right => io.keys_down[2] = pressed,
-        Key::Up => io.keys_down[3] = pressed,
-        Key::Down => io.keys_down[4] = pressed,
-        Key::PageUp => io.keys_down[5] = pressed,
-        Key::PageDown => io.keys_down[6] = pressed,
-        Key::Home => io.keys_down[7] = pressed,
-        Key::End => io.keys_down[8] = pressed,
-        Key::Delete => io.keys_down[9] = pressed,
-        Key::Back => io.keys_down[10] = pressed,
-        Key::Return => io.keys_down[11] = pressed,
-        Key::Escape => io.keys_down[12] = pressed,
-        Key::A => io.keys_down[13] = pressed,
-        Key::C => io.keys_down[14] = pressed,
-        Key::V => io.keys_down[15] = pressed,
-        Key::X => io.keys_down[16] = pressed,
-        Key::Y => io.keys_down[17] = pressed,
-        Key::Z => io.keys_down[18] = pressed,
-        Key::LControl | Key::RControl => io.key_ctrl = pressed,
-        Key::LShift | Key::RShift => io.key_shift = pressed,
-        Key::LAlt | Key::RAlt => io.key_alt = pressed,
-        Key::LWin | Key::RWin => io.key_super = pressed,
-        _ => {}
-    }
-}
+// fn update_keyboard(imgui: &mut Context, vk: VirtualKeyCode, pressed: bool) {
+//     use glium::glutin::VirtualKeyCode as Key;
+//     let io = imgui.io_mut();
+//     match vk {
+//         Key::Tab => io.keys_down[0] = pressed,
+//         Key::Left => io.keys_down[1] = pressed,
+//         Key::Right => io.keys_down[2] = pressed,
+//         Key::Up => io.keys_down[3] = pressed,
+//         Key::Down => io.keys_down[4] = pressed,
+//         Key::PageUp => io.keys_down[5] = pressed,
+//         Key::PageDown => io.keys_down[6] = pressed,
+//         Key::Home => io.keys_down[7] = pressed,
+//         Key::End => io.keys_down[8] = pressed,
+//         Key::Delete => io.keys_down[9] = pressed,
+//         Key::Back => io.keys_down[10] = pressed,
+//         Key::Return => io.keys_down[11] = pressed,
+//         Key::Escape => io.keys_down[12] = pressed,
+//         Key::A => io.keys_down[13] = pressed,
+//         Key::C => io.keys_down[14] = pressed,
+//         Key::V => io.keys_down[15] = pressed,
+//         Key::X => io.keys_down[16] = pressed,
+//         Key::Y => io.keys_down[17] = pressed,
+//         Key::Z => io.keys_down[18] = pressed,
+//         Key::LControl | Key::RControl => io.key_ctrl = pressed,
+//         Key::LShift | Key::RShift => io.key_shift = pressed,
+//         Key::LAlt | Key::RAlt => io.key_alt = pressed,
+//         Key::LWin | Key::RWin => io.key_super = pressed,
+//         _ => {}
+//     }
+// }
 
 impl InputState {
     pub fn new(size: (u32, u32), view_angle: f32, gui: Rc<RefCell<Context>>) -> InputState {
@@ -288,6 +288,8 @@ impl InputState {
                 self.platform
                     .handle_event(self.gui.borrow_mut().io_mut(), disp.window(), &ev);
             }
+            let gui = self.gui.borrow_mut();
+            let io = gui.io();
             if let Event::WindowEvent { event, .. } = ev {
                 match event {
                     WindowEvent::CloseRequested => {
@@ -297,7 +299,7 @@ impl InputState {
                         self.size = (width as u32, height as u32);
                     }
                     WindowEvent::Focused(true) => self.keys.clear(),
-                    WindowEvent::KeyboardInput { input, .. } => {
+                    WindowEvent::KeyboardInput { input, .. } if !io.want_capture_keyboard => {
                         let vk = if let Some(kc) = input.virtual_keycode {
                             kc
                         } else {
@@ -305,14 +307,14 @@ impl InputState {
                         };
                         let was_hit = input.state == ElementState::Pressed;
                         self.key_changes.push((vk, was_hit));
-                        update_keyboard(&mut self.gui.borrow_mut(), vk, was_hit);
-                        let mut k = self.key_state_mut(vk);
+                        // update_keyboard(&mut self.gui.borrow_mut(), vk, was_hit);
+                        let mut k = self.keys.entry(vk).or_insert_with(|| Default::default());
                         if !k.changed {
                             k.changed = k.down != was_hit;
                         }
                         k.down = was_hit;
                     }
-                    WindowEvent::CursorMoved { position, .. } => {
+                    WindowEvent::CursorMoved { position, .. } if !io.want_capture_mouse => {
                         let pos = vec2(position.x as f32, position.y as f32);
                         if self.mouse_grabbed {
                             let gl_window = display.gl_window();
@@ -334,7 +336,7 @@ impl InputState {
                             self.mouse.pos = pos;
                         }
                     }
-                    WindowEvent::MouseInput { button, state, .. } => {
+                    WindowEvent::MouseInput { button, state, .. } if !io.want_capture_mouse => {
                         let pressed = state == ElementState::Pressed;
                         match button {
                             MouseButton::Left => {
@@ -349,14 +351,11 @@ impl InputState {
                             _ => {}
                         }
                     }
-                    WindowEvent::ReceivedCharacter(c) => {
-                        self.gui.borrow_mut().io_mut().add_input_character(c);
-                    }
                     WindowEvent::MouseWheel {
                         delta,
                         phase: TouchPhase::Moved,
                         ..
-                    } => match delta {
+                    } if !io.want_capture_mouse => match delta {
                         MouseScrollDelta::LineDelta(_, y) => {
                             self.mouse.wheel = y * 10.0;
                         }

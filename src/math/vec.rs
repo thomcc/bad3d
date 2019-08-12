@@ -12,7 +12,7 @@ pub struct V2 {
 }
 
 #[inline]
-pub fn vec2(x: f32, y: f32) -> V2 {
+pub const fn vec2(x: f32, y: f32) -> V2 {
     V2 { x, y }
 }
 
@@ -25,7 +25,7 @@ pub struct V3 {
 }
 
 #[inline]
-pub fn vec3(x: f32, y: f32, z: f32) -> V3 {
+pub const fn vec3(x: f32, y: f32, z: f32) -> V3 {
     V3 { x, y, z }
 }
 
@@ -39,7 +39,7 @@ pub struct V4 {
 }
 
 #[inline]
-pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
+pub const fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
     V4 { x, y, z, w }
 }
 

@@ -207,7 +207,7 @@ fn main() -> Result<()> {
     demo_objects.push(DemoObject::from_body(&win.display, jack.clone())?);
 
     {
-        let mut z = 6.5;
+        let mut z = 8.5;
         while z < 14.0 {
             demo_objects.push(DemoObject::new_box(
                 &win.display,
@@ -233,13 +233,15 @@ fn main() -> Result<()> {
     }
     let excessive = true;
     if excessive {
-        for i in 0..10 {
-            for k in 0..10 {
-                demo_objects.push(DemoObject::new_cloud(
-                    &win.display,
-                    vec3(i as f32 - 5.0, k as f32 - 5.0, 5.0),
-                    None,
-                )?);
+        for z in 0..2 {
+            for i in 0..10 {
+                for k in 0..10 {
+                    demo_objects.push(DemoObject::new_cloud(
+                        &win.display,
+                        vec3(i as f32 - 5.0, k as f32 - 5.0, 5.0 + (z as f32)),
+                        None,
+                    )?);
+                }
             }
         }
     }
@@ -296,6 +298,10 @@ fn main() -> Result<()> {
         imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
 
     let mut running = false;
+    let mut params = bad3d::phys::PhysParams::default();
+    let mut dt_scale = 1.0;
+    let mut fix_dt: bool = false;
+    let mut fix_phys_fps: f32 = 60.0;
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
         let ui = imgui.frame();
@@ -330,7 +336,7 @@ fn main() -> Result<()> {
         let targ_pos = if selected.is_none() {
             let mut picked = None;
             let mut best_dist = 10000000.0;
-            let v1 = cam.position + mouse_ray * 100.0;
+            let v1 = cam.position + mouse_ray * 500.0;
             for obj in &demo_objects {
                 if let Some(hit) = body_hit_check(&obj.body.borrow(), cam.position, v1) {
                     let dist = hit.impact.dist(cam.position);
@@ -357,9 +363,14 @@ fn main() -> Result<()> {
         cube_pos = cam.position
             + mouse_ray
                 * (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
-        if running {
-            let dt = 1.0 / 60.0; //win.last_frame_time;
-            let mut cs = phys::ConstraintSet::new(dt);
+
+        let dt = if fix_dt {
+            safe_div0(1.0, fix_phys_fps)
+        } else {
+            win.last_frame_time
+        } * dt_scale;
+        if running && dt > 0.0 {
+            let mut cs = phys::ConstraintSet::new_with_params(dt, params);
 
             if win.input.shift_down() && win.input.mouse.down.0 {
                 if let Some(body) = &selected {
@@ -413,11 +424,67 @@ fn main() -> Result<()> {
                 ui.text(im_str!("  reset: [R]"));
                 ui.text(im_str!("  pause/unpause: [Space]"));
                 ui.separator();
-                let mut s = log.sections.lock().unwrap();
-                s.sort_by_key(|a| a.2);
+                if ui
+                    .collapsing_header(im_str!("tunable parameters"))
+                    .default_open(true)
+                    .build()
+                {
+                    ui.checkbox(im_str!("use rk4 instead of euler?"), &mut params.use_rk4);
 
-                for (s, t, _) in s.iter() {
-                    ui.text(im_str!("{}: {:.3}ms", s, duration_ms(*t)));
+                    ui.slider_float(im_str!("time scale"), &mut dt_scale, 0.0, 3.0)
+                        .build();
+                    ui.checkbox(im_str!("fix timestep"), &mut fix_dt);
+                    if fix_dt {
+                        ui.input_float(im_str!("fixed fps value: "), &mut fix_phys_fps)
+                            .build();
+                    }
+
+                    ui.slider_float(im_str!("gravity z"), &mut params.gravity.z, -30.0, 0.0)
+                        .build();
+
+                    ui.input_float(im_str!("restitution"), &mut params.restitution)
+                        .build();
+                    ui.input_float(im_str!("ballistic r"), &mut params.ballistic_response)
+                        .build();
+                    ui.input_float(im_str!("pos bias"), &mut params.pos_bias)
+                        .build();
+                    ui.input_float(im_str!("neg bias"), &mut params.neg_bias)
+                        .build();
+                    ui.input_float(im_str!("joint bias"), &mut params.joint_bias)
+                        .build();
+                    ui.input_float(im_str!("max drift"), &mut params.max_drift)
+                        .build();
+                    ui.input_float(im_str!("damping"), &mut params.damping)
+                        .build();
+
+                    let mut its = params.solver_iterations as i32;
+                    if ui
+                        .slider_int(im_str!("solve iters"), &mut its, 0, 32)
+                        .build()
+                    {
+                        params.solver_iterations = its as usize
+                    }
+
+                    let mut its = params.post_solver_iterations as i32;
+                    if ui
+                        .slider_int(im_str!("post solve iters"), &mut its, 0, 32)
+                        .build()
+                    {
+                        params.post_solver_iterations = its as usize
+                    }
+                }
+                ui.separator();
+                if ui
+                    .collapsing_header(im_str!("time breakdown"))
+                    .default_open(true)
+                    .build()
+                {
+                    let mut s = log.sections.lock().unwrap();
+                    s.sort_by_key(|a| a.2);
+
+                    for (s, t, _) in s.iter() {
+                        ui.text(im_str!("{}: {:.3}ms", s, duration_ms(*t)));
+                    }
                 }
             });
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
