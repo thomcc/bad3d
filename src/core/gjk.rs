@@ -318,7 +318,11 @@ impl Simplex {
     }
 }
 
-pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(a: &A, b: &B, find_closest: bool) -> ContactInfo {
+pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
+    a: &A,
+    b: &B,
+    find_closest: bool,
+) -> ContactInfo {
     let eps = 0.00001_f32;
 
     let mut v = Point::on_sum(a, b, vec3(0.0, 0.0, 1.0)).p;
@@ -419,7 +423,11 @@ pub struct ContactPatch {
 }
 
 impl ContactPatch {
-    pub fn new<A: Support + ?Sized, B: Support + ?Sized>(s0: &A, s1: &B, max_sep: f32) -> ContactPatch {
+    pub fn new<A: Support + ?Sized, B: Support + ?Sized>(
+        s0: &A,
+        s1: &B,
+        max_sep: f32,
+    ) -> ContactPatch {
         let mut result: ContactPatch = Default::default();
         result.hit_info[0] = separated(s0, s1, true);
         if result.hit_info[0].separation > max_sep {

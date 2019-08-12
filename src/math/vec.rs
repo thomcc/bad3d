@@ -106,7 +106,6 @@ pub trait VecType:
     fn max(self, o: Self) -> Self {
         self.map2(o, |a, b| a.max(b))
     }
-
 }
 
 impl Fold for V2 {

@@ -42,3 +42,41 @@ impl fmt::Display for OrdFloat {
         write!(f, "{}", self.0)
     }
 }
+
+pub struct PerfLog {
+    pub sections: std::sync::Mutex<Vec<(&'static str, std::time::Duration, usize)>>,
+    pub ctr: std::sync::atomic::AtomicUsize,
+}
+
+impl PerfLog {
+    pub fn new() -> Self {
+        Self {
+            sections: std::sync::Mutex::new(vec![]),
+            ctr: std::sync::atomic::AtomicUsize::new(0),
+        }
+    }
+    #[must_use]
+    pub fn begin(&self, t: &'static str) -> PerfEntry<'_> {
+        PerfEntry {
+            log: self,
+            name: t,
+            start: std::time::Instant::now(),
+            i: self.ctr.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+        }
+    }
+}
+
+pub struct PerfEntry<'a> {
+    log: &'a PerfLog,
+    name: &'static str,
+    start: std::time::Instant,
+    i: usize,
+}
+
+impl<'a> Drop for PerfEntry<'a> {
+    fn drop(&mut self) {
+        let end = self.start.elapsed();
+        let mut l = self.log.sections.lock().unwrap();
+        l.push((self.name, end, self.i));
+    }
+}

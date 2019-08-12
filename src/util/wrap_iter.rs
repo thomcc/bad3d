@@ -1,4 +1,3 @@
-
 #[derive(Debug, Copy, Clone)]
 pub struct PairIndices {
     pos: usize,

@@ -152,7 +152,7 @@ pub fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
     let mut vs = vec![V3::zero(); size];
     loop {
         for item in vs.iter_mut() {
-            *item = rand_v3() + V3::splat(-0.5);
+            *item = (rand_v3() + V3::splat(-0.5)).normalize().unwrap() / 2.0;
         }
         if let Some((indices, _)) = hull::compute_hull(&mut vs[..]) {
             return (vs, indices);

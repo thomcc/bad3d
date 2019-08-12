@@ -932,61 +932,88 @@ fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32) -> Vec<PhysicsContact> {
 }
 
 const PHYS_ITER: usize = 16;
-const PHYS_POST_ITER: usize = 8;
+const PHYS_POST_ITER: usize = 16;
 
 pub fn update_physics(
     rbs: &mut [RigidBodyRef],
     constraints: &mut ConstraintSet,
     world_geom: &[Vec<V3>],
     dt: f32,
+    perf: &crate::util::PerfLog,
 ) {
-    for rb in rbs.iter_mut() {
-        rb.borrow_mut().init_velocity(dt);
-    }
-
-    let world_contacts = find_world_contacts(rbs, world_geom, dt);
-    let body_contacts = find_body_contacts(rbs, dt);
-
-    constraints.constrain_contacts(&world_contacts[..]);
-    constraints.constrain_contacts(&body_contacts[..]);
-
-    for c in constraints.linears.iter_mut() {
-        c.target_speed = c.target_dist / dt;
-    }
-
-    for _ in 0..PHYS_ITER {
-        for i in 0..constraints.linears.len() {
-            let ci = constraints.linears[i].controller_impulse(i, &constraints.linears[..]);
-            constraints.linears[i].solve(dt, ci);
+    let _g = perf.begin("physics");
+    {
+        let _g = perf.begin("  before sim");
+        for rb in rbs.iter_mut() {
+            rb.borrow_mut().init_velocity(dt);
         }
+    }
+    let world_contacts;
+    let body_contacts;
+    {
+        let _g = perf.begin("  find contacts");
+        {
+            let _g = perf.begin("    find contacts: world");
+            world_contacts = find_world_contacts(rbs, world_geom, dt);
+        }
+        {
+            let _g = perf.begin("    find contacts: bodies");
+            body_contacts = find_body_contacts(rbs, dt);
+        }
+    }
+    {
+        let _g = perf.begin("  constrain contacts");
+        constraints.constrain_contacts(&world_contacts[..]);
+        constraints.constrain_contacts(&body_contacts[..]);
+    }
+
+    // for c in constraints.linears.iter_mut() {
+    // c.target_speed = c.target_dist / dt;
+    // }
+
+    {
+        let _g = perf.begin("  run solvers: main");
+        for _ in 0..PHYS_ITER {
+            for i in 0..constraints.linears.len() {
+                let ci = constraints.linears[i].controller_impulse(i, &constraints.linears[..]);
+                constraints.linears[i].solve(dt, ci);
+            }
+            for c in constraints.angulars.iter_mut() {
+                c.solve(dt);
+            }
+        }
+    }
+
+    {
+        let _g = perf.begin("  remove constraint biases");
+        for rb in rbs.iter_mut() {
+            rb.borrow_mut().calc_next_pose(dt);
+        }
+
+        for c in constraints.linears.iter_mut() {
+            c.remove_bias();
+        }
+
         for c in constraints.angulars.iter_mut() {
-            c.solve(dt);
+            c.remove_bias();
         }
     }
-
-    for rb in rbs.iter_mut() {
-        rb.borrow_mut().calc_next_pose(dt);
-    }
-
-    for c in constraints.linears.iter_mut() {
-        c.remove_bias();
-    }
-
-    for c in constraints.angulars.iter_mut() {
-        c.remove_bias();
-    }
-
-    for _ in 0..PHYS_POST_ITER {
-        for i in 0..constraints.linears.len() {
-            let ci = constraints.linears[i].controller_impulse(i, &constraints.linears[..]);
-            constraints.linears[i].solve(dt, ci);
-        }
-        for c in constraints.angulars.iter_mut() {
-            c.solve(dt);
+    {
+        let _g = perf.begin("  run solvers: post");
+        for _ in 0..PHYS_POST_ITER {
+            for i in 0..constraints.linears.len() {
+                let ci = constraints.linears[i].controller_impulse(i, &constraints.linears[..]);
+                constraints.linears[i].solve(dt, ci);
+            }
+            for c in constraints.angulars.iter_mut() {
+                c.solve(dt);
+            }
         }
     }
-
-    for rb in rbs.iter_mut() {
-        rb.borrow_mut().update_pose();
+    {
+        let _g = perf.begin("  after sim");
+        for rb in rbs.iter_mut() {
+            rb.borrow_mut().update_pose();
+        }
     }
 }

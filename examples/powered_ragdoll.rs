@@ -24,6 +24,7 @@ use std::rc::Rc;
 
 fn main() -> Result<()> {
     env_logger::init();
+    let perf_log = bad3d::util::PerfLog::new();
     let body_sizes = [
         vec3(0.25, 0.50, 0.10), // torso
         vec3(0.25, 0.05, 0.05), // limb upper bones
@@ -169,7 +170,8 @@ fn main() -> Result<()> {
             );
         }
 
-        phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt);
+        perf_log.sections.lock().unwrap().clear();
+        phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt, &perf_log);
 
         window.draw_lit_mesh(M4x4::identity(), &*ground_mesh)?;
         for obj in demo_objects.iter() {

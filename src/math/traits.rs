@@ -1,4 +1,3 @@
-
 pub trait ApproxEq {
     fn approx_zero_e(&self, e: f32) -> bool;
     fn approx_eq_e(&self, o: &Self, e: f32) -> bool;

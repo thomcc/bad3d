@@ -404,7 +404,7 @@ fn build_simplex(p0: usize, p1: usize, p2: usize, p3: usize) -> [HullTri; 4] {
 // the mink sum
 pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -> Plane {
     let mut plane = Plane::new(V3::zero(), -f32::MAX);
-    let epsilon = 0.001f32; // ...
+    let epsilon = 0.01f32; // ...
 
     let mut verts = vec![simp.0, simp.1, simp.2, simp.3];
     let mut tris = Vec::from(&build_simplex(0, 1, 2, 3)[..]);

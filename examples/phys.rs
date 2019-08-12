@@ -105,6 +105,11 @@ fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
     None
 }
 
+#[inline]
+fn duration_ms(d: std::time::Duration) -> f32 {
+    1000.0 * (d.as_secs() as f32 + d.subsec_nanos() as f32 / 1_000_000_000.0)
+}
+
 fn main() -> Result<()> {
     env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::Context::create()));
@@ -121,7 +126,7 @@ fn main() -> Result<()> {
         gui.clone(),
     )?;
 
-    let ground = Shape::new_aabb(vec3(-10.0, -10.0, -5.0), vec3(10.0, 10.0, -2.0));
+    let ground = Shape::new_aabb(vec3(-40.0, -40.0, -5.0), vec3(40.0, 40.0, -2.0));
 
     let ground_mesh =
         DemoMesh::from_shape(&win.display, &ground, Some(vec4(0.25, 0.75, 0.25, 1.0)))?;
@@ -155,6 +160,7 @@ fn main() -> Result<()> {
     )?);
 
     let seesaw = demo_objects[demo_objects.len() - 1].body.clone();
+    let log = bad3d::util::PerfLog::new();
 
     {
         let mut wm = WingMesh::new_cylinder(30, 1.0, 2.0);
@@ -175,7 +181,7 @@ fn main() -> Result<()> {
         let r = DemoObject::new_box(
             &win.display,
             V3::splat(0.5),
-            seesaw_start + vec3(-2.5, 0.0, 5.0),
+            seesaw_start + vec3(-2.5, 0.0, 8.0),
             None,
         )?;
         r.body.borrow_mut().scale_mass(2.0);
@@ -201,7 +207,7 @@ fn main() -> Result<()> {
     demo_objects.push(DemoObject::from_body(&win.display, jack.clone())?);
 
     {
-        let mut z = 5.5;
+        let mut z = 6.5;
         while z < 14.0 {
             demo_objects.push(DemoObject::new_box(
                 &win.display,
@@ -225,7 +231,18 @@ fn main() -> Result<()> {
             z += 3.0;
         }
     }
-
+    let excessive = true;
+    if excessive {
+        for i in 0..10 {
+            for k in 0..10 {
+                demo_objects.push(DemoObject::new_cloud(
+                    &win.display,
+                    vec3(i as f32 - 5.0, k as f32 - 5.0, 5.0),
+                    None,
+                )?);
+            }
+        }
+    }
     for i in 0..4 {
         let fi = i as f32;
         demo_objects.push(DemoObject::new_cloud(
@@ -341,7 +358,7 @@ fn main() -> Result<()> {
             + mouse_ray
                 * (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
         if running {
-            let dt = win.last_frame_time;
+            let dt = 1.0 / 60.0; //win.last_frame_time;
             let mut cs = phys::ConstraintSet::new(dt);
 
             if win.input.shift_down() && win.input.mouse.down.0 {
@@ -363,7 +380,8 @@ fn main() -> Result<()> {
                 .iter()
                 .map(|item| item.body.clone())
                 .collect::<Vec<phys::RigidBodyRef>>();
-            phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt);
+            log.sections.lock().unwrap().clear();
+            phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt, &log);
         }
 
         cam.handle_input(&win.input);
@@ -386,12 +404,21 @@ fn main() -> Result<()> {
         let framerate = ui.io().framerate;
         ui.window(im_str!("test"))
             .position([20.0, 20.0], imgui::Condition::Appearing)
+            .always_auto_resize(true)
+            // .size([200.0, 300.0], )
             .build(|| {
                 ui.text(im_str!("fps: {:.3}", framerate));
                 ui.separator();
                 ui.text(im_str!("Keys:"));
                 ui.text(im_str!("  reset: [R]"));
                 ui.text(im_str!("  pause/unpause: [Space]"));
+                ui.separator();
+                let mut s = log.sections.lock().unwrap();
+                s.sort_by_key(|a| a.2);
+
+                for (s, t, _) in s.iter() {
+                    ui.text(im_str!("{}: {:.3}ms", s, duration_ms(*t)));
+                }
             });
         win.end_frame_and_ui(&mut gui_renderer, ui)?;
     }

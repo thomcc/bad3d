@@ -52,7 +52,7 @@ impl GjkTestState {
             let pos = (object::rand_v3() - V3::splat(0.5)) * 1.0;
             for _ in 0..self.vert_count {
                 self.all_verts
-                    .push(pos + object::rand_v3() - V3::splat(0.5));
+                    .push(pos + (object::rand_v3() - V3::splat(0.5)).normalize().unwrap() / 2.0);
             }
         }
         let com =
