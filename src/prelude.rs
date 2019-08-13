@@ -5,7 +5,7 @@ pub use crate::util::*;
 pub use crate::core::{
     bsp::{self, BspNode},
     gjk, hull,
-    phys::{self, RbMass, RigidBody, RigidBodyRef},
+    phys::{self, RbMass, RigidBody},
     shape::Shape,
     wingmesh::WingMesh,
 };

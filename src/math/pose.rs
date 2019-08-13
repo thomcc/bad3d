@@ -125,7 +125,25 @@ impl From<Quat> for Pose {
     fn from(orientation: Quat) -> Pose {
         Pose {
             position: V3::zero(),
-            orientation,
+            orientation: orientation.must_norm(),
+        }
+    }
+}
+impl From<(V3, Quat)> for Pose {
+    #[inline]
+    fn from(parts: (V3, Quat)) -> Pose {
+        Pose {
+            position: parts.0,
+            orientation: parts.1.must_norm(),
+        }
+    }
+}
+impl From<(Quat, V3)> for Pose {
+    #[inline]
+    fn from(parts: (Quat, V3)) -> Pose {
+        Pose {
+            position: parts.1,
+            orientation: parts.0.must_norm(),
         }
     }
 }

@@ -124,10 +124,10 @@ pub fn rand_v3() -> V3 {
     vec3(rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>())
 }
 
-pub struct DemoObject {
-    pub body: RigidBodyRef,
-    pub meshes: Vec<DemoMesh>,
-}
+// pub struct DemoObject {
+//     pub body: RigidBodyRef,
+//     pub meshes: Vec<DemoMesh>,
+// }
 
 pub fn convex_parts(mut v: Vec<V3>) -> (Vec<V3>, Vec<[u16; 3]>) {
     let tris = hull::compute_hull_trunc(&mut v, None).expect("Planar or linear vertices...");
@@ -153,7 +153,7 @@ pub fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
         }
     }
 }
-
+/*
 impl DemoObject {
     pub fn new_box<F: Facade>(facade: &F, r: V3, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
         DemoObject::from_shape(facade, Shape::new_box(r), com, orient)
@@ -199,3 +199,4 @@ impl DemoObject {
         Ok(DemoObject { body, meshes })
     }
 }
+*/
