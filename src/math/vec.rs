@@ -605,7 +605,7 @@ macro_rules! do_vec_boilerplate {
 
             #[inline]
             pub fn unit_axis(axis: usize) -> Self {
-                debug_assert_lt!(axis, $length, "Invalid axis");
+                chek::debug_lt!(axis, $length, "Invalid axis");
                 let mut v = Self::zero();
                 v[axis] = 1.0;
                 v

@@ -78,7 +78,13 @@ fn next_mod3(i: usize) -> (usize, usize) {
 impl HullTri {
     #[inline]
     const fn new(vi: I3, ni: I3, id: i32) -> HullTri {
-        HullTri { vi, ni, id, max_v: -1, rise: 0.0 }
+        HullTri {
+            vi,
+            ni,
+            id,
+            max_v: -1,
+            rise: 0.0,
+        }
     }
 
     #[inline]
@@ -243,7 +249,7 @@ fn find_extrudable(tris: &[HullTri], epsilon: f32) -> Option<usize> {
     assert_ne!(tris.len(), 0);
     let mut best = 0usize;
     for (idx, tri) in tris.iter().enumerate() {
-        debug_assert_ge!(tri.id, 0);
+        chek::debug_ge!(tri.id, 0);
         debug_assert_eq!(tri.id, (idx as i32));
         debug_assert!(!tri.dead());
         if best != idx && tris[best].rise < tri.rise {

@@ -18,8 +18,6 @@ extern crate bad3d;
 
 #[macro_use]
 extern crate failure;
-#[macro_use]
-extern crate more_asserts;
 
 #[macro_use]
 mod shared;
@@ -260,7 +258,7 @@ impl BspScene {
                 .conj();
             }
             Some(DragMode::Obj(which)) => {
-                assert_lt!(which, self.objects.len());
+                chek::lt!(which, self.objects.len());
                 let pos_offset = (self.cam.orientation * input.mouse.vec
                     - self.cam.orientation * input.mouse_prev.vec)
                     * self.hit_dist;

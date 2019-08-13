@@ -786,7 +786,12 @@ impl ConstraintSet {
         let axis = cross(a1, a0).norm_or(0.0, 0.0, 1.0);
         let rb_angle = clamp01(dot(a0, a1)).acos();
         let delta_angle = rb_angle - angle_degrees.to_radians();
-        let target_spin = (if equality { self.params.joint_bias } else { 1.0 }) * delta_angle / self.dt;
+        let target_spin = (if equality {
+            self.params.joint_bias
+        } else {
+            1.0
+        }) * delta_angle
+            / self.dt;
         let torque_min = if angle_degrees > 0.0 { 0.0 } else { -f32::MAX };
         self.angular(AngularConstraint::new(
             (r0, Some(r1)),
@@ -816,7 +821,9 @@ impl ConstraintSet {
             let sep = cc.separation;
 
             let bounce_vel = 0.0f32.max(
-                (-dot(cc.plane.normal, v) - self.params.gravity.length() * self.params.ballistic_response) * self.params.restitution,
+                (-dot(cc.plane.normal, v)
+                    - self.params.gravity.length() * self.params.ballistic_response)
+                    * self.params.restitution,
             );
 
             let q = Quat::shortest_arc(vec3(0.0, 0.0, 1.0), -cc.plane.normal);
@@ -892,7 +899,9 @@ fn find_world_contacts(
         if !body.collides_with_world {
             continue;
         }
-        let distance_range = params.max_drift.max(body.linear_momentum.length() * dt * body.inv_mass);
+        let distance_range = params
+            .max_drift
+            .max(body.linear_momentum.length() * dt * body.inv_mass);
         for shape in body.shapes.iter() {
             for cell in world_cells.iter() {
                 let patch = gjk::ContactPatch::new(
@@ -912,7 +921,11 @@ fn find_world_contacts(
     result
 }
 
-fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32, params: &PhysParams) -> Vec<PhysicsContact> {
+fn find_body_contacts(
+    bodies: &[RigidBodyRef],
+    dt: f32,
+    params: &PhysParams,
+) -> Vec<PhysicsContact> {
     let mut result = Vec::new();
     for i in 0..bodies.len() {
         let b0 = bodies[i].borrow();
@@ -930,7 +943,8 @@ fn find_body_contacts(bodies: &[RigidBodyRef], dt: f32, params: &PhysParams) -> 
             if b0.ignored.contains(&b1.id) || b1.ignored.contains(&b0.id) {
                 continue;
             }
-            let distance_range = params.max_drift
+            let distance_range = params
+                .max_drift
                 .max(b0.linear_momentum.length() * dt * b0.inv_mass)
                 .max(b1.linear_momentum.length() * dt * b1.inv_mass);
             for s0 in b0.shapes.iter() {

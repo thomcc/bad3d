@@ -319,16 +319,14 @@ fn main() -> Result<()> {
             .build(|| {
                 ui.checkbox(im_str!("show minkowski hull"), &mut show_mink);
                 let mut count = test_state.vert_count as i32;
-                if ui
+                let changed = ui
                     .slider_int(im_str!("vert count"), &mut count, 4, 50)
-                    .build()
-                {
-                    if count >= 4 {
-                        test_state.vert_count = count as usize;
-                        a_pos = V3::zero();
-                        b_pos = V3::zero();
-                        test_state.reinit();
-                    }
+                    .build();
+                if changed && count >= 4 {
+                    test_state.vert_count = count as usize;
+                    a_pos = V3::zero();
+                    b_pos = V3::zero();
+                    test_state.reinit();
                 }
                 ui.drag_float3(im_str!("a pos"), a_pos.as_mut())
                     .speed(0.01)

@@ -18,9 +18,6 @@ extern crate imgui;
 use imgui_glium_renderer;
 
 #[macro_use]
-extern crate more_asserts;
-
-#[macro_use]
 extern crate failure;
 #[global_allocator]
 static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
@@ -369,7 +366,7 @@ fn bsp_meshes(f: &glium::Display, bsp: &mut BspNode, color: V4) -> Result<Vec<De
         if vertices == 0 {
             continue;
         }
-        assert_lt!(vertices, u16::MAX as usize);
+        chek::lt!(vertices, u16::MAX as usize);
         if offset + vertices >= u16::MAX as usize {
             ms.push(DemoMesh::new(
                 f,

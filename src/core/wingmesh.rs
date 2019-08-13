@@ -203,7 +203,7 @@ impl WingMesh {
         }
 
         let vc = 1 + tris.iter().fold(0, |a, b| max!(a, b[0], b[1], b[2])) as usize;
-        assert_le!(vc, verts.len());
+        chek::le!(vc, verts.len());
 
         m.verts = verts;
         m.verts.truncate(vc);
@@ -316,8 +316,8 @@ impl WingMesh {
     }
 
     pub fn new_sphere(radius: f32, bands: (usize, usize)) -> Self {
-        assert_gt!(bands.0, 2);
-        assert_gt!(bands.1, 2);
+        chek::gt!(bands.0, 2);
+        chek::gt!(bands.1, 2);
 
         let mut mesh = WingMesh::with_capacities(bands.0 * bands.1 * 4, bands.0 * bands.1, None);
 
@@ -415,8 +415,8 @@ impl WingMesh {
             }
             let id = int(e);
             assert_eq!(edge.id, id);
-            assert_ge!(edge.v, 0);
-            assert_ge!(edge.face, 0);
+            chek::ge!(edge.v, 0);
+            chek::ge!(edge.face, 0);
             assert_eq!(self.edges[edge.next_idx()].prev, id);
             assert_eq!(self.edges[edge.prev_idx()].next, id);
             assert_ne!(edge.adj, id);
@@ -721,8 +721,8 @@ impl WingMesh {
         if self.edges.len() == s {
             return;
         }
-        debug_assert_lt!(s, self.edges.len());
-        debug_assert_ge!(e.v, 0);
+        chek::debug_lt!(s, self.edges.len());
+        chek::debug_ge!(e.v, 0);
 
         if !self.vback.is_empty() && self.vback[e.vert_idx()] == e.id {
             self.vback[e.vert_idx()] = int(s);
@@ -895,8 +895,8 @@ impl WingMesh {
     pub fn collapse_edge(&mut self, ea: usize, pack: bool) {
         let eb = self.edges[ea].adj_idx();
 
-        assert_ge!(self.edges[ea].v, 0);
-        assert_ge!(self.edges[eb].v, 0);
+        chek::ge!(self.edges[ea].v, 0);
+        chek::ge!(self.edges[eb].v, 0);
 
         let eap = self.edges[ea].prev_idx();
         let ean = self.edges[ea].next_idx();
@@ -1041,8 +1041,8 @@ impl WingMesh {
             let ec = edge_loop[i];
             let en = edge_loop[i1];
 
-            assert_lt!(ec, self.edges.len());
-            assert_lt!(en, self.edges.len());
+            chek::lt!(ec, self.edges.len());
+            chek::lt!(en, self.edges.len());
 
             let mut e = self.edges[ec].next;
 
@@ -1294,7 +1294,7 @@ impl WingMesh {
             self.crop_to_loop(&l);
         }
         self.debug_assert_valid();
-        debug_assert_gt!(dot(self.faces[0].normal, slice.normal), 0.99);
+        chek::debug_gt!(dot(self.faces[0].normal, slice.normal), 0.99);
         self.faces[0] = slice;
         self
     }

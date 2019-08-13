@@ -4,8 +4,6 @@
     clippy::many_single_char_names,
     clippy::cast_lossless
 )]
-#[macro_use]
-extern crate more_asserts;
 
 #[macro_use]
 pub mod util;

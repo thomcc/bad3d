@@ -188,8 +188,7 @@ fn main() -> Result<()> {
 
         let need_reset = bodies[0..body_sizes.len()]
             .iter()
-            .find(|b| b.borrow().pose.position.length() > 25.0)
-            .is_some();
+            .any(|b| b.borrow().pose.position.length() > 25.0);
         if need_reset {
             for body in bodies[0..body_sizes.len()].iter_mut() {
                 let momentum = body.borrow().linear_momentum;

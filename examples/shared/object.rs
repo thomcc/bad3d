@@ -35,7 +35,7 @@ pub fn vertex_slice(v3s: &[V3]) -> &[Vertex] {
 static_assert_usize_eq!(
     vertex_size_check,
     std::mem::size_of::<V3>(),
-    std::mem::size_of::<[f32; 3]>()
+    std::mem::size_of::<Vertex>()
 );
 
 pub struct DemoMesh {

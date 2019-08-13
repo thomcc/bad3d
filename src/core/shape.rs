@@ -56,7 +56,7 @@ impl Shape {
 
     pub fn new_sphere(radius: f32, bands: (usize, usize)) -> Self {
         use std::{f32, u16};
-        assert_le!(bands.0 * bands.1 * 4, u16::MAX as usize);
+        chek::le!(bands.0 * bands.1 * 4, u16::MAX as usize);
         let mut vertices = Vec::with_capacity(bands.0 * bands.1 * 4);
         let mut tris = Vec::with_capacity(bands.0 * bands.1 * 2);
         let lat_step = f32::consts::PI / (bands.0 as f32);

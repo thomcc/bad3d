@@ -91,7 +91,7 @@ impl Plane {
 
     #[inline]
     pub fn from_points(points: &[V3]) -> Plane {
-        assert_ge!(points.len(), 3);
+        chek::ge!(points.len(), 3);
         let c = points.iter().fold(V3::zero(), |a, &b| a + b) / (points.len() as f32);
         let mut n = V3::zero();
         for i in 0..points.len() {
@@ -166,7 +166,7 @@ impl Plane {
 
     #[inline]
     pub fn test_e(&self, pos: V3, e: f32) -> PlaneTestResult {
-        debug_assert_ge!(e, 0.0);
+        chek::debug_ge!(e, 0.0);
         let a = dot(pos, self.normal) + self.offset;
         if a > e {
             PlaneTestResult::Over

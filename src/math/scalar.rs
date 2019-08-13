@@ -15,8 +15,8 @@ impl ApproxEq for f32 {
     fn approx_eq_e(&self, o: &Self, e: f32) -> bool {
         let a = *self;
         let b = *o;
-        debug_assert_le!({ e }, 1.0);
-        debug_assert_ge!({ e }, 0.0);
+        chek::debug_le!({ e }, 1.0);
+        chek::debug_ge!({ e }, 0.0);
         debug_assert!(a.is_finite(), "non-finite number: {}", { a });
         debug_assert!(b.is_finite(), "non-finite number: {}", { b });
         let sc = max!(a.abs(), b.abs(), std::f32::MIN_POSITIVE);
@@ -66,7 +66,7 @@ pub fn repeat(v: f32, rep: f32) -> f32 {
 
 #[inline]
 pub fn wrap_between(v: f32, lo: f32, hi: f32) -> f32 {
-    debug_assert_lt!(lo, hi);
+    chek::debug_lt!(lo, hi);
     repeat(v - lo, hi - lo) + lo
 }
 

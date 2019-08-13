@@ -119,8 +119,8 @@ fn plane_cost_c(input: &[Face], split: Plane, space: &WingMesh) -> (f32, [f32; 4
     let vol_under = space_under.volume();
     let vol_over = vol_total - vol_under; // space_over.volume();
 
-    debug_assert_ge!(vol_over / vol_total, -0.01);
-    debug_assert_ge!(vol_under / vol_total, -0.01);
+    chek::debug_ge!(vol_over / vol_total, -0.01);
+    chek::debug_ge!(vol_under / vol_total, -0.01);
     // if ((vol_over+vol_under-vol_total) / vol_total).abs() >= 0.01 {
     //     println!("Warning: hacky plane cost calculation is happening");
     //     vol_total = vol_over + vol_under;
@@ -197,13 +197,13 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
 
     for face in over.iter() {
         for v in face.vertex.iter() {
-            debug_assert_ge!(dot(node.plane.normal, *v) + node.plane.offset, -FUZZY_WIDTH);
+            chek::debug_ge!(dot(node.plane.normal, *v) + node.plane.offset, -FUZZY_WIDTH);
         }
     }
 
     for face in under.iter() {
         for v in face.vertex.iter() {
-            debug_assert_le!(dot(node.plane.normal, *v) + node.plane.offset, FUZZY_WIDTH);
+            chek::debug_le!(dot(node.plane.normal, *v) + node.plane.offset, FUZZY_WIDTH);
         }
     }
 
@@ -1253,7 +1253,7 @@ impl Face {
 
     // point must be interior
     pub fn closest_edge(&self, point: V3) -> usize {
-        assert_ge!(self.vertex.len(), 3);
+        chek::ge!(self.vertex.len(), 3);
         let mut closest = -1;
         let mut min_d = 0.0;
         for (i, &v0) in self.vertex.iter().enumerate() {
@@ -1265,7 +1265,7 @@ impl Face {
                 min_d = d;
             }
         }
-        assert_ge!(closest, 0);
+        chek::ge!(closest, 0);
         closest as usize
     }
 
@@ -1319,7 +1319,7 @@ impl Face {
             split_count += 1;
         }
         // FIXME ???
-        // debug_assert_gt!(v0.dist(v1), QUANTIZE_CHECK);
+        // chek::debug_gt!(v0.dist(v1), QUANTIZE_CHECK);
         let f0 = n.plane.test_e(v0, QUANTIZE_CHECK);
         let f1 = n.plane.test_e(v1, QUANTIZE_CHECK);
         match (f0 as usize) | (f1 as usize) {
@@ -1341,10 +1341,10 @@ impl Face {
             OVER => split_count += self.edge_splicer(vi0, n.over.as_ref().unwrap()),
             SPLIT => {
                 split_count += 1;
-                assert_gt!(v0.dist(v1), QUANTIZE_CHECK);
+                chek::gt!(v0.dist(v1), QUANTIZE_CHECK);
                 let v_mid = n.plane.intersect_with_line(v0, v1);
-                assert_gt!(v_mid.dist(v1), QUANTIZE_CHECK);
-                assert_gt!(v0.dist(v_mid), QUANTIZE_CHECK);
+                chek::gt!(v_mid.dist(v1), QUANTIZE_CHECK);
+                chek::gt!(v0.dist(v_mid), QUANTIZE_CHECK);
                 assert_eq!(n.plane.test(v_mid), PlaneTestResult::Coplanar);
 
                 self.vertex.insert(vi0 + 1, v_mid);
@@ -1383,7 +1383,7 @@ impl Face {
                     assert_eq!(clip.test(v_mid), PlaneTestResult::Coplanar);
                     self.vertex.insert(i2, v_mid);
                     i = 0;
-                    assert_lt!(c, 2);
+                    chek::lt!(c, 2);
                     c += 1;
                 }
                 _ => {}
