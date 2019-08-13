@@ -18,7 +18,7 @@ extern crate failure;
 #[macro_use]
 mod shared;
 
-use shared::{input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
+use shared::{input::InputState, object, DemoMesh, DemoOptions, DemoWindow, Result};
 
 use bad3d::prelude::*; //{hull, bsp, gjk, wingmesh::WingMesh, phys::{self, RigidBody, RigidBodyRef}};
                        // use bad3d::math::*;

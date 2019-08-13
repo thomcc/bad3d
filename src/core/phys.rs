@@ -840,7 +840,6 @@ impl ConstraintSet {
     }
 
     fn constrain_contacts(&mut self, bodies: &mut HandleMap<RigidBody>, contacts: &[PhysicsContact]) {
-        let mut maxvel = 0.0;
         for c in contacts {
             let cc = c.contact;
 
@@ -886,9 +885,6 @@ impl ConstraintSet {
                 (-dot(cc.plane.normal, v) - self.params.gravity.length() * self.params.ballistic_response)
                     * self.params.restitution,
             );
-            if bounce_vel.abs() > maxvel {
-                maxvel = bounce_vel;
-            }
 
             let q = Quat::shortest_arc(vec3(0.0, 0.0, 1.0), -cc.plane.normal);
 
@@ -924,9 +920,6 @@ impl ConstraintSet {
                 Some((0.0, 0.0)),
             ));
             self.linears.last_mut().unwrap().friction_control(-2);
-        }
-        if maxvel != 0.0 {
-            println!("{}", maxvel);
         }
     }
 }
@@ -990,7 +983,7 @@ fn find_world_contacts(
     result
 }
 
-fn find_body_contacts(bodies: &[&RigidBody], dt: f32, params: &PhysParams) -> Vec<PhysicsContact> {
+fn find_body_contacts(bodies: &[&RigidBody], _dt: f32, params: &PhysParams) -> Vec<PhysicsContact> {
     let mut result = Vec::new();
     for (i, b0) in bodies.iter().enumerate() {
         if !b0.collides_with_body {

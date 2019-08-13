@@ -25,7 +25,7 @@ static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
 mod shared;
 
 use crate::shared::cam::*;
-use crate::shared::{input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
+use crate::shared::{input::InputState, object, DemoMesh, DemoOptions, DemoWindow, Result};
 
 use bad3d::prelude::*;
 use glium::glutin::VirtualKeyCode as Key;

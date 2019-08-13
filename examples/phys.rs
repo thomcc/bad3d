@@ -179,7 +179,7 @@ fn main() -> Result<()> {
             .add()
             .at(seesaw_start + vec3(3.5, 0.0, 50.0))
             .collider(wm)
-            .scale_mass(6.0)
+            // .scale_mass(6.0)
             .build();
         scene
             .add()

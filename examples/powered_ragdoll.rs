@@ -17,7 +17,7 @@ static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
 use imgui;
 
 mod shared;
-use crate::shared::{object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
+use crate::shared::{object, DemoMesh, DemoOptions, DemoWindow, Result};
 
 use bad3d::prelude::*;
 use std::cell::RefCell;
@@ -25,7 +25,6 @@ use std::rc::Rc;
 
 fn main() -> Result<()> {
     env_logger::init();
-    let perf_log = bad3d::util::PerfLog::new();
     let body_sizes = [
         vec3(0.25, 0.50, 0.10), // torso
         vec3(0.25, 0.05, 0.05), // limb upper bones
@@ -67,83 +66,85 @@ fn main() -> Result<()> {
         },
         Rc::new(RefCell::new(imgui::Context::create())),
     )?;
-    let Shape {
-        vertices: ground_verts,
-        tris: ground_tris,
-    } = Shape::new_aabb(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
+    let mut scene = bad3d::phys::PhysScene::default();
+    let ground = Shape::new_aabb(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
 
-    let ground_mesh = Box::new(DemoMesh::new(
+    let ground_mesh = Box::new(DemoMesh::from_shape(
         &window.display,
-        ground_verts.clone(),
-        ground_tris,
-        vec4(0.25, 0.75, 0.25, 1.0),
+        &ground,
+        vec4(0.25, 0.75, 0.25, 1.0).into(),
     )?);
+    scene.world.push(ground);
 
-    let mut demo_objects = Vec::with_capacity(body_sizes.len() + 2);
-
-    for size in body_sizes.iter() {
-        let obj = DemoObject::new_box(&window.display, *size, V3::zero(), None)?;
-        {
-            // Mass is based on volume by default on DemoObjects, but for this
-            // demo that's the wrong call. Hackily fix it up.
-            let mut body = obj.body.borrow_mut();
-            let mass = body.mass;
-            body.scale_mass(1.0 / mass);
-        }
-        demo_objects.push(obj);
-        for m in demo_objects.last_mut().unwrap().meshes.iter_mut() {
-            m.color = vec4(0.8, 0.4, 0.2, 1.0);
-        }
-    }
-
-    demo_objects[0].body.borrow_mut().scale_mass(5.0);
+    let handles = body_sizes
+        .iter()
+        .enumerate()
+        .map(|(i, size)| {
+            let mass = if i == 0 { 5.0 } else { 1.0 };
+            scene
+                .add()
+                .box_collider(*size)
+                .build_with(|b| b.scale_mass(mass / b.mass))
+        })
+        .collect::<Vec<_>>();
 
     for joint in joints.iter() {
-        let mut body0 = demo_objects[joint.0].body.borrow_mut();
-        let mut body1 = demo_objects[joint.1].body.borrow_mut();
-
-        body0.ignored.insert(body1.id);
-        body1.ignored.insert(body0.id);
-        let pos = body0.pose * joint.3 - body1.pose.orientation * joint.4;
-        body1.pose.position = pos;
-        body1.start_pose.position = pos;
+        scene.bodies[handles[joint.0]].ignored.push(handles[joint.1]);
+        scene.bodies[handles[joint.1]].ignored.push(handles[joint.0]);
+        let pos =
+            scene.bodies[handles[joint.0]].pose * joint.3 - scene.bodies[handles[joint.1]].pose.orientation * joint.4;
+        scene.bodies[handles[joint.1]].pose.position = pos;
+        scene.bodies[handles[joint.1]].start_pose.position = pos;
     }
+    scene
+        .add()
+        .box_collider(vec3(2.0, 0.1, 0.1))
+        .at(vec3(0.0, 0.0, -0.5))
+        .build();
+    scene
+        .add()
+        .box_collider(vec3(2.0, 0.4, 0.1))
+        .at(vec3(0.0, 1.0, -0.5))
+        .build();
 
-    demo_objects.push(DemoObject::new_box(
-        &window.display,
-        vec3(2.0, 0.1, 0.1),
-        vec3(0.0, 0.0, -0.5),
-        None,
-    )?);
-    demo_objects.push(DemoObject::new_box(
-        &window.display,
-        vec3(2.0, 0.4, 0.1),
-        vec3(0.0, 1.0, -0.5),
-        None,
-    )?);
+    use std::collections::HashMap;
+    let mut body_meshes: HashMap<handy::Handle, Vec<DemoMesh>> = HashMap::with_capacity(scene.bodies.len());
+    for (h, b) in scene.bodies.iter_with_handles() {
+        let meshes: Vec<DemoMesh> = b
+            .shapes
+            .iter()
+            .map(|s| {
+                let mut m = DemoMesh::from_shape(&window.display, s, None).unwrap();
+                m.color = vec4(0.8, 0.4, 0.2, 1.0);
+                m
+            })
+            .collect::<Vec<_>>();
+        body_meshes.insert(h, meshes);
+    }
 
     let torque_limit = 38.0;
     let mut time = 0.0;
 
-    let world_geom = [ground_verts];
+    // let world_geom = [ground_verts];
 
     while window.is_up() {
         let dt = 1.0 / 60.0f32;
         time += 0.06f32;
+        scene.begin(dt);
 
-        let mut cs = phys::ConstraintSet::new(dt);
+        // let mut cs = phys::ConstraintSet::new(dt);
 
         for joint in joints.iter() {
-            cs.nail(
-                Some(demo_objects[joint.0].body.clone()),
+            scene.constraints.nail(
+                Some(&scene.bodies[handles[joint.0]]),
                 joint.3,
-                Some(demo_objects[joint.1].body.clone()),
+                Some(&scene.bodies[handles[joint.1]]),
                 joint.4,
             );
 
-            cs.powered_angle(
-                Some(demo_objects[joint.0].body.clone()),
-                Some(demo_objects[joint.1].body.clone()),
+            scene.constraints.powered_angle(
+                Some(&scene.bodies[handles[joint.0]]),
+                Some(&scene.bodies[handles[joint.1]]),
                 quat(
                     0.0,
                     joint.2 * time.cos(),
@@ -154,39 +155,38 @@ fn main() -> Result<()> {
             );
         }
 
-        let mut bodies = demo_objects
-            .iter()
-            .map(|item| item.body.clone())
-            .collect::<Vec<phys::RigidBodyRef>>();
+        // let mut bodies = demo_objects
+        //     .iter()
+        //     .map(|item| item.body.clone())
+        //     .collect::<Vec<phys::RigidBodyRef>>();
 
-        for body in bodies[body_sizes.len()..].iter_mut() {
-            cs.under_plane(
-                body.clone(),
-                Plane::from_norm_and_point(cs.params.gravity.must_norm(), vec3(5.0, 5.0, -10.0)),
-                None,
-            );
-        }
+        // for &body in &handles {
+        // scene.constraints.under_plane(
+        //     &scene.bodies[body],
+        //     Plane::from_norm_and_point(scene.params.gravity.must_norm(), vec3(5.0, 5.0, -10.0)),
+        //     None,
+        // );
+        // }
 
-        perf_log.sections.lock().unwrap().clear();
-        phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt, &perf_log);
+        // perf_log.sections.lock().unwrap().clear();
+        scene.simulate();
+        // phys::update_physics(&mut bodies[..], &mut cs, &world_geom[..], dt, &perf_log);
 
         window.draw_lit_mesh(M4x4::identity(), &*ground_mesh)?;
-        for obj in demo_objects.iter() {
-            let pose = obj.body.borrow().pose.to_mat4();
-            for mesh in &obj.meshes {
+        for (k, v) in &body_meshes {
+            let pose = scene.bodies[*k].pose.to_mat4();
+            for mesh in v {
                 window.draw_lit_mesh(pose, mesh)?;
             }
         }
 
-        let need_reset = bodies[0..body_sizes.len()]
-            .iter()
-            .any(|b| b.borrow().pose.position.length() > 25.0);
+        let need_reset = handles.iter().any(|b| scene.bodies[*b].pose.position.length() > 25.0);
         if need_reset {
-            for body in bodies[0..body_sizes.len()].iter_mut() {
-                let momentum = body.borrow().linear_momentum;
-                let start_pose = body.borrow_mut().start_pose;
-                body.borrow_mut().linear_momentum = -momentum;
-                body.borrow_mut().pose = start_pose;
+            for &b in &handles {
+                let momentum = scene.bodies[b].linear_momentum;
+                let start_pose = scene.bodies[b].start_pose;
+                scene.bodies[b].linear_momentum = -momentum;
+                scene.bodies[b].pose = start_pose;
             }
             time = 0.0;
         }

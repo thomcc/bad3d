@@ -17,7 +17,7 @@ use imgui_glium_renderer;
 use imgui::{self, im_str};
 
 mod shared;
-use crate::shared::{object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
+use crate::shared::{object, DemoMesh, DemoOptions, DemoWindow, Result};
 
 use bad3d::prelude::*;
 use std::cell::RefCell;
