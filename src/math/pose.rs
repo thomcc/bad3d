@@ -1,6 +1,5 @@
 use crate::math::mat::*;
 use crate::math::quat::*;
-use crate::math::traits::*;
 use crate::math::vec::*;
 
 use std::ops::*;
@@ -91,6 +90,15 @@ impl Pose {
         }
         orient.normalize().map(|q| Pose::new(pos, q))
     }
+
+    pub const ZERO: Pose = Pose {
+        position: V3::ZERO,
+        orientation: Quat::ZERO,
+    };
+    pub const IDENTITY: Pose = Pose {
+        position: V3::ZERO,
+        orientation: Quat::IDENTITY,
+    };
 }
 
 // Hrm... This won't always result in a sane pose...
@@ -106,20 +114,6 @@ impl From<Pose> for M4x4 {
     fn from(p: Pose) -> M4x4 {
         p.to_mat4()
     }
-}
-
-impl Identity for Pose {
-    const IDENTITY: Pose = Pose {
-        position: V3::ZERO,
-        orientation: Quat::IDENTITY,
-    };
-}
-
-impl Zero for Pose {
-    const ZERO: Pose = Pose {
-        position: V3::ZERO,
-        orientation: Quat::ZERO,
-    };
 }
 
 impl From<V3> for Pose {

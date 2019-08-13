@@ -37,20 +37,6 @@ pub trait Lerp: Copy + Clone {
     fn lerp(self, _: Self, _: f32) -> Self;
 }
 
-pub trait Zero: Copy + Clone {
-    const ZERO: Self;
-    fn zero() -> Self {
-        Self::ZERO
-    }
-}
-
-pub trait Identity: Copy + Clone {
-    const IDENTITY: Self;
-    fn identity() -> Self {
-        Self::IDENTITY
-    }
-}
-
 pub trait Fold: Copy + Clone {
     fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32;
     fn fold2_init<T>(self, _: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T;
@@ -90,9 +76,9 @@ pub trait TriIndices: Copy {
     }
 }
 
-pub trait Dot {
-    fn dot(self, o: Self) -> f32;
-}
+// pub trait Dot {
+//     fn dot(self, o: Self) -> f32;
+// }
 
 pub trait Map: Copy + Clone {
     fn map3<F>(self, a: Self, b: Self, f: F) -> Self
@@ -148,18 +134,18 @@ impl TriIndices for (u32, u32, u32) {
     }
 }
 
-impl<T> Dot for T
-where
-    T: Map + Fold,
-{
-    #[inline]
-    fn dot(self, o: Self) -> f32 {
-        self.map2(o, |x, y| x * y).fold(|a, b| a + b)
-    }
-}
+// impl<T> Dot for T
+// where
+//     T: Map + Fold,
+// {
+//     #[inline]
+//     fn dot(self, o: Self) -> f32 {
+//         self.map2(o, |x, y| x * y).fold(|a, b| a + b)
+//     }
+// }
 
 #[inline]
-pub fn dot<T: Dot>(a: T, b: T) -> f32 {
+pub fn dot(a: super::vec::V3, b: super::vec::V3) -> f32 {
     a.dot(b)
 }
 

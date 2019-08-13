@@ -11,7 +11,7 @@ use std::{f32, fmt, mem};
 pub struct Quat(pub V4);
 
 #[inline]
-pub fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
+pub const fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
     Quat(V4 { x, y, z, w })
 }
 
@@ -290,8 +290,8 @@ impl Quat {
         let Quat(V4 { x, y, z, w }) = self;
         vec3(
             w * w + x * x - y * y - z * z,
-            x * y + z * w + x * y + z * w,
-            z * x - y * w + z * x - y * w,
+            (x * y + z * w) * 2.0,
+            (z * x - y * w) * 2.0,
         )
     }
 
@@ -299,9 +299,9 @@ impl Quat {
     pub fn y_dir(self) -> V3 {
         let Quat(V4 { x, y, z, w }) = self;
         vec3(
-            x * y - z * w + x * y - z * w,
+            (x * y - z * w) * 2.0,
             w * w - x * x + y * y - z * z,
-            y * z + x * w + y * z + x * w,
+            (y * z + x * w) * 2.0,
         )
     }
 
@@ -309,8 +309,8 @@ impl Quat {
     pub fn z_dir(self) -> V3 {
         let Quat(V4 { x, y, z, w }) = self;
         vec3(
-            z * x + y * w + z * x + y * w,
-            y * z - x * w + y * z - x * w,
+            (z * x + y * w) * 2.0,
+            (y * z - x * w) * 2.0,
             w * w - x * x - y * y + z * z,
         )
     }
@@ -461,25 +461,22 @@ impl Quat {
     }
 
     #[inline]
-    pub fn identity() -> Quat {
-        quat(0.0, 0.0, 0.0, 1.0)
+    pub const fn zero() -> Self {
+        Self::ZERO
     }
 
     #[inline]
-    pub fn zero() -> Quat {
-        quat(0.0, 0.0, 0.0, 0.0)
+    pub const fn identity() -> Self {
+        Self::IDENTITY
     }
-}
 
-impl Lerp for Quat {
-    #[inline]
-    fn lerp(self, o: Self, t: f32) -> Self {
-        Quat(self.0.lerp(o.0, t))
-    }
-}
-
-impl Identity for Quat {
-    const IDENTITY: Quat = Quat(V4 {
+    pub const ZERO: Quat = Quat(V4 {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+        w: 0.0,
+    });
+    pub const IDENTITY: Quat = Quat(V4 {
         x: 0.0,
         y: 0.0,
         z: 0.0,
@@ -487,13 +484,11 @@ impl Identity for Quat {
     });
 }
 
-impl Zero for Quat {
-    const ZERO: Quat = Quat(V4 {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-        w: 0.0,
-    });
+impl Lerp for Quat {
+    #[inline]
+    fn lerp(self, o: Self, t: f32) -> Self {
+        Quat(self.0.slerp(o.0, t))
+    }
 }
 
 impl Mul<V3> for Quat {

@@ -296,8 +296,8 @@ impl HitInfo {
 }
 
 pub fn poly_hit_check_p(verts: &[V3], plane: Plane, v0: V3, v1: V3) -> Option<HitInfo> {
-    let d0 = dot(Plane::new(v0, 1.0), plane);
-    let d1 = dot(Plane::new(v1, 1.0), plane);
+    let d0 = Plane::new(v0, 1.0).dot(plane);
+    let d1 = Plane::new(v1, 1.0).dot(plane);
     let mut did_hit = d0 > 0.0 && d1 < 0.0;
     if !did_hit {
         return None;
@@ -323,8 +323,8 @@ pub fn convex_hit_check(planes: impl Iterator<Item = Plane>, p0: V3, p1: V3) -> 
     let mut v0 = p0;
     let mut v1 = p1;
     for plane in planes {
-        let d0 = dot(Plane::new(v0, 1.0), plane);
-        let d1 = dot(Plane::new(v1, 1.0), plane);
+        let d0 = Plane::new(v0, 1.0).dot(plane);
+        let d1 = Plane::new(v1, 1.0).dot(plane);
         if d0 >= 0.0 && d1 >= 0.0 {
             return None;
         }

@@ -37,7 +37,7 @@ impl Default for PhysParams {
             max_drift: 0.03,
             solver_iterations: 16,
             ballistic_response: 0.2,
-            post_solver_iterations: 8,
+            post_solver_iterations: 4,
             use_rk4: true,
         }
     }

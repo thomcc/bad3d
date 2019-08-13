@@ -65,8 +65,8 @@ impl ops::Neg for Plane {
 
 impl Plane {
     #[inline]
-    pub fn zero() -> Plane {
-        Plane::new(V3::zero(), 0.0)
+    pub const fn zero() -> Self {
+        Self::ZERO
     }
 
     #[inline]
@@ -102,7 +102,7 @@ impl Plane {
     }
 
     #[inline]
-    pub fn new(normal: V3, offset: f32) -> Plane {
+    pub const fn new(normal: V3, offset: f32) -> Plane {
         Plane { normal, offset }
     }
 
@@ -113,7 +113,7 @@ impl Plane {
 
     #[inline]
     pub fn from_norm_and_point(n: V3, pt: V3) -> Plane {
-        Plane::new(n, -dot(n, pt))
+        Plane::new(n, -n.dot(pt))
     }
 
     #[inline]
@@ -138,7 +138,7 @@ impl Plane {
 
     #[inline]
     pub fn project(&self, pt: V3) -> V3 {
-        pt - self.normal * dot(self.to_v4(), V4::expand(pt, 1.0))
+        pt - self.normal * self.to_v4().dot(V4::expand(pt, 1.0))
     }
 
     #[inline]
@@ -241,23 +241,19 @@ impl Plane {
     pub fn test(&self, pos: V3) -> PlaneTestResult {
         self.test_e(pos, DEFAULT_PLANE_WIDTH)
     }
-}
 
-impl Zero for Plane {
-    const ZERO: Plane = Plane {
+    #[inline]
+    pub fn dot(self, o: Plane) -> f32 {
+        self.to_v4().dot(o.to_v4())
+    }
+
+    pub const ZERO: Plane = Plane {
         normal: V3::ZERO,
         offset: 0.0,
     };
 }
 
-impl Dot for Plane {
-    #[inline]
-    fn dot(self, o: Plane) -> f32 {
-        self.to_v4().dot(o.to_v4())
-    }
-}
-
 #[inline]
-pub fn plane(nx: f32, ny: f32, nz: f32, o: f32) -> Plane {
+pub const fn plane(nx: f32, ny: f32, nz: f32, o: f32) -> Plane {
     Plane::new(vec3(nx, ny, nz), o)
 }

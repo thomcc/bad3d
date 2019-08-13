@@ -27,15 +27,15 @@ pub struct M4x4 {
     pub w: V4,
 }
 
-impl Identity for M2x2 {
-    const IDENTITY: M2x2 = M2x2 {
+impl M2x2 {
+    pub const IDENTITY: M2x2 = M2x2 {
         x: V2 { x: 1.0, y: 0.0 },
         y: V2 { x: 0.0, y: 1.0 },
     };
 }
 
-impl Identity for M3x3 {
-    const IDENTITY: M3x3 = M3x3 {
+impl M3x3 {
+    pub const IDENTITY: M3x3 = M3x3 {
         x: V3 {
             x: 1.0,
             y: 0.0,
@@ -54,8 +54,8 @@ impl Identity for M3x3 {
     };
 }
 
-impl Identity for M4x4 {
-    const IDENTITY: M4x4 = M4x4 {
+impl M4x4 {
+    pub const IDENTITY: M4x4 = M4x4 {
         x: V4 {
             x: 1.0,
             y: 0.0,
@@ -83,15 +83,15 @@ impl Identity for M4x4 {
     };
 }
 
-impl Zero for M2x2 {
-    const ZERO: M2x2 = M2x2 {
+impl M2x2 {
+    pub const ZERO: M2x2 = M2x2 {
         x: V2 { x: 0.0, y: 0.0 },
         y: V2 { x: 0.0, y: 0.0 },
     };
 }
 
-impl Zero for M3x3 {
-    const ZERO: M3x3 = M3x3 {
+impl M3x3 {
+    pub const ZERO: M3x3 = M3x3 {
         x: V3 {
             x: 0.0,
             y: 0.0,
@@ -110,8 +110,8 @@ impl Zero for M3x3 {
     };
 }
 
-impl Zero for M4x4 {
-    const ZERO: M4x4 = M4x4 {
+impl M4x4 {
+    pub const ZERO: M4x4 = M4x4 {
         x: V4 {
             x: 0.0,
             y: 0.0,
@@ -160,29 +160,29 @@ impl fmt::Display for M4x4 {
 impl Default for M2x2 {
     #[inline]
     fn default() -> Self {
-        <Self as Identity>::IDENTITY
+        Self::IDENTITY
     }
 }
 impl Default for M3x3 {
     #[inline]
     fn default() -> Self {
-        <Self as Identity>::IDENTITY
+        Self::IDENTITY
     }
 }
 impl Default for M4x4 {
     #[inline]
     fn default() -> Self {
-        <Self as Identity>::IDENTITY
+        Self::IDENTITY
     }
 }
 
 #[inline]
-pub fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
+pub const fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
     M2x2::new(m00, m01, m10, m11)
 }
 
 #[inline]
-pub fn mat3(
+pub const fn mat3(
     m00: f32,
     m01: f32,
     m02: f32,
@@ -197,7 +197,7 @@ pub fn mat3(
 }
 
 #[inline]
-pub fn mat4(
+pub const fn mat4(
     m00: f32,
     m01: f32,
     m02: f32,
@@ -482,7 +482,7 @@ do_mat_boilerplate!(
 
 impl M2x2 {
     #[inline]
-    pub fn new(xx: f32, xy: f32, yx: f32, yy: f32) -> M2x2 {
+    pub const fn new(xx: f32, xy: f32, yx: f32, yy: f32) -> M2x2 {
         M2x2 {
             x: V2 { x: xx, y: xy },
             y: V2 { x: yx, y: yy },
@@ -490,12 +490,12 @@ impl M2x2 {
     }
 
     #[inline]
-    pub fn from_cols(x: V2, y: V2) -> M2x2 {
+    pub const fn from_cols(x: V2, y: V2) -> M2x2 {
         M2x2 { x, y }
     }
 
     #[inline]
-    pub fn from_rows(x: V2, y: V2) -> M2x2 {
+    pub const fn from_rows(x: V2, y: V2) -> M2x2 {
         M2x2::new(x.x, y.x, x.y, y.y)
     }
 
@@ -543,19 +543,19 @@ impl M2x2 {
     }
 
     #[inline]
-    pub fn identity() -> Self {
-        mat2(1.0, 0.0, 0.0, 1.0)
+    pub const fn identity() -> Self {
+        Self::IDENTITY
     }
 
     #[inline]
-    pub fn zero() -> Self {
-        mat2(0.0, 0.0, 0.0, 0.0)
+    pub const fn zero() -> Self {
+        Self::ZERO
     }
 }
 
 impl M3x3 {
     #[inline]
-    pub fn new(
+    pub const fn new(
         xx: f32,
         xy: f32,
         xz: f32,
@@ -586,12 +586,12 @@ impl M3x3 {
     }
 
     #[inline]
-    pub fn from_cols(x: V3, y: V3, z: V3) -> M3x3 {
+    pub const fn from_cols(x: V3, y: V3, z: V3) -> M3x3 {
         M3x3 { x, y, z }
     }
 
     #[inline]
-    pub fn from_rows(x: V3, y: V3, z: V3) -> M3x3 {
+    pub const fn from_rows(x: V3, y: V3, z: V3) -> M3x3 {
         M3x3::new(x.x, y.x, z.x, x.y, y.y, z.y, x.z, y.z, z.z)
     }
 
@@ -703,13 +703,13 @@ impl M3x3 {
     }
 
     #[inline]
-    pub fn identity() -> Self {
-        mat3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
+    pub const fn identity() -> Self {
+        Self::IDENTITY
     }
 
     #[inline]
-    pub fn zero() -> Self {
-        mat3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    pub const fn zero() -> Self {
+        Self::ZERO
     }
 
     #[inline]
@@ -825,7 +825,7 @@ impl M3x3 {
 
 impl M4x4 {
     #[inline]
-    pub fn new(
+    pub const fn new(
         xx: f32,
         xy: f32,
         xz: f32,
@@ -872,12 +872,12 @@ impl M4x4 {
     }
 
     #[inline]
-    pub fn from_cols(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
+    pub const fn from_cols(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
         M4x4 { x, y, z, w }
     }
 
     #[inline]
-    pub fn from_rows(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
+    pub const fn from_rows(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
         mat4(
             x.x, y.x, z.x, w.x, x.y, y.y, z.y, w.y, x.z, y.z, z.z, w.z, x.w, y.w, z.w, w.w,
         )
@@ -1103,17 +1103,13 @@ impl M4x4 {
     }
 
     #[inline]
-    pub fn identity() -> Self {
-        mat4(
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-        )
+    pub const fn identity() -> Self {
+        Self::IDENTITY
     }
 
     #[inline]
-    pub fn zero() -> Self {
-        mat4(
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        )
+    pub const fn zero() -> Self {
+        Self::ZERO
     }
 
     pub fn inverse(&self) -> Option<Self> {
@@ -1134,11 +1130,6 @@ pub trait MatType:
     + Mul<Self, Output = Self>
     + Mul<f32, Output = Self>
     + Div<f32, Output = Self>
-    + Identity
-    + Zero
-// + Mul<Self::Vec, Output = Self::Vec>
-// + Index<usize, Output = Self::Vec>
-// + IndexMut<usize>
 {
     type Vec: VecType;
 

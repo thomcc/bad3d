@@ -67,8 +67,6 @@ pub trait VecType:
     + Fold
     + Map
     + ApproxEq
-    + Identity
-    + Zero
     + Add<Output = Self>
     + Sub<Output = Self>
     + AddAssign
@@ -106,6 +104,7 @@ pub trait VecType:
     fn max(self, o: Self) -> Self {
         self.map2(o, |a, b| a.max(b))
     }
+    fn dot(self, o: Self) -> f32;
 }
 
 impl Fold for V2 {
@@ -481,6 +480,7 @@ macro_rules! do_vec_boilerplate {
         impl Div<f32> for $Vn {
             type Output = Self;
             #[inline]
+            #[allow(clippy::suspicious_arithmetic_impl)]
             fn div(self, o: f32) -> Self {
                 debug_assert_ne!(o, 0.0);
                 let inv = 1.0 / o;
@@ -540,15 +540,15 @@ macro_rules! do_vec_boilerplate {
             }
         }
 
-        impl Zero for $Vn {
-            const ZERO: $Vn = $Vn { $($field: 0.0),+ };
-        }
-
-        impl Identity for $Vn {
-            const IDENTITY: $Vn = $Vn { $($field: 0.0),+ };
-        }
 
         impl $Vn {
+            pub const ZERO: $Vn = $Vn { $($field: 0.0),+ };
+
+            #[inline]
+            pub const fn zero() -> Self {
+                Self::ZERO
+            }
+
             #[inline]
             pub fn new($($field: f32),+) -> Self {
                 Self { $($field: $field),+ }
@@ -662,11 +662,6 @@ macro_rules! do_vec_boilerplate {
             }
 
             #[inline]
-            pub fn dot(self, o: Self) -> f32 {
-                self.map2(o, |x, y| x * y).fold(|a, b| a + b)
-            }
-
-            #[inline]
             pub fn normalize(self) -> Option<Self> {
                 self.norm_len().0
             }
@@ -759,15 +754,10 @@ macro_rules! do_vec_boilerplate {
                 self.norm_or_v(Self { $($field),+ })
             }
 
-            #[inline]
-            pub fn zero() -> Self {
-                $Vn { $($field: 0.0),+ }
-            }
-
-            #[inline]
-            pub fn identity() -> Self {
-                $Vn { $($field: 0.0),+ }
-            }
+            // #[inline]
+            // pub fn identity() -> Self {
+            //     $Vn { $($field: 0.0),+ }
+            // }
         }
 
         impl iter::IntoIterator for $Vn {
@@ -806,6 +796,10 @@ macro_rules! do_vec_boilerplate {
             fn splat(v: f32) -> Self {
                 Self { $($field: v),+ }
             }
+            #[inline]
+            fn dot(self, o: Self) -> f32 {
+                $Vn::dot(self, o)
+            }
         }
     }
 }
@@ -840,6 +834,10 @@ impl V2 {
     #[inline]
     pub fn cross(self, o: V2) -> f32 {
         self.x * o.y - self.y * o.x
+    }
+    #[inline]
+    pub fn dot(self, o: V2) -> f32 {
+        self.x * o.x + self.y * o.y
     }
     #[inline]
     pub fn norm_or_unit(self) -> V2 {
@@ -883,6 +881,11 @@ impl V3 {
     #[inline]
     pub fn expand(v: V2, z: f32) -> V3 {
         V3 { x: v.x, y: v.y, z }
+    }
+
+    #[inline]
+    pub fn dot(self, o: V3) -> f32 {
+        self.x * o.x + self.y * o.y + self.z * o.z
     }
 
     #[inline]
@@ -997,6 +1000,12 @@ impl V4 {
     pub fn to_arr(self) -> [f32; 4] {
         self.into()
     }
+
+    #[inline]
+    pub fn dot(self, o: V4) -> f32 {
+        self.x * o.x + self.y * o.y + self.z * o.z + self.w * o.w
+    }
+
     #[inline]
     pub fn outer_prod(self, o: V4) -> M4x4 {
         M4x4 {
