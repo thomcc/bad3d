@@ -2,7 +2,10 @@ use crate::math::mat::*;
 use crate::math::scalar::*;
 use crate::math::traits::*;
 use std::ops::*;
-use std::{self, fmt, iter, mem, slice};
+use std::{self, fmt, slice};
+mod iter;
+
+pub use iter::VecIter;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]
@@ -216,25 +219,6 @@ vec_from! { V4 [
     (t: [f64;   4]) -> vec4(t[0] as f32, t[1] as f32, t[2] as f32, t[3] as f32);
 ]}
 
-// @@ partially duplicated in mat.rs...
-macro_rules! define_transmute_conversions {
-    ($src_type: ty, $dst_type: ty) => {
-        impl AsRef<$dst_type> for $src_type {
-            #[inline]
-            fn as_ref(&self) -> &$dst_type {
-                unsafe { mem::transmute(self) }
-            }
-        }
-
-        impl AsMut<$dst_type> for $src_type {
-            #[inline]
-            fn as_mut(&mut self) -> &mut $dst_type {
-                unsafe { mem::transmute(self) }
-            }
-        }
-    };
-}
-
 macro_rules! impl_index_op {
     ($Vn:ident, $Indexer:ty, $out_type:ty) => {
         impl Index<$Indexer> for $Vn {
@@ -254,139 +238,33 @@ macro_rules! impl_index_op {
     };
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct VecIter<T: VecType> {
-    pub v: T,
-    p: usize,
-    e: usize,
-}
-
-impl<T: VecType> VecIter<T> {
-    #[inline]
-    pub fn new(v: T) -> Self {
-        Self {
-            v,
-            p: 0,
-            e: <T as VecType>::SIZE,
-        }
-    }
-
-    #[inline]
-    pub fn len(&self) -> usize {
-        debug_assert_le!(self.e, <T as VecType>::SIZE);
-        self.e.saturating_sub(self.p)
-    }
-
-    // #[inline]
-    // fn remaining(&self, offset: isize) -> usize {
-    //     debug_assert_le!(self.e, <T as VecType>::SIZE);
-    //     let (p, e) = (self.p as isize, self.e as isize);
-    //     let l = e - (p + offset);
-    //     if l < 0 { 0 } else { l as usize }
-    // }
-
-    #[inline]
-    unsafe fn raw_get(&self, p: usize) -> f32 {
-        debug_assert_le!(self.e, <T as VecType>::SIZE);
-        debug_assert_lt!(p, <T as VecType>::SIZE);
-        if cfg!(debug_assertions) {
-            *self.v.as_ref().get_unchecked(p)
-        } else {
-            self.v[p]
-        }
-    }
-
-    #[inline]
-    fn do_iter_fwd(&mut self, pre: usize, post: usize) -> Option<usize> {
-        debug_assert_le!(self.e, <T as VecType>::SIZE);
-        let (p, e) = (self.p + pre, self.e);
-        if p >= e {
-            self.p = self.e;
-            None
-        } else {
-            self.p = p + post;
-            Some(p)
-        }
-    }
-
-    // #[inline]
-    // fn do_iter_back(&mut self, pre: usize, post: usize) -> Option<usize> {
-    //     debug_assert_le!(self.e, <T as VecType>::SIZE);
-    //     let (p, e) = (pre, self.e);
-    //     if p >= e { self.p = self.e; None }
-    //     else { self.p = p + post; Some(p) }
-    // }
-}
-
-impl<T: VecType> Iterator for VecIter<T> {
-    type Item = f32;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.do_iter_fwd(0, 1).map(|i| unsafe { self.raw_get(i) })
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.len(), Some(self.len()))
-    }
-
-    #[inline]
-    fn count(self) -> usize {
-        self.len()
-    }
-
-    #[inline]
-    fn last(self) -> Option<Self::Item> {
-        if self.p >= self.e {
-            None
-        } else {
-            Some(unsafe { self.raw_get(<T as VecType>::SIZE - 1) })
-        }
-    }
-
-    #[inline]
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.do_iter_fwd(n, 1).map(|i| unsafe { self.raw_get(i) })
-    }
-}
-
-impl<T: VecType> iter::ExactSizeIterator for VecIter<T> {}
-
-impl<T: VecType> iter::DoubleEndedIterator for VecIter<T> {
-    #[inline]
-    fn next_back(&mut self) -> Option<f32> {
-        if self.p >= self.e {
-            return None;
-        }
-        debug_assert_gt!(self.e, 1);
-        self.e -= 1;
-        Some(unsafe { self.raw_get(self.e) })
-    }
-}
-
-macro_rules! first_expr {
-    ($fst:expr, $($_rest:expr),+) => {
-        $fst
-    };
-}
-
 macro_rules! do_vec_boilerplate {
     ($Vn: ident { $($field: ident : $index: expr),+ }, $length: expr, $tuple_ty: ty) => {
-        define_transmute_conversions!($Vn, [f32; $length]);
-        define_transmute_conversions!($Vn, $tuple_ty);
+        impl AsRef<[f32; $length]> for $Vn {
+            #[inline]
+            fn as_ref(&self) -> &[f32; $length] {
+                self.as_array()
+            }
+        }
+
+        impl AsMut<[f32; $length]> for $Vn {
+            #[inline]
+            fn as_mut(&mut self) -> &mut [f32; $length] {
+                self.as_mut_array()
+            }
+        }
 
         impl AsRef<[f32]> for $Vn {
             #[inline]
             fn as_ref(&self) -> &[f32] {
-                unsafe { slice::from_raw_parts(self.as_ptr(), $length) }
+                self.as_slice()
             }
         }
 
         impl AsMut<[f32]> for $Vn {
             #[inline]
             fn as_mut(&mut self) -> &mut [f32] {
-                unsafe { slice::from_raw_parts_mut(self.as_mut_ptr(), $length) }
+                self.as_mut_slice()
             }
         }
 
@@ -559,24 +437,34 @@ macro_rules! do_vec_boilerplate {
                 Self { $($field: v),+ }
             }
 
-            #[inline] pub fn as_slice(&self) -> &[f32] { self.as_ref() }
-            #[inline] pub fn as_mut_slice(&mut self) -> &mut [f32] { self.as_mut() }
+            #[inline]
+            pub fn as_slice(&self) -> &[f32] {
+                self.as_array()
+            }
+            #[inline]
+            pub fn as_mut_slice(&mut self) -> &mut [f32] {
+                self.as_mut_array()
+            }
 
             #[inline]
             pub fn as_ptr(&self) -> *const f32 {
-                (& first_expr!($(self.$field),+)) as *const f32
+                &self.x as *const f32
             }
 
             #[inline]
             pub fn as_mut_ptr(&mut self) -> *mut f32 {
-                (&mut first_expr!($(self.$field),+)) as *mut f32
+                &mut self.x as *mut f32
             }
 
-            #[inline] pub fn as_array(&self) -> &[f32; $length] { self.as_ref() }
-            #[inline] pub fn as_mut_array(&mut self) -> &mut [f32; $length] { self.as_mut() }
+            #[inline]
+            pub fn as_array(&self) -> &[f32; $length] {
+                unsafe { &*(self as *const $Vn as *const [f32; $length]) }
+            }
 
-            #[inline] pub fn as_mut_tuple(&mut self) -> &mut $tuple_ty { self.as_mut() }
-            #[inline] pub fn as_tuple(&self) -> &$tuple_ty { self.as_ref() }
+            #[inline]
+            pub fn as_mut_array(&mut self) -> &mut [f32; $length] {
+                unsafe { &mut *(self as *mut $Vn as *mut [f32; $length]) }
+            }
 
             #[inline] pub fn tup(self) -> $tuple_ty { self.into() }
 
@@ -592,7 +480,6 @@ macro_rules! do_vec_boilerplate {
                 self.as_mut_slice().iter_mut()
             }
 
-            #[inline] pub fn into_iter(self) -> VecIter<Self> { VecIter::new(self) }
             #[inline] pub fn count() -> usize { $length }
 
             #[inline] pub fn max_elem(self) -> f32 { self.fold(|a, b| a.max(b)) }
@@ -718,7 +605,7 @@ macro_rules! do_vec_boilerplate {
 
             #[inline]
             pub fn unit_axis(axis: usize) -> Self {
-                assert_lt!(axis, $length, "Invalid axis");
+                debug_assert_lt!(axis, $length, "Invalid axis");
                 let mut v = Self::zero();
                 v[axis] = 1.0;
                 v
@@ -760,14 +647,6 @@ macro_rules! do_vec_boilerplate {
             // }
         }
 
-        impl iter::IntoIterator for $Vn {
-            type Item = f32;
-            type IntoIter = VecIter<$Vn>;
-            #[inline]
-            fn into_iter(self) -> VecIter<Self> {
-                VecIter::new(self)
-            }
-        }
 
         impl ApproxEq for $Vn {
 
@@ -1164,45 +1043,30 @@ impl From<V2> for V4 {
     }
 }
 
-impl AsRef<V2> for V3 {
+impl IntoIterator for V2 {
+    type Item = f32;
+    type IntoIter = VecIter<f32>;
     #[inline]
-    fn as_ref(&self) -> &V2 {
-        unsafe { mem::transmute(self) }
+    fn into_iter(self) -> VecIter<f32> {
+        VecIter::new([self.x, self.y, 0.0, 0.0], 2)
     }
 }
 
-impl AsRef<V2> for V4 {
+impl IntoIterator for V3 {
+    type Item = f32;
+    type IntoIter = VecIter<f32>;
     #[inline]
-    fn as_ref(&self) -> &V2 {
-        unsafe { mem::transmute(self) }
+    fn into_iter(self) -> VecIter<f32> {
+        VecIter::new([self.x, self.y, self.z, 0.0], 3)
     }
 }
 
-impl AsRef<V3> for V4 {
+impl IntoIterator for V4 {
+    type Item = f32;
+    type IntoIter = VecIter<f32>;
     #[inline]
-    fn as_ref(&self) -> &V3 {
-        unsafe { mem::transmute(self) }
-    }
-}
-
-impl AsMut<V2> for V3 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut V2 {
-        unsafe { mem::transmute(self) }
-    }
-}
-
-impl AsMut<V2> for V4 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut V2 {
-        unsafe { mem::transmute(self) }
-    }
-}
-
-impl AsMut<V3> for V4 {
-    #[inline]
-    fn as_mut(&mut self) -> &mut V3 {
-        unsafe { mem::transmute(self) }
+    fn into_iter(self) -> VecIter<f32> {
+        VecIter::new([self.x, self.y, self.z, self.w], 4)
     }
 }
 

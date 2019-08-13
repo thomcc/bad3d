@@ -1,35 +1,12 @@
 #[macro_export]
-macro_rules! warn_if {
-    ($expr:expr) => ({
-        if !($expr) {
-            log::warn!("warn_if!({}) failed!", stringify!($expr));
-        }
-    });
-    ($expr:expr, ) => ({
-        warn_if!($expr);
-    });
-    ($expr:expr, $($msg_args:tt)+) => ({
-        if !($expr) {
-            log::warn!("warn_if!({}) failed: {}", stringify!($expr), format_args!($($msg_args)+));
-        }
-    });
-}
-
-#[macro_export]
-macro_rules! debug_warn_if {
-    ($expr:expr) => ({
-        if cfg!(debug_assertions) && !($expr) {
-            log::warn!("debug_warn_if!({}) failed!", stringify!($expr));
-        }
-    });
-    ($expr:expr, ) => ({
-        debug_warn_if!($expr);
-    });
-    ($expr:expr, $($msg_args:tt)+) => ({
-        if cfg!(debug_assertions) && !($expr) {
-            log::warn!("debug_warn_if!({}) failed: {}", stringify!($expr), format_args!($($msg_args)+));
-        }
-    });
+macro_rules! static_assert {
+    ($NAME:ident, $test:expr) => {
+        #[allow(dead_code, nonstandard_style)]
+        const $NAME: [(); 0] = {
+            const ASSERT_TEST: bool = $test;
+            [(); (!ASSERT_TEST as usize)]
+        };
+    };
 }
 
 #[macro_export]

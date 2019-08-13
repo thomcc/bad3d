@@ -32,6 +32,11 @@ pub fn vertex_slice<'a>(v3s: &'a [V3]) -> &'a [Vertex] {
     unsafe { slice::from_raw_parts(v3s.as_ptr() as *const Vertex, v3s.len()) }
 }
 
+static_assert!(
+    vertex_size_check,
+    std::mem::size_of::<V3>() == std::mem::size_of::<Vertex>()
+);
+
 pub struct DemoMesh {
     pub verts: Vec<V3>,
     pub tris: Vec<[u16; 3]>,

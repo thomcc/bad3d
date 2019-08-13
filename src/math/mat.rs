@@ -1,7 +1,7 @@
 use crate::math::quat::*;
 use crate::math::traits::*;
 use crate::math::vec::*;
-use std::{f32, fmt, mem, ops::*};
+use std::{f32, fmt, ops::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(C)]
@@ -35,51 +35,21 @@ impl M2x2 {
 }
 
 impl M3x3 {
+    #[rustfmt::skip]
     pub const IDENTITY: M3x3 = M3x3 {
-        x: V3 {
-            x: 1.0,
-            y: 0.0,
-            z: 0.0,
-        },
-        y: V3 {
-            x: 0.0,
-            y: 1.0,
-            z: 0.0,
-        },
-        z: V3 {
-            x: 0.0,
-            y: 0.0,
-            z: 1.0,
-        },
+        x: V3 { x: 1.0, y: 0.0, z: 0.0 },
+        y: V3 { x: 0.0, y: 1.0, z: 0.0 },
+        z: V3 { x: 0.0, y: 0.0, z: 1.0 },
     };
 }
 
 impl M4x4 {
+    #[rustfmt::skip]
     pub const IDENTITY: M4x4 = M4x4 {
-        x: V4 {
-            x: 1.0,
-            y: 0.0,
-            z: 0.0,
-            w: 0.0,
-        },
-        y: V4 {
-            x: 0.0,
-            y: 1.0,
-            z: 0.0,
-            w: 0.0,
-        },
-        z: V4 {
-            x: 0.0,
-            y: 0.0,
-            z: 1.0,
-            w: 0.0,
-        },
-        w: V4 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-            w: 1.0,
-        },
+        x: V4 { x: 1.0, y: 0.0, z: 0.0, w: 0.0 },
+        y: V4 { x: 0.0, y: 1.0, z: 0.0, w: 0.0 },
+        z: V4 { x: 0.0, y: 0.0, z: 1.0, w: 0.0 },
+        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
     };
 }
 
@@ -91,51 +61,21 @@ impl M2x2 {
 }
 
 impl M3x3 {
+    #[rustfmt::skip]
     pub const ZERO: M3x3 = M3x3 {
-        x: V3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        },
-        y: V3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        },
-        z: V3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        },
+        x: V3 { x: 0.0, y: 0.0, z: 0.0 },
+        y: V3 { x: 0.0, y: 0.0, z: 0.0 },
+        z: V3 { x: 0.0, y: 0.0, z: 0.0 },
     };
 }
 
 impl M4x4 {
+    #[rustfmt::skip]
     pub const ZERO: M4x4 = M4x4 {
-        x: V4 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-            w: 0.0,
-        },
-        y: V4 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-            w: 0.0,
-        },
-        z: V4 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-            w: 0.0,
-        },
-        w: V4 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-            w: 0.0,
-        },
+        x: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        y: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        z: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
     };
 }
 
@@ -182,41 +122,28 @@ pub const fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
 }
 
 #[inline]
+#[rustfmt::skip]
 pub const fn mat3(
-    m00: f32,
-    m01: f32,
-    m02: f32,
-    m10: f32,
-    m11: f32,
-    m12: f32,
-    m20: f32,
-    m21: f32,
-    m22: f32,
+    m00: f32, m01: f32, m02: f32,
+    m10: f32, m11: f32, m12: f32,
+    m20: f32, m21: f32, m22: f32,
 ) -> M3x3 {
     M3x3::new(m00, m01, m02, m10, m11, m12, m20, m21, m22)
 }
 
 #[inline]
+#[rustfmt::skip]
 pub const fn mat4(
-    m00: f32,
-    m01: f32,
-    m02: f32,
-    m03: f32,
-    m10: f32,
-    m11: f32,
-    m12: f32,
-    m13: f32,
-    m20: f32,
-    m21: f32,
-    m22: f32,
-    m23: f32,
-    m30: f32,
-    m31: f32,
-    m32: f32,
-    m33: f32,
+    m00: f32, m01: f32, m02: f32, m03: f32,
+    m10: f32, m11: f32, m12: f32, m13: f32,
+    m20: f32, m21: f32, m22: f32, m23: f32,
+    m30: f32, m31: f32, m32: f32, m33: f32,
 ) -> M4x4 {
     M4x4::new(
-        m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33,
+        m00, m01, m02, m03,
+        m10, m11, m12, m13,
+        m20, m21, m22, m23,
+        m30, m31, m32, m33,
     )
 }
 
@@ -266,38 +193,6 @@ impl Mul<V4> for M4x4 {
     }
 }
 
-macro_rules! define_conversions {
-    ($src_type: ty, $dst_type: ty) => {
-        impl AsRef<$dst_type> for $src_type {
-            #[inline]
-            fn as_ref(&self) -> &$dst_type {
-                unsafe { mem::transmute(self) }
-            }
-        }
-
-        impl AsMut<$dst_type> for $src_type {
-            #[inline]
-            fn as_mut(&mut self) -> &mut $dst_type {
-                unsafe { mem::transmute(self) }
-            }
-        }
-
-        impl From<$src_type> for $dst_type {
-            #[inline]
-            fn from(m: $src_type) -> $dst_type {
-                unsafe { mem::transmute(m) }
-            }
-        }
-
-        impl From<$dst_type> for $src_type {
-            #[inline]
-            fn from(m: $dst_type) -> $src_type {
-                unsafe { mem::transmute(m) }
-            }
-        }
-    };
-}
-
 macro_rules! impl_ref_operators {
     ($OperTrait:ident :: $func:ident, $lhs:ty, $rhs:ty) => {
         impl<'a> $OperTrait<$rhs> for &'a $lhs {
@@ -333,24 +228,31 @@ macro_rules! do_mat_boilerplate {
      $Vn: ident, $size: expr,
      $elems: expr) =>
     {
-        // would be nice if we did this for tuples too...
-        define_conversions!($Mn, [f32; $elems]);
-        define_conversions!($Mn, [[f32; $size]; $size]);
-        define_conversions!($Mn, [$Vn; $size]);
-
-        impl AsRef<[f32]> for $Mn {
+        impl AsRef<[$Vn; $size]> for $Mn {
             #[inline]
-            fn as_ref(&self) -> &[f32] {
-                let m: &[f32; $elems] = self.as_ref();
-                &m[..]
+            fn as_ref(&self) -> &[$Vn; $size] {
+                unsafe { &*(self as *const $Mn as *const [$Vn; $size]) }
             }
         }
 
-        impl AsMut<[f32]> for $Mn {
+        impl AsMut<[$Vn; $size]> for $Mn {
             #[inline]
-            fn as_mut(&mut self) -> &mut [f32] {
-                let m: &mut[f32; $elems] = self.as_mut();
-                &mut m[..]
+            fn as_mut(&mut self) -> &mut [$Vn; $size] {
+                unsafe { &mut *(self as *mut $Mn as *mut [$Vn; $size]) }
+            }
+        }
+
+        impl From<$Mn> for [$Vn; $size] {
+            #[inline]
+            fn from(m: $Mn) -> [$Vn; $size] {
+                *m.as_ref()
+            }
+        }
+
+        impl From<[$Vn; $size]> for $Mn {
+            #[inline]
+            fn from(m: [$Vn; $size]) -> $Mn {
+                $Mn { $($field: m[$index]),+ }
             }
         }
 
@@ -371,24 +273,8 @@ macro_rules! do_mat_boilerplate {
         }
 
         impl $Mn {
-            #[inline] pub fn as_ptr(&self) -> *const f32 { (&self.x.x) as *const f32 }
-            #[inline] pub fn as_mut_ptr(&mut self) -> *mut f32 { (&mut self.x.x) as *mut f32 }
-
-            #[inline] pub fn as_f32_slice(&self) -> &[f32] { self.as_ref() }
-            #[inline] pub fn as_mut_f32_slice(&mut self) -> &mut [f32] { self.as_mut() }
-
             #[inline] pub fn as_slice(&self) -> &[$Vn] { self.as_ref() }
             #[inline] pub fn as_mut_slice(&mut self) -> &mut [$Vn] { self.as_mut() }
-
-            #[inline]
-            pub fn map<F: Fn($Vn) -> $Vn>(self, f: F) -> $Mn {
-                $Mn { $($field: f(self.$field)),+ }
-            }
-
-            #[inline]
-            pub fn map2<F: Fn($Vn, $Vn) -> $Vn>(self, o: $Mn, f: F) -> $Mn {
-                $Mn { $($field: f(self.$field, o.$field)),+ }
-            }
         }
 
         impl Index<usize> for $Mn {
@@ -402,12 +288,12 @@ macro_rules! do_mat_boilerplate {
 
         impl Add for $Mn {
             type Output = $Mn;
-            #[inline] fn add(self, o: $Mn) -> $Mn { self.map2(o, |a, b| a + b) }
+            #[inline] fn add(self, o: $Mn) -> $Mn { $Mn { $($field: self.$field + o.$field),+ } }
         }
 
         impl Sub for $Mn {
             type Output = $Mn;
-            #[inline] fn sub(self, o: $Mn) -> $Mn { self.map2(o, |a, b| a - b) }
+            #[inline] fn sub(self, o: $Mn) -> $Mn { $Mn { $($field: self.$field - o.$field),+ } }
         }
 
         impl Mul<$Mn> for $Mn {
@@ -417,12 +303,18 @@ macro_rules! do_mat_boilerplate {
 
         impl Mul<f32> for $Mn {
             type Output = $Mn;
-            #[inline] fn mul(self, rhs: f32) -> $Mn { self.map(|a| a * rhs) }
+            #[inline] fn mul(self, rhs: f32) -> $Mn { $Mn { $($field: self.$field * rhs),+ } }
         }
 
         impl Div<f32> for $Mn {
             type Output = $Mn;
-            #[inline] fn div(self, rhs: f32) -> $Mn { self.map(|a| a / rhs) }
+            #[inline]
+            #[allow(clippy::suspicious_arithmetic_impl)]
+            fn div(self, rhs: f32) -> $Mn {
+                debug_assert!(rhs != 0.0);
+                let i = 1.0 / rhs;
+                $Mn { $($field: self.$field * i),+ }
+            }
         }
 
         impl_ref_operators!(Mul::mul, $Mn, $Mn);
@@ -555,33 +447,16 @@ impl M2x2 {
 
 impl M3x3 {
     #[inline]
+    #[rustfmt::skip]
     pub const fn new(
-        xx: f32,
-        xy: f32,
-        xz: f32,
-        yx: f32,
-        yy: f32,
-        yz: f32,
-        zx: f32,
-        zy: f32,
-        zz: f32,
+        xx: f32, xy: f32, xz: f32,
+        yx: f32, yy: f32, yz: f32,
+        zx: f32, zy: f32, zz: f32,
     ) -> Self {
         Self {
-            x: V3 {
-                x: xx,
-                y: xy,
-                z: xz,
-            },
-            y: V3 {
-                x: yx,
-                y: yy,
-                z: yz,
-            },
-            z: V3 {
-                x: zx,
-                y: zy,
-                z: zz,
-            },
+            x: V3 { x: xx, y: xy, z: xz },
+            y: V3 { x: yx, y: yy, z: yz },
+            z: V3 { x: zx, y: zy, z: zz },
         }
     }
 
@@ -825,49 +700,18 @@ impl M3x3 {
 
 impl M4x4 {
     #[inline]
+    #[rustfmt::skip]
     pub const fn new(
-        xx: f32,
-        xy: f32,
-        xz: f32,
-        xw: f32,
-        yx: f32,
-        yy: f32,
-        yz: f32,
-        yw: f32,
-        zx: f32,
-        zy: f32,
-        zz: f32,
-        zw: f32,
-        wx: f32,
-        wy: f32,
-        wz: f32,
-        ww: f32,
+        xx: f32, xy: f32, xz: f32, xw: f32,
+        yx: f32, yy: f32, yz: f32, yw: f32,
+        zx: f32, zy: f32, zz: f32, zw: f32,
+        wx: f32, wy: f32, wz: f32, ww: f32,
     ) -> M4x4 {
         M4x4 {
-            x: V4 {
-                x: xx,
-                y: xy,
-                z: xz,
-                w: xw,
-            },
-            y: V4 {
-                x: yx,
-                y: yy,
-                z: yz,
-                w: yw,
-            },
-            z: V4 {
-                x: zx,
-                y: zy,
-                z: zz,
-                w: zw,
-            },
-            w: V4 {
-                x: wx,
-                y: wy,
-                z: wz,
-                w: ww,
-            },
+            x: V4 { x: xx, y: xy, z: xz, w: xw },
+            y: V4 { x: yx, y: yy, z: yz, w: yw },
+            z: V4 { x: zx, y: zy, z: zz, w: zw },
+            w: V4 { x: wx, y: wy, z: wz, w: ww },
         }
     }
 
@@ -877,9 +721,13 @@ impl M4x4 {
     }
 
     #[inline]
+    #[rustfmt::skip]
     pub const fn from_rows(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
         mat4(
-            x.x, y.x, z.x, w.x, x.y, y.y, z.y, w.y, x.z, y.z, z.z, w.z, x.w, y.w, z.w, w.w,
+            x.x, y.x, z.x, w.x,
+            x.y, y.y, z.y, w.y,
+            x.z, y.z, z.z, w.z,
+            x.w, y.w, z.w, w.w,
         )
     }
 
@@ -889,7 +737,7 @@ impl M4x4 {
     }
 
     #[inline]
-    pub fn diagonal(&self) -> V4 {
+    pub const fn diagonal(&self) -> V4 {
         vec4(self.x.x, self.y.y, self.z.z, self.w.w)
     }
 
@@ -1122,6 +970,103 @@ impl M4x4 {
     }
 }
 
+impl From<M2x2> for [f32; 4] {
+    #[inline]
+    fn from(m: M2x2) -> [f32; 4] {
+        [m.x.x, m.x.y, m.y.x, m.y.y]
+    }
+}
+
+impl From<[f32; 4]> for M2x2 {
+    #[inline]
+    fn from(m: [f32; 4]) -> M2x2 {
+        mat2(m[0], m[1], m[2], m[3])
+    }
+}
+
+impl From<M2x2> for [[f32; 2]; 2] {
+    #[inline]
+    fn from(m: M2x2) -> [[f32; 2]; 2] {
+        [[m.x.x, m.x.y], [m.y.x, m.y.y]]
+    }
+}
+
+impl From<[[f32; 2]; 2]> for M2x2 {
+    #[inline]
+    fn from(m: [[f32; 2]; 2]) -> M2x2 {
+        mat2(m[0][0], m[0][1], m[1][0], m[1][1])
+    }
+}
+
+impl From<M3x3> for [f32; 9] {
+    #[inline]
+    fn from(m: M3x3) -> [f32; 9] {
+        [
+            m.x.x, m.x.y, m.x.z, m.y.x, m.y.y, m.y.z, m.z.x, m.z.y, m.z.z,
+        ]
+    }
+}
+
+impl From<[f32; 9]> for M3x3 {
+    #[inline]
+    fn from(m: [f32; 9]) -> M3x3 {
+        mat3(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8])
+    }
+}
+
+impl From<M3x3> for [[f32; 3]; 3] {
+    #[inline]
+    fn from(m: M3x3) -> [[f32; 3]; 3] {
+        [m[0].into(), m[1].into(), m[2].into()]
+    }
+}
+
+impl From<[[f32; 3]; 3]> for M3x3 {
+    #[inline]
+    fn from(m: [[f32; 3]; 3]) -> M3x3 {
+        M3x3::from_cols(m[0].into(), m[1].into(), m[2].into())
+    }
+}
+
+impl From<M4x4> for [f32; 16] {
+    #[inline]
+    #[rustfmt::skip]
+    fn from(m: M4x4) -> [f32; 16] {
+        [
+            m.x.x, m.x.y, m.x.z, m.x.w,
+            m.y.x, m.y.y, m.y.z, m.y.w,
+            m.z.x, m.z.y, m.z.z, m.z.w,
+            m.w.x, m.w.y, m.w.z, m.w.w,
+        ]
+    }
+}
+
+impl From<[f32; 16]> for M4x4 {
+    #[inline]
+    #[rustfmt::skip]
+    fn from(m: [f32; 16]) -> M4x4 {
+        mat4(
+            m[0],  m[1],  m[2],  m[3],
+            m[4],  m[5],  m[6],  m[7],
+            m[8],  m[9],  m[10], m[11],
+            m[12], m[13], m[14], m[15],
+        )
+    }
+}
+
+impl From<M4x4> for [[f32; 4]; 4] {
+    #[inline]
+    fn from(m: M4x4) -> [[f32; 4]; 4] {
+        [m[0].into(), m[1].into(), m[2].into(), m[3].into()]
+    }
+}
+
+impl From<[[f32; 4]; 4]> for M4x4 {
+    #[inline]
+    fn from(m: [[f32; 4]; 4]) -> M4x4 {
+        M4x4::from_cols(m[0].into(), m[1].into(), m[2].into(), m[3].into())
+    }
+}
 pub trait MatType:
     Copy
     + Clone

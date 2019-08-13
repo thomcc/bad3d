@@ -3,10 +3,6 @@ use std::{cmp, fmt};
 #[macro_use]
 mod macros;
 
-mod wrap_iter;
-
-pub use self::wrap_iter::*;
-
 #[inline]
 pub fn some_if<T>(cond: bool, val: T) -> Option<T> {
     if cond {

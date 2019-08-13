@@ -4,9 +4,8 @@ use crate::math::traits::*;
 use crate::math::vec::*;
 
 use std::ops::*;
-use std::{f32, fmt, mem};
 
-#[repr(C)]
+#[repr(transparent)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Quat(pub V4);
 
@@ -15,8 +14,8 @@ pub const fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
     Quat(V4 { x, y, z, w })
 }
 
-impl fmt::Display for Quat {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl std::fmt::Display for Quat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "quat({}, {}, {}, {})",
@@ -54,13 +53,14 @@ impl AsMut<V4> for Quat {
 impl AsRef<Quat> for V4 {
     #[inline]
     fn as_ref(&self) -> &Quat {
-        unsafe { mem::transmute(self) }
+        unsafe { &*(self as *const V4 as *const Quat) }
     }
 }
+
 impl AsMut<Quat> for V4 {
     #[inline]
     fn as_mut(&mut self) -> &mut Quat {
-        unsafe { mem::transmute(self) }
+        unsafe { &mut *(self as *mut V4 as *mut Quat) }
     }
 }
 
@@ -197,13 +197,15 @@ impl DivAssign<f32> for Quat {
 
 impl Quat {
     #[inline]
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quat {
+    pub const fn new(x: f32, y: f32, z: f32, w: f32) -> Quat {
         quat(x, y, z, w)
     }
+
     #[inline]
     pub fn angle(self) -> f32 {
         self.0.w.acos() * 2.0
     }
+
     #[inline]
     pub fn axis(self) -> V3 {
         self.axis_angle().0
