@@ -20,7 +20,7 @@ pub const fn vec2(x: f32, y: f32) -> V2 {
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-#[repr(C)]
+#[repr(C, align(16))]
 pub struct V3 {
     pub x: f32,
     pub y: f32,

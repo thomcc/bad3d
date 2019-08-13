@@ -767,6 +767,10 @@ impl ConstraintSet {
     fn constrain_contacts(&mut self, contacts: &[PhysicsContact]) {
         for c in contacts {
             let cc = c.contact;
+            let sep = cc.separation;
+            if sep < 0.0 {
+                continue;
+            }
 
             let r0 = rb_map_or(&c.bodies.0, V3::zero(), |rb| cc.points.0 - rb.pose.position);
             let r1 = rb_map_or(&c.bodies.1, V3::zero(), |rb| cc.points.1 - rb.pose.position);
@@ -781,8 +785,7 @@ impl ConstraintSet {
             let v = v0 - v1;
 
             let min_sep = self.params.max_drift * 0.25;
-            let sep = cc.separation;
-
+            // assert!(sep < 0.0);
             let bounce_vel = 0.0f32.max(
                 (-dot(cc.plane.normal, v) - self.params.gravity.length() * self.params.ballistic_response)
                     * self.params.restitution,
