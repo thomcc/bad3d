@@ -269,6 +269,7 @@ impl DemoWindow {
         let params = glium::DrawParameters {
             point_size: if solid { Some(5.0) } else { None },
             line_width: Some(5.0),
+            blend: glium::Blend::alpha_blending(),
             smooth: if solid {
                 None
             } else {

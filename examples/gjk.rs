@@ -11,8 +11,9 @@ extern crate bad3d;
 extern crate failure;
 #[global_allocator]
 static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
+use imgui_glium_renderer;
 
-use imgui;
+use imgui::{self, im_str};
 
 mod shared;
 use crate::shared::{object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
@@ -60,6 +61,7 @@ impl GjkTestState {
         for v in self.all_verts.iter_mut() {
             *v -= com;
         }
+        self.regen();
     }
 
     fn set_count(&mut self, vert_count: usize) {
@@ -67,6 +69,7 @@ impl GjkTestState {
             self.vert_count = vert_count;
         }
         self.reinit();
+        self.regen();
     }
 
     fn regen(&mut self) {
@@ -99,6 +102,7 @@ impl GjkTestState {
 
 fn main() -> Result<()> {
     env_logger::init();
+    let gui = Rc::new(RefCell::new(imgui::Context::create()));
     let mut win = DemoWindow::new(
         DemoOptions {
             title: "Hull test",
@@ -112,8 +116,11 @@ fn main() -> Result<()> {
             light_pos: vec3(1.4, 0.4, 0.7),
             ..Default::default()
         },
-        Rc::new(RefCell::new(imgui::Context::create())),
+        gui.clone(),
     )?;
+
+    let mut a_pos = V3::zero();
+    let mut b_pos = V3::zero();
 
     let mut test_state = GjkTestState::new();
     let mut show_mink = false;
@@ -121,8 +128,8 @@ fn main() -> Result<()> {
     use glium::index::PrimitiveType::*;
 
     let mut model_orientation = Quat::identity();
-    let mut print_hit_info = true;
-
+    let mut gui_renderer =
+        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
     while win.is_up() {
         for &(key, down) in win.input.key_changes.iter() {
             if !down {
@@ -131,12 +138,12 @@ fn main() -> Result<()> {
             match key {
                 glium::glutin::VirtualKeyCode::Key1 => {
                     test_state.reinit();
-                    print_hit_info = true;
+                    a_pos = V3::zero();
+                    b_pos = V3::zero();
                 }
                 glium::glutin::VirtualKeyCode::Key2 => {
                     let t = !show_mink;
                     show_mink = t;
-                    print_hit_info = true;
                 }
                 _ => {}
             }
@@ -152,36 +159,60 @@ fn main() -> Result<()> {
             ) * q;
         }
 
+        // let mouse_ray = model_orientation * win.input.mouse.vec.must_norm();
+
+        // let on_a = geom::convex_hit_check_posed(
+        //     test_state.a_tris.iter().map(|&tri| {
+        //         let (v0, v1, v2) = tri.tri_verts(&test_state.a_verts);
+        //         Plane::from_tri(v0, v1, v2)
+        //     }),
+        //     a_pos.into(),
+        //     V3::zero(),
+        //     mouse_ray * 100.0,
+        // );
+
+        // let on_b = geom::convex_hit_check_posed(
+        //     test_state.b_tris.iter().map(|&tri| {
+        //         let (v0, v1, v2) = tri.tri_verts(&test_state.b_verts);
+        //         Plane::from_tri(v0, v1, v2)
+        //     }),
+        //     b_pos.into(),
+        //     V3::zero(),
+        //     mouse_ray * 100.0,
+        // );
+        // let a_dist = on_a.map(|hi| hi.impact.length_sq());
+        // let b_dist = on_b.map(|hi| hi.impact.length_sq());
+
         let scene_matrix = Pose::from_rotation(model_orientation).to_mat4();
 
-        test_state.regen();
-        let hit = gjk::separated(&test_state.a_verts[..], &test_state.b_verts[..], true);
+        let va = test_state
+            .a_verts
+            .iter()
+            .map(|&v| v + a_pos)
+            .collect::<Vec<_>>();
+        let vb = test_state
+            .b_verts
+            .iter()
+            .map(|&v| v + b_pos)
+            .collect::<Vec<_>>();
+
+        let hit = gjk::separated(&va[..], &vb[..], true);
+
         let did_hit = hit.separation <= 0.0;
-        if print_hit_info {
-            println!(
-                r#"
-                did hit? {}\n
-                separation: {}\n
-                full info: {:?}
-            "#,
-                did_hit, hit.separation, hit
-            );
-        }
 
         let hit_p = if show_mink {
-            let mut mink_vertices =
-                Vec::with_capacity(test_state.a_verts.len() * test_state.b_verts.len());
+            let mut mink_vertices = Vec::with_capacity(va.len() * vb.len());
 
-            for a in &test_state.a_verts {
-                for b in &test_state.b_verts {
+            for a in &va {
+                for b in &vb {
                     mink_vertices.push(*a - *b);
                 }
             }
-            let mink_tris = hull::compute_hull(&mut mink_vertices[..]).unwrap().0;
+            let (mink_tris, len) = hull::compute_hull(&mut mink_vertices[..]).unwrap();
             win.draw_tris(
                 scene_matrix,
                 vec4(1.0, 0.5, 0.5, 0.8),
-                &mink_vertices,
+                &mink_vertices[..len],
                 Some(&mink_tris),
                 false,
             )?;
@@ -218,14 +249,14 @@ fn main() -> Result<()> {
             win.draw_tris(
                 scene_matrix,
                 vec4(1.0, 0.5, 0.5, 0.8),
-                &test_state.a_verts[..],
+                &va,
                 Some(&test_state.a_tris[..]),
                 false,
             )?;
             win.draw_tris(
                 scene_matrix,
                 vec4(0.5, 0.5, 1.0, 0.8),
-                &test_state.b_verts[..],
+                &vb,
                 Some(&test_state.b_tris[..]),
                 false,
             )?;
@@ -241,7 +272,7 @@ fn main() -> Result<()> {
             )?;
             win.draw_solid(
                 scene_matrix,
-                vec4(0.5, 0.0, 0.0, 1.0),
+                vec4(1.0, 0.0, 1.0, 1.0),
                 &hit.simplex,
                 Points,
                 false,
@@ -274,7 +305,44 @@ fn main() -> Result<()> {
         win.draw_tris(scene_matrix, vec4(rc, 0.0, 1.0, 0.5), &quads0, None, false)?;
         win.draw_tris(scene_matrix, vec4(rc, 1.0, 0.0, 0.5), &quads1, None, false)?;
 
-        win.end_frame()?;
+        let mut imgui = gui.borrow_mut();
+        let ui = imgui.frame();
+
+        ui.window(im_str!("GJK"))
+            .position([20.0, 20.0], imgui::Condition::Appearing)
+            .always_auto_resize(true)
+            .build(|| {
+                ui.checkbox(im_str!("show minkowski hull"), &mut show_mink);
+                let mut count = test_state.vert_count as i32;
+                if ui
+                    .slider_int(im_str!("vert count"), &mut count, 4, 50)
+                    .build()
+                {
+                    if count >= 4 {
+                        test_state.vert_count = count as usize;
+                        a_pos = V3::zero();
+                        b_pos = V3::zero();
+                        test_state.reinit();
+                    }
+                }
+                ui.drag_float3(im_str!("a pos"), a_pos.as_mut())
+                    .speed(0.01)
+                    .build();
+                ui.drag_float3(im_str!("b pos"), b_pos.as_mut())
+                    .speed(0.01)
+                    .build();
+
+                if ui.button(im_str!("new shapes"), [0.0; 2]) {
+                    test_state.reinit();
+                    a_pos = V3::zero();
+                    b_pos = V3::zero();
+                }
+                ui.separator();
+                ui.text(im_str!("did_hit: {}", hit.separation <= 0.0));
+                ui.text(im_str!("separation: {}", hit.separation));
+                ui.text(im_str!("full: {:#?}", hit));
+            });
+        win.end_frame_and_ui(&mut gui_renderer, ui)?;
     }
     Ok(())
 }
