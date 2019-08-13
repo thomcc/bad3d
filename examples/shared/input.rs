@@ -9,8 +9,8 @@ use imgui::{Context, StyleColor, Ui};
 use imgui_winit_support::WinitPlatform;
 
 use glium::glutin::{
-    ElementState, Event, EventsLoop, KeyboardInput, MouseButton, MouseScrollDelta, TouchPhase,
-    VirtualKeyCode, WindowEvent,
+    ElementState, Event, EventsLoop, KeyboardInput, MouseButton, MouseScrollDelta, TouchPhase, VirtualKeyCode,
+    WindowEvent,
 };
 use glium::Display;
 

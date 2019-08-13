@@ -175,10 +175,7 @@ mod tests {
         let vi = vec4(100.0, 4.0, 6.0, 15.0).into_iter();
         assert_eq!(vi.len(), 4);
         assert_eq!(&vi.clone().collect::<Vec<_>>(), &[100.0, 4.0, 6.0, 15.0]);
-        assert_eq!(
-            &vi.clone().rev().collect::<Vec<_>>(),
-            &[15.0, 6.0, 4.0, 100.0]
-        );
+        assert_eq!(&vi.clone().rev().collect::<Vec<_>>(), &[15.0, 6.0, 4.0, 100.0]);
         {
             let mut via = vi.clone();
             assert_eq!(via.next(), Some(100.0));

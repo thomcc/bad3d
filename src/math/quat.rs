@@ -16,11 +16,7 @@ pub const fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
 
 impl std::fmt::Display for Quat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "quat({}, {}, {}, {})",
-            self.0.x, self.0.y, self.0.z, self.0.w
-        )
+        write!(f, "quat({}, {}, {}, {})", self.0.x, self.0.y, self.0.z, self.0.w)
     }
 }
 
@@ -365,10 +361,7 @@ impl Quat {
 
     #[inline]
     pub fn slerp_closer(self, o: Quat, t: f32) -> Quat {
-        Quat(
-            self.0
-                .slerp(if self.0.dot(o.0) < 0.0 { -o.0 } else { o.0 }, t),
-        )
+        Quat(self.0.slerp(if self.0.dot(o.0) < 0.0 { -o.0 } else { o.0 }, t))
     }
 
     #[inline]

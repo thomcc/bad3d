@@ -1,10 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![allow(
-    clippy::float_cmp,
-    clippy::many_single_char_names,
-    clippy::cast_lossless
-)]
+#![allow(clippy::float_cmp, clippy::many_single_char_names, clippy::cast_lossless)]
 #[macro_use]
 extern crate glium;
 use rand;
@@ -62,17 +58,9 @@ impl<'a> ImguiExt for imgui::Ui<'a> {
             .iter()
             .map(|choice| im_str!("{:?}", choice).clone())
             .collect::<Vec<imgui::ImString>>();
-        let items = items_storage
-            .iter()
-            .map(|r| r.as_ref())
-            .collect::<Vec<&imgui::ImStr>>();
+        let items = items_storage.iter().map(|r| r.as_ref()).collect::<Vec<&imgui::ImStr>>();
 
-        let mut cur_item = choices
-            .iter()
-            .enumerate()
-            .find(|(_, x)| x == &cur_choice)
-            .unwrap()
-            .0 as i32;
+        let mut cur_item = choices.iter().enumerate().find(|(_, x)| x == &cur_choice).unwrap().0 as i32;
 
         let res = self.combo(&im_str!("{}", label), &mut cur_item, &items, -1);
         if cur_item < 0 || cur_item as usize > choices.len() {
@@ -195,10 +183,7 @@ impl BspScene {
             world_size: 2.0,
             hit_dist: 0.0,
             faces: vec![],
-            cam: Pose::from_rotation(Quat::from_axis_angle(
-                vec3(1.0, 0.0, 0.0),
-                60f32.to_radians(),
-            )),
+            cam: Pose::from_rotation(Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), 60f32.to_radians())),
             objects: vec![
                 (
                     SceneObj::new(Shape::Rect(vec3(1.0, 1.0, 2.4)), vec3(0.0, 0.0, 0.5)),
@@ -216,21 +201,11 @@ impl BspScene {
                     CsgOp::Union,
                 ),
                 (
-                    SceneObj::new(
-                        Shape::Octahedron(vec3(0.85, 0.85, 0.85)),
-                        vec3(0.8, 0.0, 0.45),
-                    ),
+                    SceneObj::new(Shape::Octahedron(vec3(0.85, 0.85, 0.85)), vec3(0.8, 0.0, 0.45)),
                     CsgOp::Subtract,
                 ),
                 (
-                    SceneObj::new(
-                        Shape::Sphere {
-                            lat: 8,
-                            lng: 8,
-                            r: 1.0,
-                        },
-                        vec3(0.2, 0.1, 0.2),
-                    ),
+                    SceneObj::new(Shape::Sphere { lat: 8, lng: 8, r: 1.0 }, vec3(0.2, 0.1, 0.2)),
                     CsgOp::Subtract,
                 ),
             ],
@@ -249,18 +224,13 @@ impl BspScene {
         let dm = self.drag_mode;
         match dm {
             Some(DragMode::Scene) => {
-                self.cam.orientation *= Quat::virtual_track_ball(
-                    vec3(0.0, 0.0, 2.0),
-                    V3::zero(),
-                    input.mouse_prev.vec,
-                    input.mouse.vec,
-                )
-                .conj();
+                self.cam.orientation *=
+                    Quat::virtual_track_ball(vec3(0.0, 0.0, 2.0), V3::zero(), input.mouse_prev.vec, input.mouse.vec)
+                        .conj();
             }
             Some(DragMode::Obj(which)) => {
                 chek::lt!(which, self.objects.len());
-                let pos_offset = (self.cam.orientation * input.mouse.vec
-                    - self.cam.orientation * input.mouse_prev.vec)
+                let pos_offset = (self.cam.orientation * input.mouse.vec - self.cam.orientation * input.mouse_prev.vec)
                     * self.hit_dist;
                 self.objects[which].0.pos += pos_offset;
                 self.bsp = None;
@@ -310,10 +280,7 @@ impl BspScene {
         bspres.rebuild_boundary();
         self.faces = bspres.rip_boundary();
         self.bsp = bsp::clean(bspres);
-        assert!(
-            self.bsp.is_some(),
-            "Somehow our compiled BSP ended up as a leaf?"
-        );
+        assert!(self.bsp.is_some(), "Somehow our compiled BSP ended up as a leaf?");
         Some(now.elapsed())
     }
 }
@@ -339,8 +306,7 @@ pub fn main() -> Result<()> {
         gui.clone(),
     )?;
 
-    let mut gui_renderer =
-        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
+    let mut gui_renderer = imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
 
     win.input.view_angle = 45.0;
 
@@ -379,19 +345,9 @@ pub fn main() -> Result<()> {
         let render_start = Instant::now();
 
         if ui_opts.collider_wires {
-            win.wm_draw_wireframe(
-                M4x4::identity(),
-                vec4(0.0, 1.0, 0.5, 1.0),
-                &scene.root_obj.mesh,
-                false,
-            )?;
+            win.wm_draw_wireframe(M4x4::identity(), vec4(0.0, 1.0, 0.5, 1.0), &scene.root_obj.mesh, false)?;
             for (obj, _) in scene.objects.iter() {
-                win.wm_draw_wireframe(
-                    M4x4::from_translation(obj.pos),
-                    obj.color,
-                    &obj.mesh,
-                    false,
-                )?;
+                win.wm_draw_wireframe(M4x4::from_translation(obj.pos), obj.color, &obj.mesh, false)?;
             }
         }
 
@@ -409,8 +365,7 @@ pub fn main() -> Result<()> {
                 let mut stack = vec![scene.bsp.as_ref().unwrap().as_ref()];
                 while let Some(n) = stack.pop() {
                     if n.leaf_type == bsp::LeafType::Under {
-                        let c = n.convex.verts.iter().fold(V3::zero(), |a, &b| a + b)
-                            / (n.convex.verts.len() as f32);
+                        let c = n.convex.verts.iter().fold(V3::zero(), |a, &b| a + b) / (n.convex.verts.len() as f32);
                         let m = M4x4::from_translation(c)
                             * M4x4::from_scale(V3::splat(ui_opts.cell_scale))
                             * M4x4::from_translation(-c);

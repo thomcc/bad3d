@@ -1,10 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![allow(
-    clippy::float_cmp,
-    clippy::many_single_char_names,
-    clippy::cast_lossless
-)]
+#![allow(clippy::float_cmp, clippy::many_single_char_names, clippy::cast_lossless)]
 #[macro_use]
 extern crate glium;
 use rand;
@@ -22,9 +18,7 @@ extern crate failure;
 static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
 
 mod shared;
-use crate::shared::{
-    input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result,
-};
+use crate::shared::{input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
 use bad3d::prelude::*;
 use glium::glutin::VirtualKeyCode;
 use std::cell::RefCell;
@@ -135,8 +129,7 @@ fn main() -> Result<()> {
 
     let ground = Shape::new_aabb(vec3(-40.0, -40.0, -5.0), vec3(40.0, 40.0, -2.0));
 
-    let ground_mesh =
-        DemoMesh::from_shape(&win.display, &ground, Some(vec4(0.25, 0.75, 0.25, 1.0)))?;
+    let ground_mesh = DemoMesh::from_shape(&win.display, &ground, Some(vec4(0.25, 0.75, 0.25, 1.0)))?;
 
     let mut demo_objects: Vec<DemoObject> = Vec::new();
 
@@ -177,20 +170,10 @@ fn main() -> Result<()> {
         let l = DemoObject::from_wingmesh(&win.display, wm, seesaw_start + vec3(3.5, 0.0, 50.0))?;
         l.body.borrow_mut().scale_mass(6.0);
 
-        let l2 = DemoObject::new_box(
-            &win.display,
-            V3::splat(0.25),
-            seesaw_start + vec3(3.0, 0.0, 0.4),
-            None,
-        )?;
+        let l2 = DemoObject::new_box(&win.display, V3::splat(0.25), seesaw_start + vec3(3.0, 0.0, 0.4), None)?;
         l2.body.borrow_mut().scale_mass(0.75);
 
-        let r = DemoObject::new_box(
-            &win.display,
-            V3::splat(0.5),
-            seesaw_start + vec3(-2.5, 0.0, 8.0),
-            None,
-        )?;
+        let r = DemoObject::new_box(&win.display, V3::splat(0.5), seesaw_start + vec3(-2.5, 0.0, 8.0), None)?;
         r.body.borrow_mut().scale_mass(2.0);
 
         demo_objects.push(l);
@@ -207,10 +190,8 @@ fn main() -> Result<()> {
         vec3(-5.5, 0.5, 7.5),
         RbMass::FromVolume,
     );
-    jack.borrow_mut()
-        .apply_impulse(jack_push_pos, jack_momentum);
-    jack.borrow_mut()
-        .apply_impulse(jack_push_pos_2, jack_momentum_2);
+    jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
+    jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
     demo_objects.push(DemoObject::from_body(&win.display, jack.clone())?);
 
     {
@@ -276,15 +257,8 @@ fn main() -> Result<()> {
 
     {
         let mut wm = WingMesh::new_cone(30, 0.5, 2.0);
-        wm.rotate(Quat::shortest_arc(
-            vec3(0.0, 0.0, 1.0),
-            vec3(0.0, -0.5, -0.5),
-        ));
-        demo_objects.push(DemoObject::from_wingmesh(
-            &win.display,
-            wm,
-            vec3(-4.0, -4.0, 4.0),
-        )?);
+        wm.rotate(Quat::shortest_arc(vec3(0.0, 0.0, 1.0), vec3(0.0, -0.5, -0.5)));
+        demo_objects.push(DemoObject::from_wingmesh(&win.display, wm, vec3(-4.0, -4.0, 4.0))?);
     }
 
     let mut cam = DemoCamera::new_at(vec3(0.2, -20.6, 6.5));
@@ -301,8 +275,7 @@ fn main() -> Result<()> {
     let mut selected: Option<RigidBodyRef> = None;
     let mut rb_pos = V3::zero();
 
-    let mut gui_renderer =
-        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
+    let mut gui_renderer = imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
 
     let mut running = false;
     let mut params = bad3d::phys::PhysParams::default();
@@ -330,10 +303,8 @@ fn main() -> Result<()> {
                     }
                     seesaw.borrow_mut().pose.orientation = Quat::identity();
 
-                    jack.borrow_mut()
-                        .apply_impulse(jack_push_pos, jack_momentum);
-                    jack.borrow_mut()
-                        .apply_impulse(jack_push_pos_2, jack_momentum_2);
+                    jack.borrow_mut().apply_impulse(jack_push_pos, jack_momentum);
+                    jack.borrow_mut().apply_impulse(jack_push_pos_2, jack_momentum_2);
                 }
                 _ => {}
             }
@@ -367,9 +338,8 @@ fn main() -> Result<()> {
         if !win.input.mouse.down.0 {
             selected = None;
         }
-        cube_pos = cam.position
-            + mouse_ray
-                * (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
+        cube_pos =
+            cam.position + mouse_ray * (targ_pos.dist(cam.position) * 1.025_f32.powf(win.input.mouse.wheel / 30.0));
 
         let dt = if fix_dt {
             safe_div0(1.0, fix_phys_fps)
@@ -438,45 +408,31 @@ fn main() -> Result<()> {
                 {
                     ui.checkbox(im_str!("use rk4 instead of euler?"), &mut params.use_rk4);
 
-                    ui.slider_float(im_str!("time scale"), &mut dt_scale, 0.0, 3.0)
-                        .build();
+                    ui.slider_float(im_str!("time scale"), &mut dt_scale, 0.0, 3.0).build();
                     ui.checkbox(im_str!("fix timestep"), &mut fix_dt);
                     if fix_dt {
-                        ui.input_float(im_str!("fixed fps value: "), &mut fix_phys_fps)
-                            .build();
+                        ui.input_float(im_str!("fixed fps value: "), &mut fix_phys_fps).build();
                     }
 
                     ui.slider_float(im_str!("gravity z"), &mut params.gravity.z, -30.0, 0.0)
                         .build();
 
-                    ui.input_float(im_str!("restitution"), &mut params.restitution)
-                        .build();
+                    ui.input_float(im_str!("restitution"), &mut params.restitution).build();
                     ui.input_float(im_str!("ballistic r"), &mut params.ballistic_response)
                         .build();
-                    ui.input_float(im_str!("pos bias"), &mut params.pos_bias)
-                        .build();
-                    ui.input_float(im_str!("neg bias"), &mut params.neg_bias)
-                        .build();
-                    ui.input_float(im_str!("joint bias"), &mut params.joint_bias)
-                        .build();
-                    ui.input_float(im_str!("max drift"), &mut params.max_drift)
-                        .build();
-                    ui.input_float(im_str!("damping"), &mut params.damping)
-                        .build();
+                    ui.input_float(im_str!("pos bias"), &mut params.pos_bias).build();
+                    ui.input_float(im_str!("neg bias"), &mut params.neg_bias).build();
+                    ui.input_float(im_str!("joint bias"), &mut params.joint_bias).build();
+                    ui.input_float(im_str!("max drift"), &mut params.max_drift).build();
+                    ui.input_float(im_str!("damping"), &mut params.damping).build();
 
                     let mut its = params.solver_iterations as i32;
-                    if ui
-                        .slider_int(im_str!("solve iters"), &mut its, 0, 32)
-                        .build()
-                    {
+                    if ui.slider_int(im_str!("solve iters"), &mut its, 0, 32).build() {
                         params.solver_iterations = its as usize
                     }
 
                     let mut its = params.post_solver_iterations as i32;
-                    if ui
-                        .slider_int(im_str!("post solve iters"), &mut its, 0, 32)
-                        .build()
-                    {
+                    if ui.slider_int(im_str!("post solve iters"), &mut its, 0, 32).build() {
                         params.post_solver_iterations = its as usize
                     }
                 }

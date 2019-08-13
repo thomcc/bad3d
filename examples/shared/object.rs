@@ -57,12 +57,7 @@ pub fn unpack_arr3_mut<T: Copy>(arrays: &mut [[T; 3]]) -> &mut [T] {
 }
 
 impl DemoMesh {
-    pub fn new<F: Facade>(
-        display: &F,
-        verts: Vec<V3>,
-        tris: Vec<[u16; 3]>,
-        color: V4,
-    ) -> Result<DemoMesh> {
+    pub fn new<F: Facade>(display: &F, verts: Vec<V3>, tris: Vec<[u16; 3]>, color: V4) -> Result<DemoMesh> {
         let vbo = glium::VertexBuffer::new(display, vertex_slice(&verts[..]))?;
         let ibo = glium::IndexBuffer::new(
             display,
@@ -120,22 +115,13 @@ pub struct TDemoMesh {
 }
 */
 pub fn random_color() -> V4 {
-    let mut c = vec4(
-        rand::random::<f32>(),
-        rand::random::<f32>(),
-        rand::random::<f32>(),
-        1.0,
-    );
+    let mut c = vec4(rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>(), 1.0);
     c[rand::random::<usize>() % 3] = rand::random::<f32>() * 0.5;
     c
 }
 
 pub fn rand_v3() -> V3 {
-    vec3(
-        rand::random::<f32>(),
-        rand::random::<f32>(),
-        rand::random::<f32>(),
-    )
+    vec3(rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>())
 }
 
 pub struct DemoObject {
@@ -169,21 +155,11 @@ pub fn random_point_cloud(size: usize) -> (Vec<V3>, Vec<[u16; 3]>) {
 }
 
 impl DemoObject {
-    pub fn new_box<F: Facade>(
-        facade: &F,
-        r: V3,
-        com: V3,
-        orient: Option<Quat>,
-    ) -> Result<DemoObject> {
+    pub fn new_box<F: Facade>(facade: &F, r: V3, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
         DemoObject::from_shape(facade, Shape::new_box(r), com, orient)
     }
 
-    pub fn new_octa<F: Facade>(
-        facade: &F,
-        r: V3,
-        com: V3,
-        orient: Option<Quat>,
-    ) -> Result<DemoObject> {
+    pub fn new_octa<F: Facade>(facade: &F, r: V3, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
         DemoObject::from_shape(facade, Shape::new_octa(r), com, orient)
     }
 
@@ -192,12 +168,7 @@ impl DemoObject {
         DemoObject::from_shape(facade, Shape::new(verts, tris), com, orient)
     }
 
-    pub fn from_shape<F: Facade>(
-        facade: &F,
-        s: Shape,
-        com: V3,
-        orient: Option<Quat>,
-    ) -> Result<DemoObject> {
+    pub fn from_shape<F: Facade>(facade: &F, s: Shape, com: V3, orient: Option<Quat>) -> Result<DemoObject> {
         let body = RigidBody::new_ref(vec![s], com, RbMass::FromVolume);
         if let Some(p) = orient {
             body.borrow_mut().pose.orientation = p;

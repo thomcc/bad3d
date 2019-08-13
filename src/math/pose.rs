@@ -14,10 +14,7 @@ pub struct Pose {
 impl Pose {
     #[inline]
     pub fn new(position: V3, orientation: Quat) -> Pose {
-        Pose {
-            position,
-            orientation,
-        }
+        Pose { position, orientation }
     }
 
     #[inline]
@@ -43,10 +40,7 @@ impl Pose {
 
     #[inline]
     pub fn from_mat4(m: M4x4) -> Pose {
-        Pose::new(
-            m.w.xyz(),
-            M3x3::from_cols(m.x.xyz(), m.y.xyz(), m.z.xyz()).to_quat(),
-        )
+        Pose::new(m.w.xyz(), M3x3::from_cols(m.x.xyz(), m.y.xyz(), m.z.xyz()).to_quat())
     }
 
     #[inline]

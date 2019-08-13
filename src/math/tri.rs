@@ -124,10 +124,7 @@ pub fn tri_ref_iter<'a, 'b, V, I: TriIndices>(
 }
 
 #[inline]
-pub fn tri_iter<'a, V: Clone, I: TriIndices>(
-    verts: &'a [V],
-    tris: &'a [I],
-) -> impl Iterator<Item = (V, V, V)> + 'a {
+pub fn tri_iter<'a, V: Clone, I: TriIndices>(verts: &'a [V], tris: &'a [I]) -> impl Iterator<Item = (V, V, V)> + 'a {
     TriIter::new(verts, tris.iter().cloned()).copied()
 }
 
@@ -183,8 +180,6 @@ where
 {
     #[inline]
     fn next_back(&mut self) -> Option<<Self as Iterator>::Item> {
-        self.wrapped
-            .next_back()
-            .map(|tri| tri.tri_vert_ref(self.verts))
+        self.wrapped.next_back().map(|tri| tri.tri_vert_ref(self.verts))
     }
 }

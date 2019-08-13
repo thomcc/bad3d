@@ -98,10 +98,7 @@ fn compile_shader<F: glium::backend::Facade>(
 }
 
 impl DemoWindow {
-    pub fn new(
-        opts: DemoOptions<'_>,
-        gui: Rc<RefCell<imgui::Context>>,
-    ) -> Result<DemoWindow, Error> {
+    pub fn new(opts: DemoOptions<'_>, gui: Rc<RefCell<imgui::Context>>) -> Result<DemoWindow, Error> {
         let context = ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
 
         let window = WindowBuilder::new()
@@ -123,11 +120,9 @@ impl DemoWindow {
         {
             let glw = display.gl_window();
             let mut gui = input_state.gui.borrow_mut();
-            input_state.platform.attach_window(
-                gui.io_mut(),
-                glw.window(),
-                imgui_winit_support::HiDpiMode::Default,
-            );
+            input_state
+                .platform
+                .attach_window(gui.io_mut(), glw.window(), imgui_winit_support::HiDpiMode::Default);
         }
         Ok(DemoWindow {
             display,
@@ -155,10 +150,7 @@ impl DemoWindow {
         self.last_frame = now;
         self.last_frame_time = delta_s;
         assert!(self.targ.is_none());
-        if !self
-            .input
-            .update(&mut self.events, &mut self.display, delta_s)
-        {
+        if !self.input.update(&mut self.events, &mut self.display, delta_s) {
             false
         } else {
             let mut targ = self.display.draw();
@@ -234,25 +226,13 @@ impl DemoWindow {
         Ok(())
     }
 
-    pub fn draw_wire_mesh(
-        &self,
-        mat: M4x4,
-        mesh: &DemoMesh,
-        color: V4,
-        use_depth: bool,
-    ) -> Result<(), Error> {
+    pub fn draw_wire_mesh(&self, mat: M4x4, mesh: &DemoMesh, color: V4, use_depth: bool) -> Result<(), Error> {
         let mut wire = Vec::with_capacity(mesh.tris.len() * 6);
         for tri in &mesh.tris {
             let (v0, v1, v2) = tri.tri_verts(&mesh.verts);
             wire.extend([v0, v1, v1, v2, v2, v0].iter().cloned())
         }
-        self.draw_solid(
-            mat,
-            color,
-            &wire,
-            glium::index::PrimitiveType::LinesList,
-            use_depth,
-        )?;
+        self.draw_solid(mat, color, &wire, glium::index::PrimitiveType::LinesList, use_depth)?;
         Ok(())
     }
 
@@ -283,11 +263,7 @@ impl DemoWindow {
             },
             ..Default::default()
         };
-        let shader = if solid {
-            &self.solid_shader
-        } else {
-            &self.lit_shader
-        };
+        let shader = if solid { &self.solid_shader } else { &self.lit_shader };
         let uniforms = uniform! {
             model: mat.to_arr(),
             u_color: color.to_arr(),
@@ -354,13 +330,7 @@ impl DemoWindow {
         Ok(())
     }
 
-    pub fn wm_draw_wireframe(
-        &self,
-        mat: M4x4,
-        color: V4,
-        wm: &WingMesh,
-        use_depth: bool,
-    ) -> Result<(), Error> {
+    pub fn wm_draw_wireframe(&self, mat: M4x4, color: V4, wm: &WingMesh, use_depth: bool) -> Result<(), Error> {
         let mut verts = Vec::with_capacity(wm.edges.len() * 2);
         for e in &wm.edges {
             verts.push(wm.verts[e.vert_idx()]);
@@ -414,11 +384,7 @@ impl DemoWindow {
         }
     }
 
-    pub fn end_frame_and_ui<'a>(
-        &mut self,
-        ui_render: &mut Renderer,
-        ui: Ui<'a>,
-    ) -> Result<(), Error> {
+    pub fn end_frame_and_ui<'a>(&mut self, ui_render: &mut Renderer, ui: Ui<'a>) -> Result<(), Error> {
         self.end_ui(ui_render, ui);
         self.end_frame()
     }

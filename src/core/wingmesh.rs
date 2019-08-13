@@ -267,12 +267,7 @@ impl WingMesh {
         }
 
         for i in 0..sides {
-            let indices = [
-                i * 2,
-                ((i + 1) % sides) * 2,
-                ((i + 1) % sides) * 2 + 1,
-                i * 2 + 1,
-            ];
+            let indices = [i * 2, ((i + 1) % sides) * 2, ((i + 1) % sides) * 2 + 1, i * 2 + 1];
             mesh.add_face(&indices[..]);
         }
 
@@ -295,8 +290,7 @@ impl WingMesh {
         for i in 0..sides {
             let progress = (i as f32) / (sides as f32);
             let a = 2.0 * f32::consts::PI * progress;
-            mesh.verts
-                .push(vec3(a.cos() * radius, a.sin() * radius, 0.0));
+            mesh.verts.push(vec3(a.cos() * radius, a.sin() * radius, 0.0));
         }
 
         mesh.verts.push(vec3(0.0, 0.0, height));
@@ -447,8 +441,7 @@ impl WingMesh {
     }
 
     pub fn iter_face_verts<'a>(&'a self, face: usize) -> impl Iterator<Item = V3> + 'a {
-        self.iter_face(face)
-            .map(move |edge| self.verts[edge.vert_idx()])
+        self.iter_face(face).map(move |edge| self.verts[edge.vert_idx()])
     }
 
     #[inline]
@@ -512,20 +505,8 @@ impl WingMesh {
     }
 
     pub fn build_edge(&mut self, ea: usize, eb: usize) -> usize {
-        debug_assert_ne!(
-            self.edges[ea].next,
-            int(eb),
-            "already an edge (ea: {}, eb: {})",
-            ea,
-            eb
-        );
-        debug_assert_ne!(
-            self.edges[eb].next,
-            int(ea),
-            "already an edge (ea: {}, eb: {})",
-            ea,
-            eb
-        );
+        debug_assert_ne!(self.edges[ea].next, int(eb), "already an edge (ea: {}, eb: {})", ea, eb);
+        debug_assert_ne!(self.edges[eb].next, int(ea), "already an edge (ea: {}, eb: {})", ea, eb);
         debug_assert_eq!(
             self.edges[ea].face, self.edges[eb].face,
             "can't build edge to different face (ea: {}, eb: {})",
@@ -876,10 +857,7 @@ impl WingMesh {
             self.edges[eid].v
         );
 
-        debug_assert_eq!(
-            self.edges[self.edges[eid].prev_idx()].face,
-            self.edges[eid].face
-        );
+        debug_assert_eq!(self.edges[self.edges[eid].prev_idx()].face, self.edges[eid].face);
 
         if self.vback[self.edges[eid].vert_idx()] == ei {
             let nv = self.edges[self.edges[eid].prev_idx()].adj;
@@ -1304,10 +1282,8 @@ impl WingMesh {
         d.faces.reserve(self.verts.len());
         d.fback.reserve(self.vback.len());
         for (i, &v) in self.verts.iter().enumerate() {
-            d.faces.push(Plane::new(
-                v.norm_or(0.0, 0.0, 1.0),
-                safe_div0(-r * r, v.length()),
-            ));
+            d.faces
+                .push(Plane::new(v.norm_or(0.0, 0.0, 1.0), safe_div0(-r * r, v.length())));
             d.fback.push(self.vback[i]);
         }
 
@@ -1420,8 +1396,7 @@ impl WingMesh {
         };
 
         for &face in &self.faces {
-            if let Some(next) = geom::segment_under(face, test_info.w0, test_info.w1, test_info.nw0)
-            {
+            if let Some(next) = geom::segment_under(face, test_info.w0, test_info.w1, test_info.nw0) {
                 test_info = next;
             } else {
                 return None;

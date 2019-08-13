@@ -43,10 +43,7 @@ impl ContactInfo {
             self.simplex[3] = src.points[2].b;
             if dot(
                 self.plane.normal,
-                cross(
-                    src.points[1].p - src.points[0].p,
-                    src.points[2].p - src.points[0].p,
-                ),
+                cross(src.points[1].p - src.points[0].p, src.points[2].p - src.points[0].p),
             ) < 0.0
             {
                 self.simplex.swap(1, 2);
@@ -59,10 +56,7 @@ impl ContactInfo {
             self.simplex[3] = src.points[2].b;
             if dot(
                 self.plane.normal,
-                cross(
-                    src.points[1].p - src.points[0].p,
-                    src.points[2].p - src.points[0].p,
-                ),
+                cross(src.points[1].p - src.points[0].p, src.points[2].p - src.points[0].p),
             ) < 0.0
             {
                 self.simplex.swap(1, 2);
@@ -91,15 +85,10 @@ impl ContactInfo {
 
             let dp = dot(
                 self.plane.normal,
-                cross(
-                    src.points[1].p - src.points[0].p,
-                    src.points[2].p - src.points[0].p,
-                ),
+                cross(src.points[1].p - src.points[0].p, src.points[2].p - src.points[0].p),
             );
 
-            if (dp < 0.0 && src.points[1].a != src.points[0].a)
-                || (dp > 0.0 && src.points[1].a == src.points[0].a)
-            {
+            if (dp < 0.0 && src.points[1].a != src.points[0].a) || (dp > 0.0 && src.points[1].a == src.points[0].a) {
                 self.simplex.swap(2, 3);
             }
         }
@@ -179,10 +168,7 @@ impl Simplex {
         if t < 0.0 {
             self.set(w.p, &[w.with_t(1.0)])
         } else {
-            self.set(
-                w.p + (self.points[0].p - w.p) * t,
-                &[s.with_t(t), w.with_t(1.0 - t)],
-            )
+            self.set(w.p + (self.points[0].p - w.p) * t, &[s.with_t(t), w.with_t(1.0 - t)])
         }
     }
 
@@ -200,10 +186,7 @@ impl Simplex {
         let in_edge1 = towards_origin(v1, s0.p);
 
         if in_edge0 && in_edge1 {
-            self.set(
-                geom::tri_project(s0.p, s1.p, w.p, V3::zero()),
-                &[s0, s1, *w],
-            )
+            self.set(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), &[s0, s1, *w])
         } else if !in_edge0 && t0 > 0.0 {
             self.set(v0, &[s0.with_t(t0), w.with_t(1.0 - t0)])
         } else if !in_edge1 && t1 > 0.0 {
@@ -295,9 +278,7 @@ impl Simplex {
 
         let (pa, pb) = self.points[0..(self.size as usize)]
             .iter()
-            .fold((V3::zero(), V3::zero()), |(pa, pb), p| {
-                (pa + p.t * p.a, pb + p.t * p.b)
-            });
+            .fold((V3::zero(), V3::zero()), |(pa, pb), p| (pa + p.t * p.a, pb + p.t * p.b));
 
         let norm = self.v.norm_or(0.0, 0.0, 1.0);
         let impact = (pa + pb) * 0.5;
@@ -315,11 +296,7 @@ impl Simplex {
     }
 }
 
-pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
-    a: &A,
-    b: &B,
-    find_closest: bool,
-) -> ContactInfo {
+pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(a: &A, b: &B, find_closest: bool) -> ContactInfo {
     let eps = 0.00001_f32;
 
     let mut v = Point::on_sum(a, b, vec3(0.0, 0.0, 1.0)).p;
@@ -357,12 +334,7 @@ pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
             }
             assert!(next.size == 4);
             let min_penetration_plane = hull::furthest_plane_epa(
-                (
-                    next.points[0].p,
-                    next.points[1].p,
-                    next.points[2].p,
-                    next.points[3].p,
-                ),
+                (next.points[0].p, next.points[1].p, next.points[2].p, next.points[3].p),
                 |v| a.support(v) - b.support(-v),
             );
 
@@ -420,11 +392,7 @@ pub struct ContactPatch {
 }
 
 impl ContactPatch {
-    pub fn new<A: Support + ?Sized, B: Support + ?Sized>(
-        s0: &A,
-        s1: &B,
-        max_sep: f32,
-    ) -> ContactPatch {
+    pub fn new<A: Support + ?Sized, B: Support + ?Sized>(s0: &A, s1: &B, max_sep: f32) -> ContactPatch {
         let mut result: ContactPatch = Default::default();
         result.hit_info[0] = separated(s0, s1, true);
         if result.hit_info[0].separation > max_sep {
@@ -449,14 +417,7 @@ impl ContactPatch {
                 * Pose::new(vec3(0.0, 0.0, 0.0), wiggle)
                 * Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
 
-            let mut next = separated(
-                &TransformedSupport {
-                    pose: ar,
-                    object: s0,
-                },
-                s1,
-                true,
-            );
+            let mut next = separated(&TransformedSupport { pose: ar, object: s0 }, s1, true);
 
             next.plane.normal = n;
             {

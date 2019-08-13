@@ -308,8 +308,7 @@ pub fn poly_hit_check_p(verts: &[V3], plane: Plane, v0: V3, v1: V3) -> Option<Hi
         if !did_hit {
             break;
         }
-        did_hit = M3x3::from_cols(verts[(i + 1) % verts.len()] - v0, v - v0, v1 - v0).determinant()
-            >= 0.0;
+        did_hit = M3x3::from_cols(verts[(i + 1) % verts.len()] - v0, v - v0, v1 - v0).determinant() >= 0.0;
     }
     HitInfo::new_opt(did_hit, impact, plane.normal)
 }
@@ -342,12 +341,7 @@ pub fn convex_hit_check(planes: impl Iterator<Item = Plane>, p0: V3, p1: V3) -> 
     Some(HitInfo::new(v0, n))
 }
 
-pub fn convex_hit_check_posed(
-    planes: impl Iterator<Item = Plane>,
-    pose: Pose,
-    p0: V3,
-    p1: V3,
-) -> Option<HitInfo> {
+pub fn convex_hit_check_posed(planes: impl Iterator<Item = Plane>, pose: Pose, p0: V3, p1: V3) -> Option<HitInfo> {
     let inv_pose = pose.inverse();
     convex_hit_check(planes, inv_pose * p0, inv_pose * p1)
         .map(|hit| HitInfo::new(pose * hit.impact, pose.orientation * hit.normal))

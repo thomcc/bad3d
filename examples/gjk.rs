@@ -1,10 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
-#![allow(
-    clippy::float_cmp,
-    clippy::many_single_char_names,
-    clippy::cast_lossless
-)]
+#![allow(clippy::float_cmp, clippy::many_single_char_names, clippy::cast_lossless)]
 #[macro_use]
 extern crate glium;
 use rand;
@@ -61,8 +57,7 @@ impl GjkTestState {
                     .push(pos + (object::rand_v3() - V3::splat(0.5)).normalize().unwrap() / 2.0);
             }
         }
-        let com =
-            self.all_verts.iter().fold(V3::zero(), |a, b| a + *b) / (self.all_verts.len() as f32);
+        let com = self.all_verts.iter().fold(V3::zero(), |a, b| a + *b) / (self.all_verts.len() as f32);
         for v in self.all_verts.iter_mut() {
             *v -= com;
         }
@@ -111,11 +106,7 @@ fn main() -> Result<()> {
     let mut win = DemoWindow::new(
         DemoOptions {
             title: "Hull test",
-            view: M4x4::look_at(
-                vec3(0.0, 0.0, 2.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 1.0, 0.0),
-            ),
+            view: M4x4::look_at(vec3(0.0, 0.0, 2.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
             clear_color: vec4(0.1, 0.1, 0.2, 1.0),
             near_far: (0.01, 50.0),
             light_pos: vec3(1.4, 0.4, 0.7),
@@ -133,8 +124,7 @@ fn main() -> Result<()> {
     use glium::index::PrimitiveType::*;
 
     let mut model_orientation = Quat::identity();
-    let mut gui_renderer =
-        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
+    let mut gui_renderer = imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
     while win.is_up() {
         for &(key, down) in win.input.key_changes.iter() {
             if !down {
@@ -190,16 +180,8 @@ fn main() -> Result<()> {
 
         let scene_matrix = Pose::from_rotation(model_orientation).to_mat4();
 
-        let va = test_state
-            .a_verts
-            .iter()
-            .map(|&v| v + a_pos)
-            .collect::<Vec<_>>();
-        let vb = test_state
-            .b_verts
-            .iter()
-            .map(|&v| v + b_pos)
-            .collect::<Vec<_>>();
+        let va = test_state.a_verts.iter().map(|&v| v + a_pos).collect::<Vec<_>>();
+        let vb = test_state.b_verts.iter().map(|&v| v + b_pos).collect::<Vec<_>>();
 
         let hit = gjk::separated(&va[..], &vb[..], true);
 
@@ -221,24 +203,12 @@ fn main() -> Result<()> {
                 Some(&mink_tris),
                 false,
             )?;
-            win.draw_solid(
-                scene_matrix,
-                vec4(1.0, 1.0, 1.0, 1.0),
-                &[V3::zero()],
-                Points,
-                false,
-            )?;
+            win.draw_solid(scene_matrix, vec4(1.0, 1.0, 1.0, 1.0), &[V3::zero()], Points, false)?;
 
             for i in 0..3 {
                 let mut v = V3::zero();
                 v[i] = 1.0;
-                win.draw_solid(
-                    scene_matrix,
-                    vec4(v[0], v[1], v[2], 1.0),
-                    &[-v, v],
-                    LinesList,
-                    false,
-                )?;
+                win.draw_solid(scene_matrix, vec4(v[0], v[1], v[2], 1.0), &[-v, v], LinesList, false)?;
             }
 
             win.draw_solid(
@@ -268,27 +238,9 @@ fn main() -> Result<()> {
 
             let points = [hit.points.0, hit.points.1];
 
-            win.draw_solid(
-                scene_matrix,
-                vec4(1.0, 0.5, 0.5, 1.0),
-                &points,
-                Points,
-                false,
-            )?;
-            win.draw_solid(
-                scene_matrix,
-                vec4(1.0, 0.0, 1.0, 1.0),
-                &hit.simplex,
-                Points,
-                false,
-            )?;
-            win.draw_solid(
-                scene_matrix,
-                vec4(1.0, 0.0, 0.0, 1.0),
-                &points,
-                LinesList,
-                false,
-            )?;
+            win.draw_solid(scene_matrix, vec4(1.0, 0.5, 0.5, 1.0), &points, Points, false)?;
+            win.draw_solid(scene_matrix, vec4(1.0, 0.0, 1.0, 1.0), &hit.simplex, Points, false)?;
+            win.draw_solid(scene_matrix, vec4(1.0, 0.0, 0.0, 1.0), &points, LinesList, false)?;
             hit.impact
         };
 
@@ -319,21 +271,15 @@ fn main() -> Result<()> {
             .build(|| {
                 ui.checkbox(im_str!("show minkowski hull"), &mut show_mink);
                 let mut count = test_state.vert_count as i32;
-                let changed = ui
-                    .slider_int(im_str!("vert count"), &mut count, 4, 50)
-                    .build();
+                let changed = ui.slider_int(im_str!("vert count"), &mut count, 4, 50).build();
                 if changed && count >= 4 {
                     test_state.vert_count = count as usize;
                     a_pos = V3::zero();
                     b_pos = V3::zero();
                     test_state.reinit();
                 }
-                ui.drag_float3(im_str!("a pos"), a_pos.as_mut())
-                    .speed(0.01)
-                    .build();
-                ui.drag_float3(im_str!("b pos"), b_pos.as_mut())
-                    .speed(0.01)
-                    .build();
+                ui.drag_float3(im_str!("a pos"), a_pos.as_mut()).speed(0.01).build();
+                ui.drag_float3(im_str!("b pos"), b_pos.as_mut()).speed(0.01).build();
 
                 if ui.button(im_str!("new shapes"), [0.0; 2]) {
                     test_state.reinit();

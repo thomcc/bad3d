@@ -142,11 +142,7 @@ impl Fold for V4 {
 
     #[inline]
     fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
-        f(
-            f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z),
-            o.w,
-            self.w,
-        )
+        f(f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z), o.w, self.w)
     }
 }
 
@@ -687,16 +683,7 @@ do_vec_boilerplate!(V2 { x: 0, y: 1 }, 2, (f32, f32));
 
 do_vec_boilerplate!(V3 { x: 0, y: 1, z: 2 }, 3, (f32, f32, f32));
 
-do_vec_boilerplate!(
-    V4 {
-        x: 0,
-        y: 1,
-        z: 2,
-        w: 3
-    },
-    4,
-    (f32, f32, f32, f32)
-);
+do_vec_boilerplate!(V4 { x: 0, y: 1, z: 2, w: 3 }, 4, (f32, f32, f32, f32));
 
 impl V2 {
     #[inline]
@@ -953,22 +940,14 @@ impl From<V3> for V2 {
 impl From<V2> for V3 {
     #[inline]
     fn from(v: V2) -> V3 {
-        V3 {
-            x: v.x,
-            y: v.y,
-            z: 0.0,
-        }
+        V3 { x: v.x, y: v.y, z: 0.0 }
     }
 }
 
 impl From<V4> for V3 {
     #[inline]
     fn from(v: V4) -> V3 {
-        V3 {
-            x: v.x,
-            y: v.y,
-            z: v.z,
-        }
+        V3 { x: v.x, y: v.y, z: v.z }
     }
 }
 

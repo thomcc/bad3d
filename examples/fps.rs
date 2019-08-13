@@ -25,9 +25,7 @@ static GLOBAL: mimallocator::Mimalloc = mimallocator::Mimalloc;
 mod shared;
 
 use crate::shared::cam::*;
-use crate::shared::{
-    input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result,
-};
+use crate::shared::{input::InputState, object, DemoMesh, DemoObject, DemoOptions, DemoWindow, Result};
 
 use bad3d::prelude::*;
 use glium::glutin::VirtualKeyCode as Key;
@@ -118,15 +116,11 @@ impl Player {
             } else if norm.z < -0.5 {
                 wall_contact = true;
             }
-            self.pos_new =
-                Plane::from_norm_and_point(norm, impact).project(self.pos_new) + (norm * 0.001);
+            self.pos_new = Plane::from_norm_and_point(norm, impact).project(self.pos_new) + (norm * 0.001);
             if let Some(ground_normal) = self.ground_norm {
-                if dot(norm, ground_normal) < 0.0
-                    && dot(ground_normal, self.pos_new) + ground_dist <= 0.0
-                {
+                if dot(norm, ground_normal) < 0.0 && dot(ground_normal, self.pos_new) + ground_dist <= 0.0 {
                     let mut slide = Plane::new(norm, 0.0).project(ground_normal);
-                    slide = slide * -(dot(ground_normal, self.pos_new) + ground_dist)
-                        / (dot(slide, ground_normal));
+                    slide = slide * -(dot(ground_normal, self.pos_new) + ground_dist) / (dot(slide, ground_normal));
                     slide = slide + slide.norm_or_unit() * 0.001;
                     self.pos_new += slide;
                 }
@@ -151,8 +145,7 @@ impl Player {
                 hit += 1;
                 impact = hi.impact;
                 // slide along plane of impact
-                target_up = Plane::from_norm_and_point(hi.normal, impact).project(target_up)
-                    + hi.normal * 0.00001;
+                target_up = Plane::from_norm_and_point(hi.normal, impact).project(target_up) + hi.normal * 0.00001;
             }
 
             let mut pos_drop = target_up - (pos_up - self.pos_new);
@@ -213,11 +206,7 @@ impl Player {
             * Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), -mouse.x * MOUSE_SENSITIVITY))
         .must_norm();
 
-        self.head_tilt = clamp(
-            self.head_tilt + (mouse.y * MOUSE_SENSITIVITY).to_degrees(),
-            -90.0,
-            90.0,
-        );
+        self.head_tilt = clamp(self.head_tilt + (mouse.y * MOUSE_SENSITIVITY).to_degrees(), -90.0, 90.0);
 
         self.pos_old = self.pose.position;
         self.ground_norm = None;
@@ -324,10 +313,7 @@ fn build_scene_bsp() -> Box<BspNode> {
 
     for (min, max) in boxes.iter() {
         bsp_geom = bsp::union(
-            bsp::compile(
-                WingMesh::new_box(*min, *max).faces(),
-                WingMesh::new_cube(16.0),
-            ),
+            bsp::compile(WingMesh::new_box(*min, *max).faces(), WingMesh::new_cube(16.0)),
             bsp_geom,
         );
     }
@@ -368,12 +354,7 @@ fn bsp_meshes(f: &glium::Display, bsp: &mut BspNode, color: V4) -> Result<Vec<De
         }
         chek::lt!(vertices, u16::MAX as usize);
         if offset + vertices >= u16::MAX as usize {
-            ms.push(DemoMesh::new(
-                f,
-                vs.drain(..).collect(),
-                ts.drain(..).collect(),
-                color,
-            )?);
+            ms.push(DemoMesh::new(f, vs.drain(..).collect(), ts.drain(..).collect(), color)?);
             assert_eq!(vs.len(), 0);
             assert_eq!(ts.len(), 0);
             offset = 0;
@@ -405,12 +386,7 @@ fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<D
                 continue;
             }
             if offset + vertices >= u16::MAX as usize {
-                ms.push(DemoMesh::new(
-                    f,
-                    vs.drain(..).collect(),
-                    ts.drain(..).collect(),
-                    color,
-                )?);
+                ms.push(DemoMesh::new(f, vs.drain(..).collect(), ts.drain(..).collect(), color)?);
                 assert_eq!(vs.len(), 0);
                 assert_eq!(ts.len(), 0);
                 offset = 0;
@@ -418,13 +394,11 @@ fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<D
             vs.extend(&n.convex.verts);
             let new_tris = n.convex.generate_tris();
             ts.reserve(new_tris.len());
-            ts.extend(new_tris.into_iter().map(|t| {
-                [
-                    t[0] + (offset as u16),
-                    t[1] + (offset as u16),
-                    t[2] + (offset as u16),
-                ]
-            }));
+            ts.extend(
+                new_tris
+                    .into_iter()
+                    .map(|t| [t[0] + (offset as u16), t[1] + (offset as u16), t[2] + (offset as u16)]),
+            );
         }
         if let Some(ref r) = n.under {
             stack.push(r.as_ref());
@@ -457,8 +431,7 @@ fn main() -> Result<()> {
         gui.clone(),
     )?;
 
-    let mut gui_renderer =
-        imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
+    let mut gui_renderer = imgui_glium_renderer::Renderer::init(&mut *gui.borrow_mut(), &win.display).unwrap();
 
     let mut fly_cam = false;
     let mut paused = false;
@@ -548,12 +521,7 @@ fn main() -> Result<()> {
                 )
             };
 
-            player.update(
-                win.input.scaled_mouse_delta(),
-                thrust,
-                &bsp_geom,
-                1.0 / 60.0,
-            );
+            player.update(win.input.scaled_mouse_delta(), thrust, &bsp_geom, 1.0 / 60.0);
             if !fly_cam {
                 camera = player.eye_pose();
                 win.view = camera.to_mat4().inverse().unwrap();

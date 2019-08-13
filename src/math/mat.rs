@@ -361,17 +361,7 @@ macro_rules! do_mat_boilerplate {
 
 do_mat_boilerplate!(M2x2 { x: 0, y: 1 }, V2, 2, 4);
 do_mat_boilerplate!(M3x3 { x: 0, y: 1, z: 2 }, V3, 3, 9);
-do_mat_boilerplate!(
-    M4x4 {
-        x: 0,
-        y: 1,
-        z: 2,
-        w: 3
-    },
-    V4,
-    4,
-    16
-);
+do_mat_boilerplate!(M4x4 { x: 0, y: 1, z: 2, w: 3 }, V4, 4, 16);
 
 impl M2x2 {
     #[inline]
@@ -597,9 +587,7 @@ impl M3x3 {
     #[inline]
     pub fn is_approx_symmetric(&self) -> bool {
         // Should this be strict comparison?
-        approx_eq(self.x.y, self.y.x)
-            && approx_eq(self.x.z, self.z.x)
-            && approx_eq(self.y.z, self.z.y)
+        approx_eq(self.x.y, self.y.x) && approx_eq(self.x.z, self.z.x) && approx_eq(self.y.z, self.z.y)
     }
 
     pub fn diagonalizer(&self) -> Quat {
@@ -735,30 +723,22 @@ impl M4x4 {
     #[inline]
     pub fn determinant(&self) -> f32 {
         self.x.x
-            * (self.y.y * self.z.z * self.w.w
-                + self.w.y * self.y.z * self.z.w
-                + self.z.y * self.w.z * self.y.w
+            * (self.y.y * self.z.z * self.w.w + self.w.y * self.y.z * self.z.w + self.z.y * self.w.z * self.y.w
                 - self.y.y * self.w.z * self.z.w
                 - self.z.y * self.y.z * self.w.w
                 - self.w.y * self.z.z * self.y.w)
             + self.x.y
-                * (self.y.z * self.w.w * self.z.x
-                    + self.z.z * self.y.w * self.w.x
-                    + self.w.z * self.z.w * self.y.x
+                * (self.y.z * self.w.w * self.z.x + self.z.z * self.y.w * self.w.x + self.w.z * self.z.w * self.y.x
                     - self.y.z * self.z.w * self.w.x
                     - self.w.z * self.y.w * self.z.x
                     - self.z.z * self.w.w * self.y.x)
             + self.x.z
-                * (self.y.w * self.z.x * self.w.y
-                    + self.w.w * self.y.x * self.z.y
-                    + self.z.w * self.w.x * self.y.y
+                * (self.y.w * self.z.x * self.w.y + self.w.w * self.y.x * self.z.y + self.z.w * self.w.x * self.y.y
                     - self.y.w * self.w.x * self.z.y
                     - self.z.w * self.y.x * self.w.y
                     - self.w.w * self.z.x * self.y.y)
             + self.x.w
-                * (self.y.x * self.w.y * self.z.z
-                    + self.z.x * self.y.y * self.w.z
-                    + self.w.x * self.z.y * self.y.z
+                * (self.y.x * self.w.y * self.z.z + self.z.x * self.y.y * self.w.z + self.w.x * self.z.y * self.y.z
                     - self.y.x * self.z.y * self.w.z
                     - self.w.x * self.y.y * self.z.z
                     - self.z.x * self.w.y * self.y.z)
@@ -993,9 +973,7 @@ impl From<[[f32; 2]; 2]> for M2x2 {
 impl From<M3x3> for [f32; 9] {
     #[inline]
     fn from(m: M3x3) -> [f32; 9] {
-        [
-            m.x.x, m.x.y, m.x.z, m.y.x, m.y.y, m.y.z, m.z.x, m.z.y, m.z.z,
-        ]
+        [m.x.x, m.x.y, m.x.z, m.y.x, m.y.y, m.y.z, m.z.x, m.z.y, m.z.z]
     }
 }
 

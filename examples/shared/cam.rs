@@ -85,9 +85,7 @@ impl FlyCam {
         }
 
         if update.cursor_delta.x != 0.0 {
-            let (ys, yc) = (-update.cursor_delta.x * self.mouse_speed)
-                .to_radians()
-                .sin_cos();
+            let (ys, yc) = (-update.cursor_delta.x * self.mouse_speed).to_radians().sin_cos();
             let ym = 1.0 - yc;
             let (ux, uy, uz) = up_norm.tup();
             // todo: figure out what's backwards with quat::yaw for this case
@@ -104,9 +102,7 @@ impl FlyCam {
         }
 
         if update.cursor_delta.y != 0.0 {
-            let (ps, pc) = (update.cursor_delta.y * self.mouse_speed)
-                .to_radians()
-                .sin_cos();
+            let (ps, pc) = (update.cursor_delta.y * self.mouse_speed).to_radians().sin_cos();
             let pm = 1.0 - pc;
 
             let (ax, ay, az) = across.tup();

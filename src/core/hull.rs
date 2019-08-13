@@ -49,11 +49,7 @@ impl I3 {
 
 #[inline]
 fn tri(verts: &[V3], t: I3) -> (V3, V3, V3) {
-    (
-        verts[t[0] as usize],
-        verts[t[1] as usize],
-        verts[t[2] as usize],
-    )
+    (verts[t[0] as usize], verts[t[1] as usize], verts[t[2] as usize])
 }
 
 fn above(verts: &[V3], t: I3, p: V3, epsilon: f32) -> bool {
@@ -165,14 +161,8 @@ fn fix_back_to_back(tris: &mut [HullTri], s: usize, t: usize) {
     for i in 0..3 {
         let (i1, i2) = next_mod3(i);
         let (va, vb) = (tris[s].vi[i1], tris[s].vi[i2]);
-        debug_assert_eq!(
-            tris[tris[s].get_neib(va, vb) as usize].get_neib(vb, va),
-            tris[s].id
-        );
-        debug_assert_eq!(
-            tris[tris[t].get_neib(va, vb) as usize].get_neib(vb, va),
-            tris[t].id
-        );
+        debug_assert_eq!(tris[tris[s].get_neib(va, vb) as usize].get_neib(vb, va), tris[s].id);
+        debug_assert_eq!(tris[tris[t].get_neib(va, vb) as usize].get_neib(vb, va), tris[t].id);
 
         let t_neib = tris[t].get_neib(vb, va);
         tris[tris[s].get_neib(va, vb) as usize].set_neib(vb, va, t_neib);
@@ -206,25 +196,13 @@ fn extrude(tris: &mut Vec<HullTri>, t0: usize, v: usize) {
 
     let vi = v as i32;
 
-    tris.push(HullTri::new(
-        int3(vi, t[1], t[2]),
-        int3(n[0], b + 1, b + 2),
-        b,
-    ));
+    tris.push(HullTri::new(int3(vi, t[1], t[2]), int3(n[0], b + 1, b + 2), b));
     tris[n[0] as usize].set_neib(t[1], t[2], b);
 
-    tris.push(HullTri::new(
-        int3(vi, t[2], t[0]),
-        int3(n[1], b + 2, b),
-        b + 1,
-    ));
+    tris.push(HullTri::new(int3(vi, t[2], t[0]), int3(n[1], b + 2, b), b + 1));
     tris[n[1] as usize].set_neib(t[2], t[0], b + 1);
 
-    tris.push(HullTri::new(
-        int3(vi, t[0], t[1]),
-        int3(n[2], b, b + 1),
-        b + 2,
-    ));
+    tris.push(HullTri::new(int3(vi, t[0], t[1]), int3(n[2], b, b + 1), b + 2));
     tris[n[2] as usize].set_neib(t[0], t[1], b + 2);
 
     tris[t0].ni = int3(-1, -1, -1);
@@ -274,12 +252,7 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b1 = cross(vec3(1.0, 0.0, 0.0), b0);
     let b2 = cross(vec3(0.0, 1.0, 0.0), b0);
 
-    let b1 = (if b1.length_sq() > b2.length_sq() {
-        b1
-    } else {
-        b2
-    })
-    .must_norm();
+    let b1 = (if b1.length_sq() > b2.length_sq() { b1 } else { b2 }).must_norm();
 
     let p2 = max_dir_index(verts, b1).unwrap();
 
@@ -335,13 +308,7 @@ fn remove_dead(tris: &mut Vec<HullTri>) {
 
 // fix flipped/skinny tris. vert_id is the id of the vertex most recently added to the hull.
 // since we only need to consider those triangles (hopefully others won't be broken...)
-fn fix_degenerate_tris(
-    tris: &mut Vec<HullTri>,
-    verts: &[V3],
-    center: V3,
-    vert_id: usize,
-    epsilon: f32,
-) {
+fn fix_degenerate_tris(tris: &mut Vec<HullTri>, verts: &[V3], center: V3, vert_id: usize, epsilon: f32) {
     let mut i: isize = tris.len() as isize;
     loop {
         i -= 1;
@@ -417,11 +384,7 @@ pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -
     let center = 0.25 * (simp.0 + simp.1 + simp.2 + simp.3);
 
     // possibly fix simplex winding
-    if dot(
-        cross(verts[2] - verts[0], verts[1] - verts[0]),
-        verts[3] - verts[0],
-    ) > 0.0
-    {
+    if dot(cross(verts[2] - verts[0], verts[1] - verts[0]), verts[3] - verts[0]) > 0.0 {
         verts.swap(2, 3);
     }
 
