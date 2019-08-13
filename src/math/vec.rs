@@ -471,12 +471,12 @@ macro_rules! do_vec_boilerplate {
             #[inline] pub fn len(&self) -> usize { $length }
 
             #[inline]
-            pub fn iter<'a>(&'a self) -> slice::Iter<'a, f32> {
+            pub fn iter(&self) -> slice::Iter<'_, f32> {
                 self.as_slice().iter()
             }
 
             #[inline]
-            pub fn iter_mut<'a>(&'a mut self) -> slice::IterMut<'a, f32> {
+            pub fn iter_mut(&mut self) -> slice::IterMut<'_, f32> {
                 self.as_mut_slice().iter_mut()
             }
 
@@ -507,7 +507,7 @@ macro_rules! do_vec_boilerplate {
 
             #[inline]
             pub fn clamp(self, min: Self, max: Self) -> Self {
-                self.map3(min, max, |v, l, h| clamp(v, l, h))
+                self.map3(min, max, clamp)
             }
 
             #[inline]
@@ -738,7 +738,7 @@ impl V2 {
     }
 
     #[inline]
-    pub fn max_index(&self) -> usize {
+    pub fn max_index(self) -> usize {
         if self.x > self.y {
             0
         } else {
@@ -747,7 +747,7 @@ impl V2 {
     }
 
     #[inline]
-    pub fn min_index(&self) -> usize {
+    pub fn min_index(self) -> usize {
         if self.x > self.y {
             1
         } else {
@@ -819,36 +819,24 @@ impl V3 {
     }
 
     #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
     pub fn max_index(&self) -> usize {
         if self.x > self.y {
-            if self.x > self.z {
-                0
-            } else {
-                2
-            }
+            if self.x > self.z { 0 } else { 2 }
         } else {
-            if self.y > self.z {
-                1
-            } else {
-                2
-            }
+            if self.y > self.z { 1 } else { 2 }
         }
     }
 
     #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
     pub fn min_index(&self) -> usize {
         if self.x < self.y {
-            if self.x < self.z {
-                0
-            } else {
-                2
-            }
+            if self.x < self.z { 0 } else { 2 }
         } else {
-            if self.y < self.z {
-                1
-            } else {
-                2
-            }
+            if self.y < self.z { 1 } else { 2 }
         }
     }
 }
@@ -860,7 +848,7 @@ impl V4 {
             x: v.x,
             y: v.y,
             z: v.z,
-            w: w,
+            w,
         }
     }
     #[inline]
@@ -905,79 +893,51 @@ impl V4 {
     }
 
     #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
     pub fn max_index(&self) -> usize {
         if self.x > self.y {
             // y out
             if self.x > self.z {
-                if self.x > self.w {
-                    0
-                } else {
-                    3
-                }
+                if self.x > self.w { 0 } else { 3 }
             }
             // z out
             else {
-                if self.z > self.w {
-                    2
-                } else {
-                    3
-                }
+                if self.z > self.w { 2 } else { 3 }
             } // x out
         } else {
             // x out
             if self.y > self.z {
-                if self.y > self.w {
-                    1
-                } else {
-                    3
-                }
+                if self.y > self.w { 1 } else { 3 }
             }
             // z out
             else {
-                if self.z > self.w {
-                    2
-                } else {
-                    3
-                }
+                if self.z > self.w { 2 } else { 3 }
             } // y out
         }
     }
 
     #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
     pub fn min_index(&self) -> usize {
         if self.x < self.y {
             // y out
             if self.x < self.z {
-                if self.x < self.w {
-                    0
-                } else {
-                    3
-                }
+                if self.x < self.w { 0 } else { 3 }
             }
             // z out
             else {
-                if self.z < self.w {
-                    2
-                } else {
-                    3
-                }
+                if self.z < self.w { 2 } else { 3 }
             } // x out
         } else {
             // x out
             if self.y < self.z {
-                if self.y < self.w {
-                    1
-                } else {
-                    3
-                }
+                if self.y < self.w { 1 } else { 3 }
             }
             // z out
             else {
-                if self.z < self.w {
-                    2
-                } else {
-                    3
-                }
+                if self.z < self.w { 2 } else { 3 }
             } // y out
         }
     }
@@ -1090,7 +1050,7 @@ pub fn max_dir(arr: &[V3], dir: V3) -> Option<V3> {
 
 #[inline]
 pub fn max_dir_index(arr: &[V3], dir: V3) -> Option<usize> {
-    if arr.len() == 0 {
+    if arr.is_empty() {
         return None;
     }
     let mut best_idx = 0;
@@ -1134,7 +1094,7 @@ where
 
 #[inline]
 pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
-    compute_bounds_i(&mut arr.iter().map(|v| *v))
+    compute_bounds_i(&mut arr.iter().copied())
 }
 
 #[inline]

@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments, clippy::op_ref)]
 use crate::math::quat::*;
 use crate::math::traits::*;
 use crate::math::vec::*;
@@ -601,16 +602,6 @@ impl M3x3 {
             && approx_eq(self.y.z, self.z.y)
     }
 
-    /// Returns quat s.t. q.to_mat3() diagonalizes this matrix. Requires `self`
-    /// be symmetric.
-    ///
-    /// If you have
-    /// ```rust,no_run
-    /// q = some_mat3.diagonalizer().to_mat3();
-    /// d = q * some_mat3 * q.transpose();
-    /// ```
-    /// Then the rows of `q` are the eigenvectors, and `d`'s diagonal are the
-    /// eigenvalues.
     pub fn diagonalizer(&self) -> Quat {
         debug_assert!(
             self.is_approx_symmetric(),
@@ -776,7 +767,7 @@ impl M4x4 {
     #[inline]
     pub fn adjugate(&self) -> M4x4 {
         let M4x4 { x, y, z, w } = *self;
-        return M4x4 {
+        M4x4 {
             x: vec4(
                 y.y * z.z * w.w + w.y * y.z * z.w + z.y * w.z * y.w
                     - y.y * w.z * z.w
@@ -849,7 +840,7 @@ impl M4x4 {
                     - y.x * x.y * z.z
                     - z.x * y.y * x.z,
             ),
-        };
+        }
     }
 
     #[inline]
@@ -907,6 +898,7 @@ impl M4x4 {
     }
 
     #[inline]
+    #[allow(clippy::many_single_char_names)]
     pub fn new_frustum(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) -> M4x4 {
         M4x4::new(
             2.0 * n / (r - l),

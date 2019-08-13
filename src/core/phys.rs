@@ -120,7 +120,7 @@ impl RigidBody {
         let mut res = RigidBody {
             id: RigidBodyID(RIGIDBODY_ID_COUNTER.fetch_add(1, Ordering::Relaxed)),
             pose: Pose::from_translation(posn),
-            mass: mass,
+            mass,
             inv_mass: safe_div0(1.0, mass),
 
             linear_momentum: V3::zero(),
@@ -147,10 +147,10 @@ impl RigidBody {
             collides_with_world: true,
 
             center: V3::zero(),
-            shapes: shapes,
+            shapes,
         };
 
-        if res.shapes.len() == 0 {
+        if res.shapes.is_empty() {
             res.collides_with_world = false;
             res.collides_with_body = false;
         }
@@ -292,7 +292,7 @@ fn rk_update(s: Quat, tensor_inv: M3x3, angular: V3, dt: f32) -> Quat {
 
 #[inline]
 fn rb_map_or<T>(o: &Option<RigidBodyRef>, default: T, f: impl Fn(&RigidBody) -> T) -> T {
-    if let &Some(ref a) = o {
+    if let Some(a) = o {
         f(&*a.borrow())
     } else {
         default
@@ -316,10 +316,10 @@ impl AngularConstraint {
         torque_bounds: (f32, f32),
     ) -> AngularConstraint {
         AngularConstraint {
-            bodies: bodies,
-            axis: axis,
-            target_spin: target_spin,
-            torque_bounds: torque_bounds,
+            bodies,
+            axis,
+            target_spin,
+            torque_bounds,
             torque: 0.0,
         }
     }
@@ -402,9 +402,9 @@ impl LinearConstraint {
     ) -> LinearConstraint {
         let lim = force_lim.unwrap_or((-f32::MAX, f32::MAX));
         LinearConstraint {
-            bodies: bodies,
-            positions: positions,
-            normal: normal,
+            bodies,
+            positions,
+            normal,
             target_dist: dist,
             unbiased_target_speed: targ_speed_nobias.unwrap_or(0.0),
             force_limit: (lim.0.min(lim.1), lim.0.max(lim.1)),

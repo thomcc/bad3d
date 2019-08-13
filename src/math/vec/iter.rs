@@ -1,4 +1,3 @@
-
 const MAX_VEC_SIZE: usize = 4;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -95,34 +94,34 @@ impl<T: Copy> std::iter::FusedIterator for VecIter<T> {}
 #[cfg(test)]
 #[allow(clippy::cognitive_complexity)]
 mod tests {
-    use super::*;
+    use super::super::*;
     // test each size separately since when they're this small they all have
     // edge-cases...
     #[test]
     fn test_vec_iter2() {
-        let v2i = int2(100, 4).into_iter();
+        let v2i = vec2(100.0, 4.0).into_iter();
         assert_eq!(v2i.len(), 2);
-        assert_eq!(&v2i.clone().collect::<Vec<_>>(), &[100, 4]);
-        assert_eq!(&v2i.clone().rev().collect::<Vec<_>>(), &[4, 100]);
+        assert_eq!(&v2i.clone().collect::<Vec<_>>(), &[100.0, 4.0]);
+        assert_eq!(&v2i.clone().rev().collect::<Vec<_>>(), &[4.0, 100.0]);
         {
             let mut v2ia = v2i.clone();
-            assert_eq!(v2ia.next(), Some(100));
+            assert_eq!(v2ia.next(), Some(100.0));
             assert_eq!(v2ia.len(), 1);
-            assert_eq!(v2ia.next_back(), Some(4));
+            assert_eq!(v2ia.next_back(), Some(4.0));
             assert_eq!(v2ia.len(), 0);
             assert_eq!(v2ia.next_back(), None);
         }
 
         {
             let mut v2ia = v2i.clone();
-            assert_eq!(v2ia.nth(1), Some(4));
+            assert_eq!(v2ia.nth(1), Some(4.0));
             assert_eq!(v2ia.len(), 0);
             assert_eq!(v2ia.next(), None);
         }
 
         {
             let mut v2ia = v2i.clone();
-            assert_eq!(v2ia.nth(1), Some(4));
+            assert_eq!(v2ia.nth(1), Some(4.0));
             assert_eq!(v2ia.len(), 0);
             assert_eq!(v2ia.next_back(), None);
         }
@@ -130,31 +129,31 @@ mod tests {
 
     #[test]
     fn test_vec_iter3() {
-        let vi = int3(100, 4, 6).into_iter();
+        let vi = vec3(100.0, 4.0, 6.0).into_iter();
         assert_eq!(vi.len(), 3);
-        assert_eq!(&vi.clone().collect::<Vec<_>>(), &[100, 4, 6]);
-        assert_eq!(&vi.clone().rev().collect::<Vec<_>>(), &[6, 4, 100]);
+        assert_eq!(&vi.clone().collect::<Vec<_>>(), &[100.0, 4.0, 6.0]);
+        assert_eq!(&vi.clone().rev().collect::<Vec<_>>(), &[6.0, 4.0, 100.0]);
         {
             let mut via = vi.clone();
-            assert_eq!(via.next(), Some(100));
+            assert_eq!(via.next(), Some(100.0));
             assert_eq!(via.len(), 2);
-            assert_eq!(via.next_back(), Some(6));
+            assert_eq!(via.next_back(), Some(6.0));
             assert_eq!(via.len(), 1);
 
             let mut vib = via.clone();
-            assert_eq!(vib.next_back(), Some(4));
+            assert_eq!(vib.next_back(), Some(4.0));
             assert_eq!(vib.len(), 0);
             assert_eq!(vib.next_back(), None);
 
             let mut vib = via.clone();
-            assert_eq!(vib.next(), Some(4));
+            assert_eq!(vib.next(), Some(4.0));
             assert_eq!(vib.len(), 0);
             assert_eq!(vib.next(), None);
         }
 
         {
             let mut via = vi.clone();
-            assert_eq!(via.nth(1), Some(4));
+            assert_eq!(via.nth(1), Some(4.0));
             assert_eq!(via.len(), 1);
 
             let mut vib = via.clone();
@@ -162,56 +161,59 @@ mod tests {
             assert_eq!(vib.len(), 0);
 
             let mut vib = via.clone();
-            assert_eq!(vib.next(), Some(6));
+            assert_eq!(vib.next(), Some(6.0));
             assert_eq!(vib.len(), 0);
 
             let mut vib = via.clone();
-            assert_eq!(vib.next_back(), Some(6));
+            assert_eq!(vib.next_back(), Some(6.0));
             assert_eq!(vib.len(), 0);
         }
     }
 
     #[test]
     fn test_vec_iter4() {
-        let vi = int4(100, 4, 6, 15).into_iter();
+        let vi = vec4(100.0, 4.0, 6.0, 15.0).into_iter();
         assert_eq!(vi.len(), 4);
-        assert_eq!(&vi.clone().collect::<Vec<_>>(), &[100, 4, 6, 15]);
-        assert_eq!(&vi.clone().rev().collect::<Vec<_>>(), &[15, 6, 4, 100]);
+        assert_eq!(&vi.clone().collect::<Vec<_>>(), &[100.0, 4.0, 6.0, 15.0]);
+        assert_eq!(
+            &vi.clone().rev().collect::<Vec<_>>(),
+            &[15.0, 6.0, 4.0, 100.0]
+        );
         {
             let mut via = vi.clone();
-            assert_eq!(via.next(), Some(100));
+            assert_eq!(via.next(), Some(100.0));
             assert_eq!(via.len(), 3);
-            assert_eq!(via.next_back(), Some(15));
+            assert_eq!(via.next_back(), Some(15.0));
             assert_eq!(via.len(), 2);
 
             let mut vib = via.clone();
-            assert_eq!(vib.next_back(), Some(6));
+            assert_eq!(vib.next_back(), Some(6.0));
             assert_eq!(vib.len(), 1);
-            assert_eq!(vib.nth(0), Some(4));
+            assert_eq!(vib.nth(0), Some(4.0));
             assert_eq!(vib.len(), 0);
             assert_eq!(vib.next_back(), None);
 
             let mut vib = via.clone();
-            assert_eq!(vib.next(), Some(4));
+            assert_eq!(vib.next(), Some(4.0));
             assert_eq!(vib.len(), 1);
-            assert_eq!(vib.next(), Some(6));
+            assert_eq!(vib.next(), Some(6.0));
             assert_eq!(vib.len(), 0);
             assert_eq!(vib.next(), None);
         }
 
         {
             let mut via = vi.clone();
-            assert_eq!(via.nth(1), Some(4));
+            assert_eq!(via.nth(1), Some(4.0));
             assert_eq!(via.len(), 2);
 
             let mut vib = via.clone();
-            assert_eq!(vib.nth(1), Some(15));
+            assert_eq!(vib.nth(1), Some(15.0));
             assert_eq!(vib.len(), 0);
 
             let mut vib = via.clone();
-            assert_eq!(vib.next(), Some(6));
+            assert_eq!(vib.next(), Some(6.0));
             assert_eq!(vib.len(), 1);
-            assert_eq!(vib.next_back(), Some(15));
+            assert_eq!(vib.next_back(), Some(15.0));
             assert_eq!(vib.len(), 0);
         }
     }

@@ -76,16 +76,12 @@ fn next_mod3(i: usize) -> (usize, usize) {
 }
 
 impl HullTri {
-    fn new(v: I3, n: I3, id: i32) -> HullTri {
-        HullTri {
-            vi: v,
-            ni: n,
-            id: id,
-            max_v: -1,
-            rise: 0.0,
-        }
+    #[inline]
+    const fn new(vi: I3, ni: I3, id: i32) -> HullTri {
+        HullTri { vi, ni, id, max_v: -1, rise: 0.0 }
     }
 
+    #[inline]
     fn dead(&self) -> bool {
         self.ni[0] == -1
     }
@@ -103,11 +99,13 @@ impl HullTri {
         );
     }
 
+    #[inline]
     fn get_neib(&self, va: i32, vb: i32) -> i32 {
         let idx = self.neib_idx(va, vb);
         self.ni[idx]
     }
 
+    #[inline]
     fn set_neib(&mut self, va: i32, vb: i32, new_value: i32) {
         let idx = self.neib_idx(va, vb);
         self.ni[idx] = new_value;
@@ -145,6 +143,7 @@ fn neib_fix(tris: &mut [HullTri], k_id: i32) {
     }
 }
 
+#[allow(clippy::manual_swap)] // bug in clippy, can't use mem::swap
 fn swap_neib(tris: &mut [HullTri], a: usize, b: usize) {
     tris.swap(a, b);
     {
@@ -204,20 +203,20 @@ fn extrude(tris: &mut Vec<HullTri>, t0: usize, v: usize) {
     tris.push(HullTri::new(
         int3(vi, t[1], t[2]),
         int3(n[0], b + 1, b + 2),
-        b + 0,
+        b,
     ));
-    tris[n[0] as usize].set_neib(t[1], t[2], b + 0);
+    tris[n[0] as usize].set_neib(t[1], t[2], b);
 
     tris.push(HullTri::new(
         int3(vi, t[2], t[0]),
-        int3(n[1], b + 2, b + 0),
+        int3(n[1], b + 2, b),
         b + 1,
     ));
     tris[n[1] as usize].set_neib(t[2], t[0], b + 1);
 
     tris.push(HullTri::new(
         int3(vi, t[0], t[1]),
-        int3(n[2], b + 0, b + 1),
+        int3(n[2], b, b + 1),
         b + 2,
     ));
     tris[n[2] as usize].set_neib(t[0], t[1], b + 2);
@@ -225,12 +224,12 @@ fn extrude(tris: &mut Vec<HullTri>, t0: usize, v: usize) {
     tris[t0].ni = int3(-1, -1, -1);
 
     // @@TODO: disable in debug?
-    check_tri(&tris, &tris[bu + 0]);
+    check_tri(&tris, &tris[bu]);
     check_tri(&tris, &tris[bu + 1]);
     check_tri(&tris, &tris[bu + 2]);
 
     if tris[n[0] as usize].vi.has_vert(vi) {
-        fix_back_to_back(&mut tris[..], bu + 0, n[0] as usize);
+        fix_back_to_back(&mut tris[..], bu, n[0] as usize);
     }
     if tris[n[1] as usize].vi.has_vert(vi) {
         fix_back_to_back(&mut tris[..], bu + 1, n[1] as usize);
@@ -472,10 +471,10 @@ fn finish_hull(tris: &mut [HullTri], verts: &mut [V3]) -> (Vec<[u16; 3]>, usize)
         }
     }
 
-    for i in 0..tris.len() {
+    for tri in tris.iter_mut() {
         for j in 0..3 {
-            let old_pos = tris[i].vi[j];
-            tris[i].vi[j] = map[old_pos as usize] as i32;
+            let old_pos = tri.vi[j];
+            tri.vi[j] = map[old_pos as usize] as i32;
         }
     }
 

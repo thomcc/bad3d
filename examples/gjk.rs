@@ -1,5 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(
+    clippy::float_cmp,
+    clippy::many_single_char_names,
+    clippy::cast_lossless
+)]
 #[macro_use]
 extern crate glium;
 use rand;

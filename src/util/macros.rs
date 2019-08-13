@@ -10,6 +10,14 @@ macro_rules! static_assert {
 }
 
 #[macro_export]
+macro_rules! static_assert_usize_eq {
+    ($NAME:ident, $first:expr, $second:expr) => {
+        #[allow(dead_code, nonstandard_style)]
+        const $NAME: [(); $first] = [(); $second];
+    };
+}
+
+#[macro_export]
 macro_rules! max {
     ($e:expr $(,)?) => ($e);
     ($a:expr, $b:expr $(,)?) => ({

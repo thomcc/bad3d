@@ -98,7 +98,7 @@ impl Shape {
                     vec3(x4, y2, z4) * radius,
                 ]);
 
-                tris.extend(&[[k + 0, k + 1, k + 2], [k + 2, k + 1, k + 3]]);
+                tris.extend(&[[k, k + 1, k + 2], [k + 2, k + 1, k + 3]]);
             }
         }
         Shape { vertices, tris }

@@ -28,13 +28,14 @@ pub struct TVertex {
 
 implement_vertex!(TVertex, position, texcoord normalize(true), color normalize(true));
 */
-pub fn vertex_slice<'a>(v3s: &'a [V3]) -> &'a [Vertex] {
+pub fn vertex_slice(v3s: &[V3]) -> &[Vertex] {
     unsafe { slice::from_raw_parts(v3s.as_ptr() as *const Vertex, v3s.len()) }
 }
 
-static_assert!(
+static_assert_usize_eq!(
     vertex_size_check,
-    std::mem::size_of::<V3>() == std::mem::size_of::<Vertex>()
+    std::mem::size_of::<V3>(),
+    std::mem::size_of::<[f32; 3]>()
 );
 
 pub struct DemoMesh {
@@ -46,12 +47,12 @@ pub struct DemoMesh {
 }
 
 #[inline]
-pub fn unpack_arr3<'a, T: Copy>(arrays: &'a [[T; 3]]) -> &'a [T] {
+pub fn unpack_arr3<T: Copy>(arrays: &[[T; 3]]) -> &[T] {
     unsafe { slice::from_raw_parts(arrays.as_ptr() as *const T, arrays.len() * 3) }
 }
 
 #[inline]
-pub fn unpack_arr3_mut<'a, T: Copy>(arrays: &'a mut [[T; 3]]) -> &'a mut [T] {
+pub fn unpack_arr3_mut<T: Copy>(arrays: &mut [[T; 3]]) -> &mut [T] {
     unsafe { slice::from_raw_parts_mut(arrays.as_ptr() as *mut T, arrays.len() * 3) }
 }
 
@@ -139,7 +140,7 @@ pub fn rand_v3() -> V3 {
 
 pub struct DemoObject {
     pub body: RigidBodyRef,
-    pub meshes: Vec<Box<DemoMesh>>,
+    pub meshes: Vec<DemoMesh>,
 }
 
 pub fn convex_parts(mut v: Vec<V3>) -> (Vec<V3>, Vec<[u16; 3]>) {
@@ -211,7 +212,7 @@ impl DemoObject {
             .borrow()
             .shapes
             .iter()
-            .map(|s| DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), color).map(Box::new))
+            .map(|s| DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), color))
             .collect::<Result<Vec<_>>>()?;
         Ok(DemoObject { body, meshes })
     }
@@ -222,10 +223,7 @@ impl DemoObject {
             .borrow()
             .shapes
             .iter()
-            .map(|s| {
-                DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), random_color())
-                    .map(Box::new)
-            })
+            .map(|s| DemoMesh::new(facade, s.vertices.clone(), s.tris.clone(), random_color()))
             .collect::<Result<Vec<_>>>()?;
         Ok(DemoObject { body, meshes })
     }

@@ -1,5 +1,11 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(
+    clippy::float_cmp,
+    clippy::many_single_char_names,
+    clippy::cast_lossless,
+    clippy::vec_box
+)]
 #[macro_use]
 extern crate glium;
 use rand;
@@ -116,7 +122,7 @@ impl Player {
                 wall_contact = true;
             }
             self.pos_new =
-                Plane::from_norm_and_point(norm, impact).project(self.pos_new) + (norm * 0.00001);
+                Plane::from_norm_and_point(norm, impact).project(self.pos_new) + (norm * 0.001);
             if let Some(ground_normal) = self.ground_norm {
                 if dot(norm, ground_normal) < 0.0
                     && dot(ground_normal, self.pos_new) + ground_dist <= 0.0
@@ -124,7 +130,7 @@ impl Player {
                     let mut slide = Plane::new(norm, 0.0).project(ground_normal);
                     slide = slide * -(dot(ground_normal, self.pos_new) + ground_dist)
                         / (dot(slide, ground_normal));
-                    slide = slide + slide.norm_or_unit() * 0.000001;
+                    slide = slide + slide.norm_or_unit() * 0.001;
                     self.pos_new += slide;
                 }
             }
@@ -264,7 +270,7 @@ impl Blaster {
     }
 
     pub fn blast(&mut self, bsp: Box<BspNode>, p: V3, s: f32) -> Box<BspNode> {
-        if self.mashers.len() == 0 {
+        if self.mashers.is_empty() {
             self.mashers = Blaster::build_mashers();
             self.idx = 0;
         }
@@ -274,7 +280,6 @@ impl Blaster {
         b.translate(p);
         bsp::intersect(b, bsp)
     }
-
     fn build_mashers() -> Vec<Box<BspNode>> {
         use rand::Rng;
         let mut rng = rand::thread_rng();
@@ -383,7 +388,7 @@ fn bsp_meshes(f: &glium::Display, bsp: &mut BspNode, color: V4) -> Result<Vec<De
             ts.push([offset as u16, (i + offset) as u16, (i + offset + 1) as u16]);
         }
     }
-    if vs.len() > 0 || ts.len() > 0 {
+    if !vs.is_empty() || !ts.is_empty() {
         ms.push(DemoMesh::new(f, vs, ts, color)?);
     }
     bsp.make_boundary(boundary, 0);
@@ -431,7 +436,7 @@ fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<D
             stack.push(r.as_ref());
         }
     }
-    if vs.len() > 0 || ts.len() > 0 {
+    if !vs.is_empty() || !ts.is_empty() {
         ms.push(DemoMesh::new(f, vs, ts, color)?);
     }
     Ok(ms)
@@ -478,7 +483,7 @@ fn main() -> Result<()> {
         mouse_speed: 0.1,
     };
 
-    let mut scene_meshes = bsp_cell_meshes(&win.display, &mut bsp_geom, scene_color)?;
+    let mut scene_meshes = bsp_cell_meshes(&win.display, &bsp_geom, scene_color)?;
 
     while win.is_up() {
         let mut imgui = gui.borrow_mut();
@@ -533,7 +538,7 @@ fn main() -> Result<()> {
             }
             if let Some(impact) = do_blast {
                 bsp_geom = blaster.blast(bsp_geom, impact, blast_sz);
-                scene_meshes = bsp_cell_meshes(&win.display, &mut bsp_geom, scene_color)?;
+                scene_meshes = bsp_cell_meshes(&win.display, &bsp_geom, scene_color)?;
                 player.recoil += 5.0;
             }
 

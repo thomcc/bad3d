@@ -1,5 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(
+    clippy::float_cmp,
+    clippy::many_single_char_names,
+    clippy::cast_lossless
+)]
 #[macro_use]
 extern crate glium;
 use rand;
@@ -177,6 +182,11 @@ pub struct BspScene {
     world_size: f32,
     hit_dist: f32,
 }
+impl Default for BspScene {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl BspScene {
     pub fn new() -> BspScene {
@@ -238,7 +248,7 @@ impl BspScene {
         if input.shift_down() {
             self.drag_mode = Some(DragMode::Scene);
         }
-        let dm = self.drag_mode.clone();
+        let dm = self.drag_mode;
         match dm {
             Some(DragMode::Scene) => {
                 self.cam.orientation *= Quat::virtual_track_ball(

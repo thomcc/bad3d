@@ -115,15 +115,12 @@ struct Point {
 }
 
 impl Point {
-    fn new(a: V3, b: V3, p: V3) -> Point {
-        Point {
-            a: a,
-            b: b,
-            p: p,
-            t: 0.0,
-        }
+    #[inline]
+    const fn new(a: V3, b: V3, p: V3) -> Point {
+        Point { a, b, p, t: 0.0 }
     }
 
+    #[inline]
     fn on_sum<A: Support + ?Sized, B: Support + ?Sized>(a: &A, b: &B, n: V3) -> Point {
         let pa = a.support(n);
         let pb = b.support(-n);
@@ -131,8 +128,8 @@ impl Point {
     }
 
     #[inline]
-    fn with_t(&self, t: f32) -> Point {
-        Point { t: t, ..*self }
+    const fn with_t(&self, t: f32) -> Point {
+        Point { t, ..*self }
     }
 }
 
@@ -161,7 +158,7 @@ impl Simplex {
 
     fn initial(v: V3) -> Simplex {
         Simplex {
-            v: v,
+            v,
             size: 0,
             ..Default::default()
         }
@@ -306,7 +303,7 @@ impl Simplex {
         let impact = (pa + pb) * 0.5;
         let mut hit_info = ContactInfo {
             points: (pa, pb),
-            impact: impact,
+            impact,
             separation: pa.dist(pb) + f32::MIN_POSITIVE,
             plane: Plane::from_norm_and_point(norm, impact),
             ..Default::default()

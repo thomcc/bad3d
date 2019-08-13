@@ -228,7 +228,7 @@ impl WingMesh {
             e2.v = t[2] as Idx;
 
             let k = m.edges.len();
-            let k0 = int(k + 0);
+            let k0 = int(k);
             let k1 = int(k + 1);
             let k2 = int(k + 2);
 
@@ -433,7 +433,7 @@ impl WingMesh {
     }
 
     #[inline]
-    pub fn iter_face<'a>(&'a self, face: usize) -> FaceViewIterator<'a> {
+    pub fn iter_face(&self, face: usize) -> FaceViewIterator<'_> {
         let fb = self.fback[face];
         FaceViewIterator {
             wm: self,
@@ -543,7 +543,7 @@ impl WingMesh {
 
         let new_face = int(self.faces.len());
 
-        let id_a = int(self.edges.len() + 0);
+        let id_a = int(self.edges.len());
         let id_b = int(self.edges.len() + 1);
         // Build two new half edges beween ea.v and eb.v
         let sa = HalfEdge {
@@ -602,7 +602,7 @@ impl WingMesh {
         let e_adj = self.edges[edge].adj_idx();
         let new_vert_id = int(self.verts.len());
 
-        let s0_id = int(self.edges.len() + 0);
+        let s0_id = int(self.edges.len());
         let sa_id = int(self.edges.len() + 1);
 
         let s0 = HalfEdge {

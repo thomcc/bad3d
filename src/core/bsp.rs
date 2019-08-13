@@ -85,7 +85,7 @@ impl<'a> Iterator for BspBackToFront<'a> {
         } else {
             &node.under
         };
-        while let &Some(ref n) = np {
+        while let Some(n) = np {
             self.stack.push(n.as_ref());
             if plane.dot(n.plane) > 0.0 {
                 np = &n.over;
@@ -660,7 +660,7 @@ impl BspNode {
         }
     }
 
-    pub fn hit_check<'t>(&'t self, v0: V3, v1: V3) -> Option<BspHitInfo<'t>> {
+    pub fn hit_check(&self, v0: V3, v1: V3) -> Option<BspHitInfo<'_>> {
         let mut info = BspHitInfo {
             normal: vec3(1.0, 0.0, 0.0),
             impact: vec3(0.0, 0.0, 0.0),
@@ -677,7 +677,7 @@ impl BspNode {
         }
     }
 
-    pub fn hit_check_solid_reenter<'t>(&'t self, v0: V3, v1: V3) -> Option<BspHitInfo<'t>> {
+    pub fn hit_check_solid_reenter(&self, v0: V3, v1: V3) -> Option<BspHitInfo<'_>> {
         let mut info = BspHitInfo {
             normal: vec3(1.0, 0.0, 0.0),
             impact: vec3(0.0, 0.0, 0.0),
@@ -857,7 +857,7 @@ fn hit_check_bevel_cylinder(
     mut v1: V3,
     mut nv0: V3,
 ) -> Option<geom::HitInfo> {
-    if convex.edges.len() == 0 {
+    if convex.edges.is_empty() {
         return None;
     }
     for (i, edge_0) in convex.edges.iter().enumerate() {
@@ -998,7 +998,7 @@ pub fn intersect(a: Box<BspNode>, b: Box<BspNode>) -> Box<BspNode> {
 }
 
 pub fn clean(mut n: Box<BspNode>) -> Option<Box<BspNode>> {
-    if n.convex.verts.len() == 0 {
+    if n.convex.verts.is_empty() {
         return None;
     }
 
@@ -1062,13 +1062,12 @@ mod part {
         if bsp.under.is_some() && bsp.over.is_some() {
             return bsp;
         }
-        let result = if bsp.under.is_none() {
+        if bsp.under.is_none() {
             bsp.over.take().unwrap()
         } else {
             assert!(bsp.over.is_none());
             bsp.under.take().unwrap()
-        };
-        result
+        }
     }
 
     pub fn partition(
@@ -1319,7 +1318,8 @@ impl Face {
         if v0.dist(v1) <= QUANTIZE_CHECK {
             split_count += 1;
         }
-        debug_assert_gt!(v0.dist(v1), QUANTIZE_CHECK);
+        // FIXME ???
+        // debug_assert_gt!(v0.dist(v1), QUANTIZE_CHECK);
         let f0 = n.plane.test_e(v0, QUANTIZE_CHECK);
         let f1 = n.plane.test_e(v1, QUANTIZE_CHECK);
         match (f0 as usize) | (f1 as usize) {

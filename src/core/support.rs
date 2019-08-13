@@ -36,7 +36,7 @@ impl<'a, T: Support + ?Sized> Support for TransformedSupport<'a, T> {
 impl Support for [V3] {
     #[inline]
     fn support(&self, dir: V3) -> V3 {
-        assert!(self.len() != 0);
+        assert!(!self.is_empty());
         let mut best = self[0];
         let mut best_dot = best.dot(dir);
         for &v in self.iter() {

@@ -43,6 +43,11 @@ pub struct PerfLog {
     pub sections: std::sync::Mutex<Vec<(&'static str, std::time::Duration, usize)>>,
     pub ctr: std::sync::atomic::AtomicUsize,
 }
+impl Default for PerfLog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl PerfLog {
     pub fn new() -> Self {

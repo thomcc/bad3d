@@ -147,7 +147,7 @@ impl DemoWindow {
             fog_amount: opts.fog_amount,
         })
     }
-
+    #[allow(clippy::wrong_self_convention)]
     pub fn is_up(&mut self) -> bool {
         let now = Instant::now();
         let delta = now - self.last_frame;
@@ -184,7 +184,6 @@ impl DemoWindow {
                 x: (dims.x / 2.0).trunc() as f64,
                 y: (dims.y / 2.0).trunc() as f64,
             })
-            .ok()
             .expect("Could not set mouse cursor position");
     }
 

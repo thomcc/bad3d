@@ -221,7 +221,7 @@ impl InputState {
 
     #[inline]
     pub fn key_state_mut(&mut self, k: VirtualKeyCode) -> &mut KeyState {
-        self.keys.entry(k).or_insert_with(|| Default::default())
+        self.keys.entry(k).or_insert_with(Default::default)
     }
 
     #[inline]
@@ -308,7 +308,7 @@ impl InputState {
                         let was_hit = input.state == ElementState::Pressed;
                         self.key_changes.push((vk, was_hit));
                         // update_keyboard(&mut self.gui.borrow_mut(), vk, was_hit);
-                        let mut k = self.keys.entry(vk).or_insert_with(|| Default::default());
+                        let mut k = self.keys.entry(vk).or_insert_with(Default::default);
                         if !k.changed {
                             k.changed = k.down != was_hit;
                         }
@@ -327,7 +327,6 @@ impl InputState {
                                     x: (dims.x / 2.0).trunc() as f64,
                                     y: (dims.y / 2.0).trunc() as f64,
                                 })
-                                .ok()
                                 .expect("Could not set mouse cursor position");
                             self.mouse.pos = pos - last_pos;
                             self.mouse_prev.pos = dims / 2.0;

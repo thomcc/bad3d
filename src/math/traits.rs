@@ -70,15 +70,11 @@ pub trait TriIndices: Copy {
     }
 
     #[inline]
-    fn tri_vert_ref<'a, V>(self, vs: &'a [V]) -> (&'a V, &'a V, &'a V) {
+    fn tri_vert_ref<V>(self, vs: &[V]) -> (&V, &V, &V) {
         let (a, b, c) = self.tri_indices();
         (&vs[a], &vs[b], &vs[c])
     }
 }
-
-// pub trait Dot {
-//     fn dot(self, o: Self) -> f32;
-// }
 
 pub trait Map: Copy + Clone {
     fn map3<F>(self, a: Self, b: Self, f: F) -> Self
@@ -133,16 +129,6 @@ impl TriIndices for (u32, u32, u32) {
         (self.0 as usize, self.1 as usize, self.2 as usize)
     }
 }
-
-// impl<T> Dot for T
-// where
-//     T: Map + Fold,
-// {
-//     #[inline]
-//     fn dot(self, o: Self) -> f32 {
-//         self.map2(o, |x, y| x * y).fold(|a, b| a + b)
-//     }
-// }
 
 #[inline]
 pub fn dot(a: super::vec::V3, b: super::vec::V3) -> f32 {

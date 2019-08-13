@@ -1,5 +1,10 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(
+    clippy::float_cmp,
+    clippy::many_single_char_names,
+    clippy::cast_lossless
+)]
 #[macro_use]
 extern crate glium;
 use rand;
@@ -67,13 +72,15 @@ impl DemoCamera {
             use crate::VirtualKeyCode::*;
             vec3(is.keys_dir(A, D), is.keys_dir(Q, E), is.keys_dir(W, S))
         };
-        let mut move_turn = 0.0;
-        let mut move_tilt = 0.0;
-        if is.mouse.down.0 && !is.shift_down() {
+        let (move_turn, move_tilt) = if is.mouse.down.0 && !is.shift_down() {
             let dm = is.mouse_delta();
-            move_turn = (-dm.x * self.mouse_sensitivity * is.view_angle).to_radians() / 100.0;
-            move_tilt = (-dm.y * self.mouse_sensitivity * is.view_angle).to_radians() / 100.0;
-        }
+            (
+                (-dm.x * self.mouse_sensitivity * is.view_angle).to_radians() / 100.0,
+                (-dm.y * self.mouse_sensitivity * is.view_angle).to_radians() / 100.0,
+            )
+        } else {
+            (0.0, 0.0)
+        };
 
         self.head_turn += move_turn;
         self.head_tilt += move_tilt;
@@ -109,7 +116,7 @@ fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
 fn duration_ms(d: std::time::Duration) -> f32 {
     1000.0 * (d.as_secs() as f32 + d.subsec_nanos() as f32 / 1_000_000_000.0)
 }
-
+#[allow(clippy::cognitive_complexity)]
 fn main() -> Result<()> {
     env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::Context::create()));
@@ -335,7 +342,7 @@ fn main() -> Result<()> {
         let mouse_ray = (cam.orientation() * win.input.mouse.vec).must_norm();
         let targ_pos = if selected.is_none() {
             let mut picked = None;
-            let mut best_dist = 10000000.0;
+            let mut best_dist = 10_000_000.0;
             let v1 = cam.position + mouse_ray * 500.0;
             for obj in &demo_objects {
                 if let Some(hit) = body_hit_check(&obj.body.borrow(), cam.position, v1) {
