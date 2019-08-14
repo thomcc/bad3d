@@ -132,8 +132,8 @@ impl SceneObj {
     pub fn new(shape: Shape, pos: V3) -> SceneObj {
         let mesh = match shape {
             Shape::Rect(size) => WingMesh::new_box(size * -0.5, size * 0.5),
-            Shape::Octahedron(V3 { x, y, z }) => {
-                let s = vec3(1.0 / x, 1.0 / y, 1.0 / z);
+            Shape::Octahedron(v) => {
+                let s = vec3(1.0 / v.x, 1.0 / v.y, 1.0 / v.z);
                 WingMesh::new_box(-s, s).dual()
             }
             Shape::Cylinder { sides, r, h } => WingMesh::new_cylinder(sides, r, h),

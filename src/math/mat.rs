@@ -38,9 +38,9 @@ impl M2x2 {
 impl M3x3 {
     #[rustfmt::skip]
     pub const IDENTITY: M3x3 = M3x3 {
-        x: V3 { x: 1.0, y: 0.0, z: 0.0 },
-        y: V3 { x: 0.0, y: 1.0, z: 0.0 },
-        z: V3 { x: 0.0, y: 0.0, z: 1.0 },
+        x: vec3(1.0, 0.0, 0.0),
+        y: vec3(0.0, 1.0, 0.0),
+        z: vec3(0.0, 0.0, 1.0),
     };
 }
 
@@ -64,9 +64,9 @@ impl M2x2 {
 impl M3x3 {
     #[rustfmt::skip]
     pub const ZERO: M3x3 = M3x3 {
-        x: V3 { x: 0.0, y: 0.0, z: 0.0 },
-        y: V3 { x: 0.0, y: 0.0, z: 0.0 },
-        z: V3 { x: 0.0, y: 0.0, z: 0.0 },
+        x: V3::ZERO,
+        y: V3::ZERO,
+        z: V3::ZERO,
     };
 }
 
@@ -445,9 +445,9 @@ impl M3x3 {
         zx: f32, zy: f32, zz: f32,
     ) -> Self {
         Self {
-            x: V3 { x: xx, y: xy, z: xz },
-            y: V3 { x: yx, y: yy, z: yz },
-            z: V3 { x: zx, y: zy, z: zz },
+            x: vec3(xx, xy, xz),
+            y: vec3(yx, yy, yz),
+            z: vec3(zx, zy, zz),
         }
     }
 

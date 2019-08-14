@@ -488,7 +488,7 @@ impl Lerp for Quat {
 
 impl Mul<V3> for Quat {
     type Output = V3;
-    #[inline]
+    // #[inline]
     fn mul(self, o: V3) -> V3 {
         let (vx, vy, vz) = o.tup();
         let (qx, qy, qz, qw) = self.tup();

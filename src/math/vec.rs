@@ -4,7 +4,7 @@ use crate::math::traits::*;
 use std::ops::*;
 use std::{self, fmt, slice};
 mod iter;
-
+mod v3;
 pub use iter::VecIter;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -25,15 +25,17 @@ pub struct V3 {
     pub x: f32,
     pub y: f32,
     pub z: f32,
+    // only exists for simd...
+    pub w: f32,
 }
 
 #[inline]
 pub const fn vec3(x: f32, y: f32, z: f32) -> V3 {
-    V3 { x, y, z }
+    V3 { x, y, z, w: 0.0 }
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
-#[repr(C)]
+#[repr(C, align(16))]
 pub struct V4 {
     pub x: f32,
     pub y: f32,
@@ -681,9 +683,15 @@ macro_rules! do_vec_boilerplate {
 
 do_vec_boilerplate!(V2 { x: 0, y: 1 }, 2, (f32, f32));
 
-do_vec_boilerplate!(V3 { x: 0, y: 1, z: 2 }, 3, (f32, f32, f32));
+// do_vec_boilerplate!(V3 { x: 0, y: 1, z: 2 }, 3, (f32, f32, f32));
 
 do_vec_boilerplate!(V4 { x: 0, y: 1, z: 2, w: 3 }, 4, (f32, f32, f32, f32));
+
+impl_index_op!(V3, usize, f32);
+impl_index_op!(V3, Range<usize>, [f32]);
+impl_index_op!(V3, RangeFrom<usize>, [f32]);
+impl_index_op!(V3, RangeTo<usize>, [f32]);
+impl_index_op!(V3, RangeFull, [f32]);
 
 impl V2 {
     #[inline]
@@ -746,7 +754,7 @@ impl V2 {
 impl V3 {
     #[inline]
     pub fn expand(v: V2, z: f32) -> V3 {
-        V3 { x: v.x, y: v.y, z }
+        vec3(v.x, v.y, z)
     }
 
     #[inline]
@@ -844,6 +852,7 @@ impl V4 {
             x: self.x,
             y: self.y,
             z: self.z,
+            w: 0.0,
         }
     }
     #[inline]
@@ -940,14 +949,24 @@ impl From<V3> for V2 {
 impl From<V2> for V3 {
     #[inline]
     fn from(v: V2) -> V3 {
-        V3 { x: v.x, y: v.y, z: 0.0 }
+        V3 {
+            x: v.x,
+            y: v.y,
+            z: 0.0,
+            w: 0.0,
+        }
     }
 }
 
 impl From<V4> for V3 {
     #[inline]
     fn from(v: V4) -> V3 {
-        V3 { x: v.x, y: v.y, z: v.z }
+        V3 {
+            x: v.x,
+            y: v.y,
+            z: v.z,
+            w: 0.0,
+        }
     }
 }
 
