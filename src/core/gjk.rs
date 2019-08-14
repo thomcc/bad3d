@@ -1,7 +1,4 @@
-use crate::core::{
-    hull,
-    support::{Support, TransformedSupport},
-};
+use crate::core::{hull, support::Support};
 use crate::math::prelude::*;
 use std::f32;
 
@@ -110,9 +107,9 @@ impl Point {
     }
 
     #[inline]
-    fn on_sum<A: Support + ?Sized, B: Support + ?Sized>(a: &A, b: &B, n: V3) -> Point {
-        let pa = a.support(n);
-        let pb = b.support(-n);
+    fn on_sum<A: Support + ?Sized, B: Support + ?Sized>(a: &A, ap: Pose, b: &B, bp: Pose, n: V3) -> Point {
+        let pa = ap * a.support(ap.orientation.conj() * n); //a.support(n);
+        let pb = bp * b.support(bp.orientation.conj() * -n); //b.support(-n);
         Point::new(pa, pb, pa - pb)
     }
 
@@ -296,13 +293,19 @@ impl Simplex {
     }
 }
 
-pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(a: &A, b: &B, find_closest: bool) -> ContactInfo {
+pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
+    a: &A,
+    ap: Pose,
+    b: &B,
+    bp: Pose,
+    find_closest: bool,
+) -> ContactInfo {
     let eps = 0.00001_f32;
 
-    let mut v = Point::on_sum(a, b, vec3(0.0, 0.0, 1.0)).p;
+    let mut v = Point::on_sum(a, ap, b, bp, vec3(0.0, 0.0, 1.0)).p;
     let mut last = Simplex::initial(v);
 
-    let mut w = Point::on_sum(a, b, -v);
+    let mut w = Point::on_sum(a, ap, b, bp, -v);
     let mut next = last.next(&w); //Simplex::from_point(&w);
 
     let mut iter = 0;
@@ -310,7 +313,7 @@ pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(a: &A, b: &B, find_cl
         iter += 1;
         last = next;
         v = last.v;
-        w = Point::on_sum(a, b, -v);
+        w = Point::on_sum(a, ap, b, bp, -v);
         if dot(w.p, v) >= dot(v, v) - (eps + eps * dot(v, v)) {
             break;
         }
@@ -323,19 +326,24 @@ pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(a: &A, b: &B, find_cl
             if next.size == 2 {
                 last = next;
                 let n = (next.points[0].p - next.points[1].p).orth();
-                next.points[2] = Point::on_sum(a, b, n);
+                next.points[2] = Point::on_sum(a, ap, b, bp, n);
                 next.size = 3;
             }
             if next.size == 3 {
                 last = next;
                 let n = geom::tri_normal(next.points[0].p, next.points[1].p, next.points[2].p);
-                next.points[3] = Point::on_sum(a, b, n);
+                next.points[3] = Point::on_sum(a, ap, b, bp, n);
                 next.size = 4;
             }
             assert!(next.size == 4);
             let min_penetration_plane = hull::furthest_plane_epa(
                 (next.points[0].p, next.points[1].p, next.points[2].p, next.points[3].p),
-                |v| a.support(v) - b.support(-v),
+                |v| {
+                    let pa = ap * a.support(ap.orientation.conj() * v); //a.support(v);
+                    let pb = bp * b.support(bp.orientation.conj() * -v); //b.support(-v);
+                    pa - pb
+                    //a.support(v) - b.support(-v)
+                },
             );
 
             let mp = M4x4::from_cols(
@@ -392,9 +400,15 @@ pub struct ContactPatch {
 }
 
 impl ContactPatch {
-    pub fn new<A: Support + ?Sized, B: Support + ?Sized>(s0: &A, s1: &B, max_sep: f32) -> ContactPatch {
+    pub fn new<A: Support + ?Sized, B: Support + ?Sized>(
+        s0: &A,
+        ap: Pose,
+        s1: &B,
+        bp: Pose,
+        max_sep: f32,
+    ) -> ContactPatch {
         let mut result: ContactPatch = Default::default();
-        result.hit_info[0] = separated(s0, s1, true);
+        result.hit_info[0] = separated(s0, ap, s1, bp, true);
         if result.hit_info[0].separation > max_sep {
             return result;
         }
@@ -416,8 +430,9 @@ impl ContactPatch {
                 * Pose::new(-pivot, quat(0.0, 0.0, 0.0, 1.0))
                 * Pose::new(vec3(0.0, 0.0, 0.0), wiggle)
                 * Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
-
-            let mut next = separated(&TransformedSupport { pose: ar, object: s0 }, s1, true);
+            //&TransformedSupport { pose: ap, object: s0 }
+            let mut next = separated(s0, ar * ap, s1, bp, true);
+            // let mut next = separated(s0, ar * ap, s1, bp, true);
 
             next.plane.normal = n;
             {

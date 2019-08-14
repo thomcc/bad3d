@@ -183,7 +183,7 @@ fn main() -> Result<()> {
         let va = test_state.a_verts.iter().map(|&v| v + a_pos).collect::<Vec<_>>();
         let vb = test_state.b_verts.iter().map(|&v| v + b_pos).collect::<Vec<_>>();
 
-        let hit = gjk::separated(&va[..], &vb[..], true);
+        let hit = gjk::separated(&va[..], Pose::identity(), &vb[..], Pose::identity(), true);
 
         let did_hit = hit.separation <= 0.0;
 

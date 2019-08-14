@@ -1,4 +1,4 @@
-use crate::core::{gjk, shape, support::TransformedSupport};
+use crate::core::{gjk, shape};
 use crate::math::prelude::*;
 
 // use std::cell::RefCell;
@@ -961,11 +961,10 @@ fn find_world_contacts(
         for shape in body.shapes.iter() {
             for cell in world_cells.iter() {
                 let patch = gjk::ContactPatch::new(
-                    &TransformedSupport {
-                        pose: body.pose,
-                        object: &shape.vertices[..],
-                    },
+                    &shape.vertices[..],
+                    body.pose,
                     &cell.vertices[..],
+                    Pose::identity(),
                     distance_range,
                 );
 
@@ -1006,14 +1005,10 @@ fn find_body_contacts(bodies: &[&RigidBody], _dt: f32, params: &PhysParams) -> V
             for s0 in b0.shapes.iter() {
                 for s1 in b1.shapes.iter() {
                     let patch = gjk::ContactPatch::new(
-                        &TransformedSupport {
-                            pose: b0.pose,
-                            object: &s0.vertices[..],
-                        },
-                        &TransformedSupport {
-                            pose: b1.pose,
-                            object: &s1.vertices[..],
-                        },
+                        &s0.vertices[..],
+                        b0.pose,
+                        &s1.vertices[..],
+                        b1.pose,
                         params.max_drift,
                         // distance_range,
                     );

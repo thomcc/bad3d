@@ -800,11 +800,11 @@ impl BspNode {
         res.len() - start_len
     }
 
-    pub fn hit_check_convex_gjk<S: Support>(&self, collider: &S) -> Option<gjk::ContactInfo> {
+    pub fn hit_check_convex_gjk<S: Support>(&self, collider: &S, collider_pose: Pose) -> Option<gjk::ContactInfo> {
         match self.leaf_type {
             LeafType::Over => return None,
             LeafType::Under => {
-                let s = gjk::separated(collider, &self.convex, true);
+                let s = gjk::separated(collider, collider_pose, &self.convex, Pose::identity(), true);
                 return if s.separation <= 0.0 { Some(s) } else { None };
             }
             _ => {}
@@ -812,12 +812,12 @@ impl BspNode {
         let t = (self.plane.test_e(collider.support(-self.plane.normal), 0.0) as usize)
             | (self.plane.test_e(collider.support(self.plane.normal), 0.0) as usize);
         if (t & UNDER) != 0 {
-            if let Some(hit) = self.under().hit_check_convex_gjk(collider) {
+            if let Some(hit) = self.under().hit_check_convex_gjk(collider, collider_pose) {
                 return Some(hit);
             }
         }
         if (t & OVER) != 0 {
-            if let Some(hit) = self.over().hit_check_convex_gjk(collider) {
+            if let Some(hit) = self.over().hit_check_convex_gjk(collider, collider_pose) {
                 return Some(hit);
             }
         }

@@ -99,7 +99,7 @@ fn compile_shader<F: glium::backend::Facade>(
 
 impl DemoWindow {
     pub fn new(opts: DemoOptions<'_>, gui: Rc<RefCell<imgui::Context>>) -> Result<DemoWindow, Error> {
-        let context = ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
+        let context = ContextBuilder::new().with_depth_buffer(24).with_vsync(false);
 
         let window = WindowBuilder::new()
             .with_title(opts.title)
