@@ -29,21 +29,40 @@ impl AsMut<[f32]> for V3 {
 }
 
 impl From<V3> for [f32; 3] {
-    #[inline] fn from(v: V3) -> [f32; 3] { [v.x, v.y, v.z] }
+    #[inline]
+    fn from(v: V3) -> [f32; 3] {
+        [v.x, v.y, v.z]
+    }
 }
 
 impl From<V3> for (f32, f32, f32) {
-    #[inline] fn from(v: V3) -> (f32, f32, f32) { (v.x, v.y, v.z) }
+    #[inline]
+    fn from(v: V3) -> (f32, f32, f32) {
+        (v.x, v.y, v.z)
+    }
 }
 
 impl From<[f32; 3]> for V3 {
-    #[inline] fn from(v: [f32; 3]) -> V3 { V3 { x: v[0], y: v[1], z: v[2], w: 0.0 } }
+    #[inline]
+    fn from(v: [f32; 3]) -> V3 {
+        V3 {
+            x: v[0],
+            y: v[1],
+            z: v[2],
+            w: 0.0,
+        }
+    }
 }
 
 impl From<(f32, f32, f32)> for V3 {
     #[inline]
     fn from(v: (f32, f32, f32)) -> Self {
-        V3 { x: v.0, y: v.1, z: v.2, w: 0.0 }
+        V3 {
+            x: v.0,
+            y: v.1,
+            z: v.2,
+            w: 0.0,
+        }
     }
 }
 
@@ -55,7 +74,12 @@ impl Neg for V3 {
     type Output = Self;
     #[inline]
     fn neg(self) -> Self {
-        Self { x: -self.x, y: -self.y, z: -self.z, w: -self.w }
+        Self {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+            w: 0.0,
+        }
     }
 }
 
@@ -63,7 +87,12 @@ impl Add for V3 {
     type Output = Self;
     #[inline]
     fn add(self, o: Self) -> Self {
-        Self { x: self.x + o.x, y: self.y + o.y, z: self.z + o.z, w: self.w + o.w  }
+        Self {
+            x: self.x + o.x,
+            y: self.y + o.y,
+            z: self.z + o.z,
+            w: 0.0,
+        }
     }
 }
 
@@ -71,7 +100,12 @@ impl Sub for V3 {
     type Output = Self;
     #[inline]
     fn sub(self, o: Self) -> Self {
-        Self { x: self.x - o.x, y: self.y - o.y, z: self.z - o.z, w: self.w - o.w  }
+        Self {
+            x: self.x - o.x,
+            y: self.y - o.y,
+            z: self.z - o.z,
+            w: 0.0,
+        }
     }
 }
 
@@ -79,7 +113,12 @@ impl Mul for V3 {
     type Output = Self;
     #[inline]
     fn mul(self, o: Self) -> Self {
-        Self { x: self.x * o.x, y: self.y * o.y, z: self.z * o.z, w: self.w * o.w, }
+        Self {
+            x: self.x * o.x,
+            y: self.y * o.y,
+            z: self.z * o.z,
+            w: 0.0,
+        }
         // Self { $($field: (self.$field * o.$field)),+ }
     }
 }
@@ -92,7 +131,12 @@ impl Div for V3 {
         // debug_assert!(o.y != 0.0);
         // debug_assert!(o.z != 0.0);
         // debug_assert!(o.w != 0.0);
-        Self { x: self.x / o.x, y: self.y / o.y, z: self.z / o.z, w: 0.0, }
+        Self {
+            x: self.x / o.x,
+            y: self.y / o.y,
+            z: self.z / o.z,
+            w: 0.0,
+        }
         // Self { $($field: (self.$field / o.$field)),+ }
     }
 }
@@ -101,7 +145,12 @@ impl Mul<f32> for V3 {
     type Output = Self;
     #[inline]
     fn mul(self, o: f32) -> Self {
-        Self { x: self.x * o, y: self.y * o, z: self.z * o, w: self.w * o }
+        Self {
+            x: self.x * o,
+            y: self.y * o,
+            z: self.z * o,
+            w: 0.0,
+        }
         // Self { $($field: (self.$field * o)),+ }
     }
 }
@@ -133,7 +182,12 @@ impl Div<V3> for f32 {
         // debug_assert!(self.y != 0.0);
         // debug_assert!(self.z != 0.0);
         // debug_assert!(self.w != 0.0);
-        V3 { x: self / v.x, y: self / v.y, z: self / v.z, w: self / v.w }
+        V3 {
+            x: self / v.x,
+            y: self / v.y,
+            z: self / v.z,
+            w: 0.0,
+        }
     }
 }
 
@@ -143,7 +197,7 @@ impl MulAssign for V3 {
         self.x *= rhs.x;
         self.y *= rhs.y;
         self.z *= rhs.z;
-        self.w *= rhs.w;
+        self.w = 0.0;
     }
 }
 
@@ -163,7 +217,7 @@ impl MulAssign<f32> for V3 {
         self.x *= rhs;
         self.y *= rhs;
         self.z *= rhs;
-        self.w *= rhs;
+        self.w = 0.0;
     }
 }
 
@@ -174,7 +228,7 @@ impl DivAssign<f32> for V3 {
         self.x *= inv;
         self.y *= inv;
         self.z *= inv;
-        self.w *= inv;
+        self.w = 0.0;
         // $(self.$field *= inv;)+
     }
 }
@@ -185,7 +239,7 @@ impl AddAssign for V3 {
         self.x += rhs.x;
         self.y += rhs.y;
         self.z += rhs.z;
-        self.w += rhs.w;
+        self.w = 0.0;
         // $(self.$field += rhs.$field;)+
     }
 }
@@ -196,14 +250,18 @@ impl SubAssign for V3 {
         self.x -= rhs.x;
         self.y -= rhs.y;
         self.z -= rhs.z;
-        self.w -= rhs.w;
+        self.w = 0.0;
         // $(self.$field -= rhs.$field;)+
     }
 }
 
-
 impl V3 {
-    pub const ZERO: V3 = V3 { x: 0.0, y: 0.0, z: 0.0, w: 0.0, };
+    pub const ZERO: V3 = V3 {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+        w: 0.0,
+    };
 
     #[inline]
     pub const fn zero() -> Self {
@@ -217,7 +275,12 @@ impl V3 {
 
     #[inline]
     pub const fn splat(v: f32) -> Self {
-        Self { x: v, y: v, z: v, w: 0.0 }
+        Self {
+            x: v,
+            y: v,
+            z: v,
+            w: 0.0,
+        }
     }
 
     #[inline]
@@ -248,7 +311,7 @@ impl V3 {
     pub fn as_mut_array(&mut self) -> &mut [f32; 3] {
         unsafe { &mut *(self as *mut V3 as *mut [f32; 3]) }
     }
-    
+
     #[inline]
     pub fn as_array4(&self) -> &[f32; 4] {
         unsafe { &*(self as *const V3 as *const [f32; 4]) }
@@ -259,7 +322,10 @@ impl V3 {
         unsafe { &mut *(self as *mut V3 as *mut [f32; 4]) }
     }
 
-    #[inline] pub fn tup(self) -> (f32, f32, f32) { self.into() }
+    #[inline]
+    pub fn tup(self) -> (f32, f32, f32) {
+        self.into()
+    }
 
     // #[inline] pub fn len(&self) -> usize { 3 }
 
@@ -273,30 +339,78 @@ impl V3 {
         self.as_mut_slice().iter_mut()
     }
 
-    #[inline] pub fn count() -> usize { 3 }
+    #[inline]
+    pub fn count() -> usize {
+        3
+    }
 
-    #[inline] pub fn max_elem(self) -> f32 { self.fold(|a, b| a.max(b)) }
-    #[inline] pub fn min_elem(self) -> f32 { self.fold(|a, b| a.min(b)) }
+    #[inline]
+    pub fn max_elem(self) -> f32 {
+        self.fold(|a, b| a.max(b))
+    }
+    #[inline]
+    pub fn min_elem(self) -> f32 {
+        self.fold(|a, b| a.min(b))
+    }
 
-    #[inline] pub fn abs(self) -> Self { self.map(|x| x.abs()) }
+    #[inline]
+    pub fn abs(self) -> Self {
+        self.map(|x| x.abs())
+    }
 
-    #[inline] pub fn floor(self) -> Self { self.map(|x| x.floor()) }
-    #[inline] pub fn ceil(self) -> Self { self.map(|x| x.ceil()) }
-    #[inline] pub fn round(self) -> Self { self.map(|x| x.round()) }
+    #[inline]
+    pub fn floor(self) -> Self {
+        self.map(|x| x.floor())
+    }
+    #[inline]
+    pub fn ceil(self) -> Self {
+        self.map(|x| x.ceil())
+    }
+    #[inline]
+    pub fn round(self) -> Self {
+        self.map(|x| x.round())
+    }
 
-    #[inline] pub fn min(self, o: Self) -> Self { self.map2(o, |a, b| a.min(b)) }
-    #[inline] pub fn max(self, o: Self) -> Self { self.map2(o, |a, b| a.max(b)) }
+    #[inline]
+    pub fn min(self, o: Self) -> Self {
+        self.map2(o, |a, b| a.min(b))
+    }
+    #[inline]
+    pub fn max(self, o: Self) -> Self {
+        self.map2(o, |a, b| a.max(b))
+    }
 
-    #[inline] pub fn length_sq(self) -> f32 { self.dot(self) }
-    #[inline] pub fn length(self) -> f32 { self.length_sq().sqrt() }
+    #[inline]
+    pub fn length_sq(self) -> f32 {
+        self.dot(self)
+    }
+    #[inline]
+    pub fn length(self) -> f32 {
+        self.length_sq().sqrt()
+    }
 
-    #[inline] pub fn towards(self, o: Self) -> Self { o - self }
-    #[inline] pub fn dir_towards(self, o: Self) -> Self { self.towards(o).norm_or_zero() }
+    #[inline]
+    pub fn towards(self, o: Self) -> Self {
+        o - self
+    }
+    #[inline]
+    pub fn dir_towards(self, o: Self) -> Self {
+        self.towards(o).norm_or_zero()
+    }
 
-    #[inline] pub fn dist_sq(self, o: Self) -> f32 { (o - self).length_sq() }
-    #[inline] pub fn dist(self, o: Self) -> f32 { (o - self).length() }
+    #[inline]
+    pub fn dist_sq(self, o: Self) -> f32 {
+        (o - self).length_sq()
+    }
+    #[inline]
+    pub fn dist(self, o: Self) -> f32 {
+        (o - self).length()
+    }
 
-    #[inline] pub fn same_dir(self, o: Self) -> bool { self.dot(o) > 0.0 }
+    #[inline]
+    pub fn same_dir(self, o: Self) -> bool {
+        self.dot(o) > 0.0
+    }
 
     #[inline]
     pub fn clamp(self, min: Self, max: Self) -> Self {
@@ -326,8 +440,11 @@ impl V3 {
     #[inline]
     pub fn clamp_length(self, max_len: f32) -> Self {
         let len = self.length();
-        if len < max_len { self }
-        else { self * (max_len / len) }
+        if len < max_len {
+            self
+        } else {
+            self * (max_len / len)
+        }
     }
 
     #[inline]
@@ -406,8 +523,11 @@ impl V3 {
     #[inline]
     pub fn angle(self, o: Self) -> f32 {
         let d = self.dot(o);
-        if d > 1.0 { 0.0 }
-        else { d.max(-1.0).acos() }
+        if d > 1.0 {
+            0.0
+        } else {
+            d.max(-1.0).acos()
+        }
     }
 
     #[inline]
@@ -433,15 +553,31 @@ impl V3 {
         self.norm_or_v(Self { x, y, z, w: 0.0 })
     }
 
+    pub fn dot3(self, a: V3, b: V3, c: V3) -> V3 {
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        {
+            V3::naive_dot3(self, a, b, c)
+        }
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            crate::math::simd::dot3(self, a, b, c)
+        }
+    }
+    #[inline]
+    #[allow(dead_code)]
+    pub(crate) fn naive_dot3(v: V3, a: V3, b: V3, c: V3) -> V3 {
+        let va = v.x * a.x + v.y * a.y + v.z * a.z;
+        let vb = v.x * b.x + v.y * b.y + v.z * b.z;
+        let vc = v.x * c.x + v.y * c.y + v.z * c.z;
+        vec3(va, vb, vc)
+    }
     // #[inline]
     // pub fn identity() -> Self {
     //     V3 { $($field: 0.0),+ }
     // }
 }
 
-
 impl ApproxEq for V3 {
-
     #[inline]
     fn approx_zero_e(&self, e: f32) -> bool {
         self.fold_init(true, |cnd, val| cnd && val.approx_zero_e(e))

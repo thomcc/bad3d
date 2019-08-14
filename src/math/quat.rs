@@ -121,21 +121,6 @@ impl Neg for Quat {
     }
 }
 
-impl Mul<Quat> for Quat {
-    type Output = Quat;
-    #[inline]
-    fn mul(self, other: Quat) -> Quat {
-        let (sx, sy, sz, sw) = self.tup();
-        let (ox, oy, oz, ow) = other.tup();
-        Quat::new(
-            sx * ow + sw * ox + sy * oz - sz * oy,
-            sy * ow + sw * oy + sz * ox - sx * oz,
-            sz * ow + sw * oz + sx * oy - sy * ox,
-            sw * ow - sx * ox - sy * oy - sz * oz,
-        )
-    }
-}
-
 impl Index<usize> for Quat {
     type Output = f32;
     #[inline]
@@ -490,18 +475,68 @@ impl Mul<V3> for Quat {
     type Output = V3;
     // #[inline]
     fn mul(self, o: V3) -> V3 {
-        let (vx, vy, vz) = o.tup();
-        let (qx, qy, qz, qw) = self.tup();
-        let ix = qw * vx + qy * vz - qz * vy;
-        let iy = qw * vy + qz * vx - qx * vz;
-        let iz = qw * vz + qx * vy - qy * vx;
-        let iw = -qx * vx - qy * vy - qz * vz;
-        vec3(
-            ix * qw + iw * -qx + iy * -qz - iz * -qy,
-            iy * qw + iw * -qy + iz * -qx - ix * -qz,
-            iz * qw + iw * -qz + ix * -qy - iy * -qx,
-        )
-        // this is slow and bad...
-        // self.to_mat3() * o
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        {
+            naive_quat_rot3(self, o)
+        }
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            super::simd::quat_rot3(self, o)
+        }
+    }
+}
+
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn naive_quat_rot3(q: Quat, o: V3) -> V3 {
+    let (vx, vy, vz) = o.tup();
+    let (qx, qy, qz, qw) = q.tup();
+    let ix = qw * vx + qy * vz - qz * vy;
+    let iy = qw * vy + qz * vx - qx * vz;
+    let iz = qw * vz + qx * vy - qy * vx;
+    let iw = -qx * vx - qy * vy - qz * vz;
+    vec3(
+        ix * qw - iw * qx - iy * qz + iz * qy,
+        iy * qw - iw * qy - iz * qx + ix * qz,
+        iz * qw - iw * qz - ix * qy + iy * qx,
+    )
+}
+#[inline]
+#[allow(dead_code)]
+pub(crate) fn naive_quat_mul_quat(q: Quat, o: Quat) -> Quat {
+    let (sx, sy, sz, sw) = q.tup();
+    let (ox, oy, oz, ow) = o.tup();
+    Quat::new(
+        sx * ow + sw * ox + sy * oz - sz * oy,
+        sy * ow + sw * oy + sz * ox - sx * oz,
+        sz * ow + sw * oz + sx * oy - sy * ox,
+        sw * ow - sx * ox - sy * oy - sz * oz,
+    )
+}
+
+impl Mul<Quat> for Quat {
+    type Output = Quat;
+    #[inline]
+    fn mul(self, other: Quat) -> Quat {
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        {
+            naive_quat_mul_quat(self, o)
+        }
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            super::simd::quat_mul_quat(self, other)
+        }
+    }
+}
+
+impl ApproxEq for Quat {
+    #[inline]
+    fn approx_zero_e(&self, e: f32) -> bool {
+        self.0.approx_zero_e(e)
+    }
+
+    #[inline]
+    fn approx_eq_e(&self, o: &Self, e: f32) -> bool {
+        self.0.approx_eq_e(&o.0, e)
     }
 }

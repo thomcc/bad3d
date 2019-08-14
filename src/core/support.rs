@@ -36,16 +36,23 @@ impl<'a, T: Support + ?Sized> Support for TransformedSupport<'a, T> {
 impl Support for [V3] {
     // #[inline]
     fn support(&self, dir: V3) -> V3 {
-        assert!(!self.is_empty());
-        let mut best = self[0];
-        let mut best_dot = best.dot(dir);
-        for &v in self.iter() {
-            let new_dot = dot(v, dir);
-            if new_dot > best_dot {
-                best = v;
-                best_dot = new_dot;
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        {
+            assert!(!self.is_empty());
+            let mut best = self[0];
+            let mut best_dot = best.dot(dir);
+            for &v in self.iter() {
+                let new_dot = dot(v, dir);
+                if new_dot > best_dot {
+                    best = v;
+                    best_dot = new_dot;
+                }
             }
+            best
         }
-        best
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            crate::math::simd::maxdot(dir, self)
+        }
     }
 }

@@ -771,13 +771,26 @@ impl V3 {
         }
     }
 
+    #[allow(dead_code)]
     #[inline]
-    pub fn cross(&self, b: V3) -> V3 {
+    pub(crate) fn naive_cross(self: V3, b: V3) -> V3 {
         vec3(
             self.y * b.z - self.z * b.y,
             self.z * b.x - self.x * b.z,
             self.x * b.y - self.y * b.x,
         )
+    }
+
+    #[inline]
+    pub fn cross(self, b: V3) -> V3 {
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        {
+            self.naive_cross(b)
+        }
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            super::simd::v3_cross(self, b)
+        }
     }
 
     #[inline]

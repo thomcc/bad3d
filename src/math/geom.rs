@@ -53,7 +53,7 @@ pub fn tri_project(v0: V3, v1: V3, v2: V3, p: V3) -> V3 {
     let dtcpm = -dot(cp, v0);
     let cpm2 = dot(cp, cp);
     if cpm2 == 0.0 {
-        let end = if (v1 - v0).length() > (v2 - v0).length() {
+        let end = if (v1 - v0).length_sq() > (v2 - v0).length_sq() {
             v1
         } else {
             v2

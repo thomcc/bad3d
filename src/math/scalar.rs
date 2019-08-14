@@ -3,7 +3,7 @@ use crate::math::traits::*;
 /// `std::f32::consts::EPSILON.sqrt()`, under the logic that
 /// we should assume that any arbitary calculation has probably
 /// lost half of it's bits of precision
-pub const DEFAULT_EPSILON: f32 = 1.0e-6; //0.00034526698_f32;
+pub const DEFAULT_EPSILON: f32 = almost::F32_TOLERANCE; // 1.0e-4; //0.00034526698_f32;
 
 impl ApproxEq for f32 {
     #[inline]
@@ -15,12 +15,13 @@ impl ApproxEq for f32 {
     fn approx_eq_e(&self, o: &Self, e: f32) -> bool {
         let a = *self;
         let b = *o;
-        chek::debug_le!({ e }, 1.0);
-        chek::debug_ge!({ e }, 0.0);
-        debug_assert!(a.is_finite(), "non-finite number: {}", { a });
-        debug_assert!(b.is_finite(), "non-finite number: {}", { b });
-        let sc = max!(a.abs(), b.abs(), std::f32::MIN_POSITIVE);
-        (a - b).abs() < sc * e
+        almost::equal_with(a, b, e)
+        // chek::debug_le!({ e }, 1.0);
+        // chek::debug_ge!({ e }, 0.0);
+        // debug_assert!(a.is_finite(), "non-finite number: {}", { a });
+        // debug_assert!(b.is_finite(), "non-finite number: {}", { b });
+        // let sc = max!(a.abs(), b.abs(), std::f32::MIN_POSITIVE);
+        // (a - b).abs() < sc * e
     }
 }
 

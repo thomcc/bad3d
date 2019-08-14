@@ -237,7 +237,7 @@ fn main() -> Result<()> {
                     scene
                         .add()
                         .at(vec3(i as f32 - 5.0, k as f32 - 5.0, 5.0 + (z as f32)))
-                        .collider(random_point_cloud(15))
+                        .collider(random_point_cloud(8 + i))
                         .build();
                     // demo_objects.push(DemoObject::new_cloud(
                     //     &win.display,
