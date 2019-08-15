@@ -33,9 +33,9 @@ impl Shape {
     pub fn new_box_at(radii: V3, com: V3) -> Self {
         let size = radii.abs().map(|x| x.max(1.0e-3));
         let mut vertices = Vec::with_capacity(8);
-        for &z in &[-size.z, size.z] {
-            for &y in &[-size.y, size.y] {
-                for &x in &[-size.x, size.x] {
+        for &z in &[-size.z(), size.z()] {
+            for &y in &[-size.y(), size.y()] {
+                for &x in &[-size.x(), size.x()] {
                     vertices.push(vec3(x, y, z) + com)
                 }
             }
@@ -108,12 +108,12 @@ impl Shape {
     pub fn new_octa(radii: V3) -> Self {
         let size = radii.abs().map(|x| x.max(1.0e-3));
         let vertices = vec![
-            vec3(-size.x, 0.0, 0.0),
-            vec3(size.x, 0.0, 0.0),
-            vec3(0.0, -size.y, 0.0),
-            vec3(0.0, size.y, 0.0),
-            vec3(0.0, 0.0, -size.z),
-            vec3(0.0, 0.0, size.z),
+            vec3(-size.x(), 0.0, 0.0),
+            vec3(size.x(), 0.0, 0.0),
+            vec3(0.0, -size.y(), 0.0),
+            vec3(0.0, size.y(), 0.0),
+            vec3(0.0, 0.0, -size.z()),
+            vec3(0.0, 0.0, size.z()),
         ];
         // This is so lazy...
         Shape::new_hull(vertices).unwrap()

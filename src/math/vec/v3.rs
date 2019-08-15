@@ -1,5 +1,20 @@
 use super::*;
 
+#[derive(Copy, Clone, Default)]
+#[repr(C, align(16))]
+pub struct V3 {
+    x: f32,
+    y: f32,
+    z: f32,
+    // only exists for simd...
+    w: f32,
+}
+
+#[inline]
+pub const fn vec3(x: f32, y: f32, z: f32) -> V3 {
+    V3 { x, y, z, w: 0.0 }
+}
+
 impl AsRef<[f32; 3]> for V3 {
     #[inline]
     fn as_ref(&self) -> &[f32; 3] {
@@ -256,6 +271,65 @@ impl SubAssign for V3 {
 }
 
 impl V3 {
+    #[inline(always)]
+    pub fn x(&self) -> f32 {
+        self.x
+    }
+    #[inline(always)]
+    pub fn y(&self) -> f32 {
+        self.y
+    }
+    #[inline(always)]
+    pub fn z(&self) -> f32 {
+        self.z
+    }
+
+    #[inline(always)]
+    pub fn mx(&mut self) -> &mut f32 {
+        &mut self.x
+    }
+    #[inline(always)]
+    pub fn my(&mut self) -> &mut f32 {
+        &mut self.y
+    }
+    #[inline(always)]
+    pub fn mz(&mut self) -> &mut f32 {
+        &mut self.z
+    }
+
+    #[inline(always)]
+    pub fn set_x(&mut self, v: f32) {
+        self.x = v;
+    }
+
+    #[inline(always)]
+    pub fn set_y(&mut self, v: f32) {
+        self.y = v;
+    }
+
+    #[inline(always)]
+    pub fn set_z(&mut self, v: f32) {
+        self.z = v;
+    }
+
+    #[inline(always)]
+    pub fn with_x(mut self, v: f32) -> V3 {
+        self.x = v;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_y(mut self, v: f32) -> V3 {
+        self.y = v;
+        self
+    }
+
+    #[inline(always)]
+    pub fn with_z(mut self, v: f32) -> V3 {
+        self.z = v;
+        self
+    }
+
     pub const ZERO: V3 = V3 {
         x: 0.0,
         y: 0.0,
@@ -324,6 +398,10 @@ impl V3 {
 
     #[inline]
     pub fn tup(self) -> (f32, f32, f32) {
+        self.into()
+    }
+    #[inline]
+    pub fn arr(self) -> [f32; 3] {
         self.into()
     }
 
@@ -549,6 +627,17 @@ impl V3 {
     }
 
     #[inline]
+    pub fn no_zeroes(self) -> bool {
+        self.x() != 0.0 && self.y() != 0.0 && self.z() != 0.0
+    }
+
+    #[inline]
+    pub fn inverse(self) -> Self {
+        debug_assert!(self.no_zeroes());
+        vec3(1.0 / self.x, 1.0 / self.y, 1.0 / self.z)
+    }
+
+    #[inline]
     pub fn norm_or(self, x: f32, y: f32, z: f32) -> Self {
         self.norm_or_v(Self { x, y, z, w: 0.0 })
     }
@@ -575,6 +664,107 @@ impl V3 {
     // pub fn identity() -> Self {
     //     V3 { $($field: 0.0),+ }
     // }
+
+    // #[inline]
+    // pub fn expand(v: V2, z: f32) -> V3 {
+    //     vec3(v.x, v.y, z)
+    // }
+
+    #[inline]
+    pub fn dot(self, o: V3) -> f32 {
+        self.x * o.x + self.y * o.y + self.z * o.z
+    }
+
+    #[inline]
+    pub fn outer_prod(self, o: V3) -> M3x3 {
+        M3x3 {
+            x: self * o.x,
+            y: self * o.y,
+            z: self * o.z,
+        }
+    }
+
+    #[allow(dead_code)]
+    #[inline]
+    pub(crate) fn naive_cross(self: V3, b: V3) -> V3 {
+        vec3(
+            self.y * b.z - self.z * b.y,
+            self.z * b.x - self.x * b.z,
+            self.x * b.y - self.y * b.x,
+        )
+    }
+
+    #[inline]
+    pub fn cross(self, b: V3) -> V3 {
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        {
+            self.naive_cross(b)
+        }
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
+            crate::math::simd::v3_cross(self, b)
+        }
+    }
+
+    #[inline]
+    pub fn orth(self) -> V3 {
+        let abs_v = self.abs();
+        let mut u = V3::splat(1.0);
+        u[abs_v.max_index()] = 0.0;
+        // let u = u;
+        u.cross(self).norm_or(1.0, 0.0, 0.0)
+    }
+
+    #[inline]
+    pub fn basis(self) -> (V3, V3, V3) {
+        let a = self.norm_or(1.0, 0.0, 0.0);
+        let bu = if self.x.abs() > 0.57735 {
+            // sqrt(1/3)
+            vec3(self.y, -self.x, 0.0)
+        } else {
+            vec3(0.0, self.z, -self.y)
+        };
+        // should never need normalizing, but there may be degenerate cases...
+        let b = bu.norm_or(0.0, -1.0, 0.0);
+        let c = a.cross(b);
+        (a, b, c)
+    }
+
+    #[inline]
+    pub fn norm_or_unit(self) -> V3 {
+        self.norm_or(0.0, 0.0, 1.0)
+    }
+    #[inline]
+    pub fn to_arr(self) -> [f32; 3] {
+        self.into()
+    }
+
+    #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
+    pub fn max_index(&self) -> usize {
+        if self.x > self.y {
+            if self.x > self.z { 0 } else { 2 }
+        } else {
+            if self.y > self.z { 1 } else { 2 }
+        }
+    }
+
+    #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
+    pub fn min_index(&self) -> usize {
+        if self.x < self.y {
+            if self.x < self.z { 0 } else { 2 }
+        } else {
+            if self.y < self.z { 1 } else { 2 }
+        }
+    }
+
+    #[inline]
+    pub fn expand(self, w: f32) -> V4 {
+        V4::expand(self, w)
+    }
 }
 
 impl ApproxEq for V3 {
@@ -611,5 +801,71 @@ impl VecType for V3 {
     #[inline]
     fn dot(self, o: Self) -> f32 {
         V3::dot(self, o)
+    }
+}
+
+impl std::fmt::Debug for V3 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("vec3")
+            .field(&self.x)
+            .field(&self.y)
+            .field(&self.z)
+            .finish()
+    }
+}
+
+impl PartialEq for V3 {
+    #[inline]
+    fn eq(&self, o: &V3) -> bool {
+        self.x == o.x && self.y == o.y && self.z == o.z
+    }
+}
+impl From<V2> for V3 {
+    #[inline]
+    fn from(v: V2) -> V3 {
+        V3 {
+            x: v.x,
+            y: v.y,
+            z: 0.0,
+            w: 0.0,
+        }
+    }
+}
+
+impl From<V4> for V3 {
+    #[inline]
+    fn from(v: V4) -> V3 {
+        V3 {
+            x: v.x,
+            y: v.y,
+            z: v.z,
+            w: 0.0,
+        }
+    }
+}
+
+impl IntoIterator for V3 {
+    type Item = f32;
+    type IntoIter = VecIter<f32>;
+    #[inline]
+    fn into_iter(self) -> VecIter<f32> {
+        VecIter::new([self.x, self.y, self.z, 0.0], 3)
+    }
+}
+impl Fold for V3 {
+    #[inline]
+    fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32 {
+        f(f(self.x, self.y), self.z)
+    }
+
+    #[inline]
+    fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
+        f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z)
+    }
+}
+
+impl fmt::Display for V3 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "vec3({}, {}, {})", self.x, self.y, self.z)
     }
 }

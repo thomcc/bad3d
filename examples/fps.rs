@@ -110,10 +110,10 @@ impl Player {
 
             let norm = hi.normal;
             impact = hi.impact;
-            if norm.z > 0.0 {
+            if norm.z() > 0.0 {
                 self.ground_norm = Some(norm);
                 ground_dist = -dot(norm, impact);
-            } else if norm.z < -0.5 {
+            } else if norm.z() < -0.5 {
                 wall_contact = true;
             }
             self.pos_new = Plane::from_norm_and_point(norm, impact).project(self.pos_new) + (norm * 0.001);
@@ -137,7 +137,7 @@ impl Player {
             while let Some(hi) = self.check_sweep_if(hit < 5, node, self.pos_new, pos_up) {
                 hit += 1;
                 pos_up = hi.impact;
-                pos_up.z -= 0.00001;
+                *pos_up.mz() -= 0.00001;
             }
 
             let mut target_up = target + (pos_up - self.pos_new);
@@ -152,7 +152,7 @@ impl Player {
             while let Some(hi) = self.check_sweep_if(hit < 5, node, target_up, pos_drop) {
                 hit += 1;
                 pos_drop = hi.impact;
-                pos_drop.z += 0.00001;
+                *pos_drop.mz() += 0.00001;
             }
             if hit != 5 {
                 self.pos_new = pos_drop;
@@ -182,22 +182,22 @@ impl Player {
         let mut micro_impulse = vec3(0.0, 0.0, 0.0);
         if approx_zero(thrust.dot(thrust)) {
             if let Some(gnorm) = self.ground_norm {
-                micro_impulse = gnorm * (GRAVITY.z * gnorm.z) - vec3(0.0, 0.0, GRAVITY.z);
+                micro_impulse = gnorm * (GRAVITY.z() * gnorm.z()) - vec3(0.0, 0.0, GRAVITY.z());
             }
         }
         if self.ground_norm.is_some() {
-            if self.vel.z < 0.0 {
-                self.vel.z = 0.0;
+            if self.vel.z() < 0.0 {
+                *self.vel.mz() = 0.0;
             }
-            if thrust.z > 0.0 {
-                self.vel.z = JUMP_SPEED;
+            if thrust.z() > 0.0 {
+                *self.vel.mz() = JUMP_SPEED;
                 self.ground_norm = None;
             }
         }
         let accel = GRAVITY
             + acc_damping
             + micro_impulse
-            + (thrust_dom.y_dir() * thrust.y + thrust_dom.x_dir() * thrust.x) * MAX_SPEED * damp;
+            + (thrust_dom.y_dir() * thrust.y() + thrust_dom.x_dir() * thrust.x()) * MAX_SPEED * damp;
 
         self.vel += accel * dt;
 

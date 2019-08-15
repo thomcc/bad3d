@@ -6,6 +6,7 @@ use std::{self, fmt, slice};
 mod iter;
 mod v3;
 pub use iter::VecIter;
+pub use v3::{vec3, V3};
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]
@@ -17,21 +18,6 @@ pub struct V2 {
 #[inline]
 pub const fn vec2(x: f32, y: f32) -> V2 {
     V2 { x, y }
-}
-
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
-#[repr(C, align(16))]
-pub struct V3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    // only exists for simd...
-    pub w: f32,
-}
-
-#[inline]
-pub const fn vec3(x: f32, y: f32, z: f32) -> V3 {
-    V3 { x, y, z, w: 0.0 }
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -51,12 +37,6 @@ pub const fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
 impl fmt::Display for V2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "vec2({}, {})", self.x, self.y)
-    }
-}
-
-impl fmt::Display for V3 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "vec3({}, {}, {})", self.x, self.y, self.z)
     }
 }
 
@@ -124,18 +104,6 @@ impl Fold for V2 {
     }
 }
 
-impl Fold for V3 {
-    #[inline]
-    fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32 {
-        f(f(self.x, self.y), self.z)
-    }
-
-    #[inline]
-    fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
-        f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z)
-    }
-}
-
 impl Fold for V4 {
     #[inline]
     fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32 {
@@ -196,15 +164,15 @@ vec_from! { V4 [
     (t: (f32, f32, V2)) -> vec4(t.0, t.1, t.2.x, t.2.y);
     (t: (V2, V2)) -> vec4(t.0.x, t.0.y, t.1.x, t.1.y);
 
-    (t: (V3, f32)) -> vec4(t.0.x, t.0.y, t.0.z, t.1);
-    (t: (f32, V3)) -> vec4(t.0, t.1.x, t.1.y, t.1.z);
+    (t: (V3, f32)) -> vec4(t.0.x(), t.0.y(), t.0.z(), t.1);
+    (t: (f32, V3)) -> vec4(t.0, t.1.x(), t.1.y(), t.1.z());
 
     (t: (V2, i32, i32)) -> vec4(t.0.x, t.0.y, t.1 as f32, t.2 as f32);
     (t: (i32, V2, i32)) -> vec4(t.0 as f32, t.1.x, t.1.y, t.2 as f32);
     (t: (i32, i32, V2)) -> vec4(t.0 as f32, t.1 as f32, t.2.x, t.2.y);
 
-    (t: (V3, i32)) -> vec4(t.0.x, t.0.y, t.0.z, t.1 as f32);
-    (t: (i32, V3)) -> vec4(t.0 as f32, t.1.x, t.1.y, t.1.z);
+    (t: (V3, i32)) -> vec4(t.0.x(), t.0.y(), t.0.z(), t.1 as f32);
+    (t: (i32, V3)) -> vec4(t.0 as f32, t.1.x(), t.1.y(), t.1.z());
 
     (t: (i32, i32, i32, i32)) -> vec4(t.0 as f32, t.1 as f32, t.2 as f32, t.3 as f32);
     (t: (u32, u32, u32, u32)) -> vec4(t.0 as f32, t.1 as f32, t.2 as f32, t.3 as f32);
@@ -751,235 +719,10 @@ impl V2 {
     }
 }
 
-impl V3 {
-    #[inline]
-    pub fn expand(v: V2, z: f32) -> V3 {
-        vec3(v.x, v.y, z)
-    }
-
-    #[inline]
-    pub fn dot(self, o: V3) -> f32 {
-        self.x * o.x + self.y * o.y + self.z * o.z
-    }
-
-    #[inline]
-    pub fn outer_prod(self, o: V3) -> M3x3 {
-        M3x3 {
-            x: self * o.x,
-            y: self * o.y,
-            z: self * o.z,
-        }
-    }
-
-    #[allow(dead_code)]
-    #[inline]
-    pub(crate) fn naive_cross(self: V3, b: V3) -> V3 {
-        vec3(
-            self.y * b.z - self.z * b.y,
-            self.z * b.x - self.x * b.z,
-            self.x * b.y - self.y * b.x,
-        )
-    }
-
-    #[inline]
-    pub fn cross(self, b: V3) -> V3 {
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-        {
-            self.naive_cross(b)
-        }
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        {
-            super::simd::v3_cross(self, b)
-        }
-    }
-
-    #[inline]
-    pub fn orth(self) -> V3 {
-        let abs_v = self.abs();
-        let mut u = V3::splat(1.0);
-        u[abs_v.max_index()] = 0.0;
-        // let u = u;
-        u.cross(self).norm_or(1.0, 0.0, 0.0)
-    }
-
-    #[inline]
-    pub fn basis(self) -> (V3, V3, V3) {
-        let a = self.norm_or(1.0, 0.0, 0.0);
-        let bu = if self.x.abs() > 0.57735 {
-            // sqrt(1/3)
-            vec3(self.y, -self.x, 0.0)
-        } else {
-            vec3(0.0, self.z, -self.y)
-        };
-        // should never need normalizing, but there may be degenerate cases...
-        let b = bu.norm_or(0.0, -1.0, 0.0);
-        let c = a.cross(b);
-        (a, b, c)
-    }
-
-    #[inline]
-    pub fn norm_or_unit(self) -> V3 {
-        self.norm_or(0.0, 0.0, 1.0)
-    }
-    #[inline]
-    pub fn to_arr(self) -> [f32; 3] {
-        self.into()
-    }
-
-    #[inline]
-    #[allow(clippy::collapsible_if)]
-    #[rustfmt::skip]
-    pub fn max_index(&self) -> usize {
-        if self.x > self.y {
-            if self.x > self.z { 0 } else { 2 }
-        } else {
-            if self.y > self.z { 1 } else { 2 }
-        }
-    }
-
-    #[inline]
-    #[allow(clippy::collapsible_if)]
-    #[rustfmt::skip]
-    pub fn min_index(&self) -> usize {
-        if self.x < self.y {
-            if self.x < self.z { 0 } else { 2 }
-        } else {
-            if self.y < self.z { 1 } else { 2 }
-        }
-    }
-}
-
-impl V4 {
-    #[inline]
-    pub fn expand(v: V3, w: f32) -> V4 {
-        V4 {
-            x: v.x,
-            y: v.y,
-            z: v.z,
-            w,
-        }
-    }
-    #[inline]
-    pub fn xyz(self) -> V3 {
-        V3 {
-            x: self.x,
-            y: self.y,
-            z: self.z,
-            w: 0.0,
-        }
-    }
-    #[inline]
-    pub fn norm_or_unit(self) -> V4 {
-        self.norm_or(0.0, 0.0, 0.0, 1.0)
-    }
-    #[inline]
-    pub fn to_arr(self) -> [f32; 4] {
-        self.into()
-    }
-
-    #[inline]
-    pub fn dot(self, o: V4) -> f32 {
-        self.x * o.x + self.y * o.y + self.z * o.z + self.w * o.w
-    }
-
-    #[inline]
-    pub fn outer_prod(self, o: V4) -> M4x4 {
-        M4x4 {
-            x: self * o.x,
-            y: self * o.y,
-            z: self * o.z,
-            w: self * o.w,
-        }
-    }
-    #[inline]
-    pub fn to_arr8(self) -> [u8; 4] {
-        [
-            (self.x * 255.0).trunc() as u8,
-            (self.y * 255.0).trunc() as u8,
-            (self.z * 255.0).trunc() as u8,
-            (self.w * 255.0).trunc() as u8,
-        ]
-    }
-
-    #[inline]
-    #[allow(clippy::collapsible_if)]
-    #[rustfmt::skip]
-    pub fn max_index(&self) -> usize {
-        if self.x > self.y {
-            // y out
-            if self.x > self.z {
-                if self.x > self.w { 0 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z > self.w { 2 } else { 3 }
-            } // x out
-        } else {
-            // x out
-            if self.y > self.z {
-                if self.y > self.w { 1 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z > self.w { 2 } else { 3 }
-            } // y out
-        }
-    }
-
-    #[inline]
-    #[allow(clippy::collapsible_if)]
-    #[rustfmt::skip]
-    pub fn min_index(&self) -> usize {
-        if self.x < self.y {
-            // y out
-            if self.x < self.z {
-                if self.x < self.w { 0 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z < self.w { 2 } else { 3 }
-            } // x out
-        } else {
-            // x out
-            if self.y < self.z {
-                if self.y < self.w { 1 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z < self.w { 2 } else { 3 }
-            } // y out
-        }
-    }
-}
-
 impl From<V3> for V2 {
     #[inline]
     fn from(v: V3) -> V2 {
-        V2 { x: v.x, y: v.y }
-    }
-}
-
-impl From<V2> for V3 {
-    #[inline]
-    fn from(v: V2) -> V3 {
-        V3 {
-            x: v.x,
-            y: v.y,
-            z: 0.0,
-            w: 0.0,
-        }
-    }
-}
-
-impl From<V4> for V3 {
-    #[inline]
-    fn from(v: V4) -> V3 {
-        V3 {
-            x: v.x,
-            y: v.y,
-            z: v.z,
-            w: 0.0,
-        }
+        V2 { x: v.x(), y: v.y() }
     }
 }
 
@@ -987,9 +730,9 @@ impl From<V3> for V4 {
     #[inline]
     fn from(v: V3) -> V4 {
         V4 {
-            x: v.x,
-            y: v.y,
-            z: v.z,
+            x: v.x(),
+            y: v.y(),
+            z: v.z(),
             w: 0.0,
         }
     }
@@ -1020,15 +763,6 @@ impl IntoIterator for V2 {
     #[inline]
     fn into_iter(self) -> VecIter<f32> {
         VecIter::new([self.x, self.y, 0.0, 0.0], 2)
-    }
-}
-
-impl IntoIterator for V3 {
-    type Item = f32;
-    type IntoIter = VecIter<f32>;
-    #[inline]
-    fn into_iter(self) -> VecIter<f32> {
-        VecIter::new([self.x, self.y, self.z, 0.0], 3)
     }
 }
 
@@ -1116,4 +850,101 @@ pub fn same_dir<T: VecType>(a: T, b: T) -> bool {
 #[inline]
 pub fn same_dir_e<T: VecType>(a: T, b: T, epsilon: f32) -> bool {
     a.dot(b) > epsilon
+}
+impl V4 {
+    #[inline]
+    pub fn expand(v: V3, w: f32) -> V4 {
+        V4 {
+            x: v.x(),
+            y: v.y(),
+            z: v.z(),
+            w,
+        }
+    }
+    #[inline]
+    pub fn xyz(self) -> V3 {
+        vec3(self.x, self.y, self.z)
+    }
+    #[inline]
+    pub fn norm_or_unit(self) -> V4 {
+        self.norm_or(0.0, 0.0, 0.0, 1.0)
+    }
+    #[inline]
+    pub fn to_arr(self) -> [f32; 4] {
+        self.into()
+    }
+
+    #[inline]
+    pub fn dot(self, o: V4) -> f32 {
+        self.x * o.x + self.y * o.y + self.z * o.z + self.w * o.w
+    }
+
+    #[inline]
+    pub fn outer_prod(self, o: V4) -> M4x4 {
+        M4x4 {
+            x: self * o.x,
+            y: self * o.y,
+            z: self * o.z,
+            w: self * o.w,
+        }
+    }
+    #[inline]
+    pub fn to_arr8(self) -> [u8; 4] {
+        [
+            (self.x * 255.0).trunc() as u8,
+            (self.y * 255.0).trunc() as u8,
+            (self.z * 255.0).trunc() as u8,
+            (self.w * 255.0).trunc() as u8,
+        ]
+    }
+
+    #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
+    pub fn max_index(&self) -> usize {
+        if self.x > self.y {
+            // y out
+            if self.x > self.z {
+                if self.x > self.w { 0 } else { 3 }
+            }
+            // z out
+            else {
+                if self.z > self.w { 2 } else { 3 }
+            } // x out
+        } else {
+            // x out
+            if self.y > self.z {
+                if self.y > self.w { 1 } else { 3 }
+            }
+            // z out
+            else {
+                if self.z > self.w { 2 } else { 3 }
+            } // y out
+        }
+    }
+
+    #[inline]
+    #[allow(clippy::collapsible_if)]
+    #[rustfmt::skip]
+    pub fn min_index(&self) -> usize {
+        if self.x < self.y {
+            // y out
+            if self.x < self.z {
+                if self.x < self.w { 0 } else { 3 }
+            }
+            // z out
+            else {
+                if self.z < self.w { 2 } else { 3 }
+            } // x out
+        } else {
+            // x out
+            if self.y < self.z {
+                if self.y < self.w { 1 } else { 3 }
+            }
+            // z out
+            else {
+                if self.z < self.w { 2 } else { 3 }
+            } // y out
+        }
+    }
 }

@@ -160,7 +160,7 @@ impl<'a> Mul<V3> for &'a M3x3 {
     type Output = V3;
     #[inline]
     fn mul(self, v: V3) -> V3 {
-        self.x * v.x + self.y * v.y + self.z * v.z
+        self.x * v.x() + self.y * v.y() + self.z * v.z()
     }
 }
 
@@ -457,24 +457,27 @@ impl M3x3 {
     }
 
     #[inline]
-    pub const fn from_rows(x: V3, y: V3, z: V3) -> M3x3 {
-        M3x3::new(x.x, y.x, z.x, x.y, y.y, z.y, x.z, y.z, z.z)
+    pub fn from_rows(x: V3, y: V3, z: V3) -> M3x3 {
+        M3x3::new(x.x(), y.x(), z.x(), x.y(), y.y(), z.y(), x.z(), y.z(), z.z())
     }
 
     #[inline]
     pub fn to_quat(&self) -> Quat {
-        let mag_w = self.x.x + self.y.y + self.z.z;
+        let [xx, xy, xz] = self.x.arr();
+        let [yx, yy, yz] = self.y.arr();
+        let [zx, zy, zz] = self.z.arr();
+        let mag_w = xx + yy + zz;
 
-        let (mag_zw, pre_zw, post_zw) = if mag_w > self.z.z {
+        let (mag_zw, pre_zw, post_zw) = if mag_w > zz {
             (mag_w, vec3(1.0, 1.0, 1.0), quat(0.0, 0.0, 0.0, 1.0))
         } else {
-            (self.z.z, vec3(-1.0, -1.0, 1.0), quat(0.0, 0.0, 1.0, 0.0))
+            (zz, vec3(-1.0, -1.0, 1.0), quat(0.0, 0.0, 1.0, 0.0))
         };
 
-        let (mag_xy, pre_xy, post_xy) = if self.x.x > self.y.y {
-            (self.x.x, vec3(1.0, -1.0, -1.0), quat(1.0, 0.0, 0.0, 0.0))
+        let (mag_xy, pre_xy, post_xy) = if xx > yy {
+            (xx, vec3(1.0, -1.0, -1.0), quat(1.0, 0.0, 0.0, 0.0))
         } else {
-            (self.y.y, vec3(-1.0, 1.0, -1.0), quat(0.0, 1.0, 0.0, 0.0))
+            (yy, vec3(-1.0, 1.0, -1.0), quat(0.0, 1.0, 0.0, 0.0))
         };
 
         let (pre, post) = if mag_zw > mag_xy {
@@ -483,12 +486,12 @@ impl M3x3 {
             (pre_xy, post_xy)
         };
 
-        let t = pre.x * self.x.x + pre.y * self.y.y + pre.z * self.z.z + 1.0;
+        let t = pre.x() * xx + pre.y() * yy + pre.z() * zz + 1.0;
         let s = 0.5 / t.sqrt();
         let qp = quat(
-            (pre.y * self.y.z - pre.z * self.z.y) * s,
-            (pre.z * self.z.x - pre.x * self.x.z) * s,
-            (pre.x * self.x.y - pre.y * self.y.x) * s,
+            (pre.y() * yz - pre.z() * zy) * s,
+            (pre.z() * zx - pre.x() * xz) * s,
+            (pre.x() * xy - pre.y() * yx) * s,
             t * s,
         );
         debug_assert!(approx_eq(qp.length(), 1.0));
@@ -512,33 +515,33 @@ impl M3x3 {
 
     #[inline]
     pub fn diagonal(&self) -> V3 {
-        vec3(self.x.x, self.y.y, self.z.z)
+        vec3(self.x.x(), self.y.y(), self.z.z())
     }
 
     #[inline]
     pub fn determinant(&self) -> f32 {
-        self.x.x * (self.y.y * self.z.z - self.z.y * self.y.z)
-            + self.x.y * (self.y.z * self.z.x - self.z.z * self.y.x)
-            + self.x.z * (self.y.x * self.z.y - self.z.x * self.y.y)
+        self.x.x() * (self.y.y() * self.z.z() - self.z.y() * self.y.z())
+            + self.x.y() * (self.y.z() * self.z.x() - self.z.z() * self.y.x())
+            + self.x.z() * (self.y.x() * self.z.y() - self.z.x() * self.y.y())
     }
 
     #[inline]
     pub fn adjugate(&self) -> M3x3 {
         M3x3 {
             x: vec3(
-                self.y.y * self.z.z - self.z.y * self.y.z,
-                self.z.y * self.x.z - self.x.y * self.z.z,
-                self.x.y * self.y.z - self.y.y * self.x.z,
+                self.y.y() * self.z.z() - self.z.y() * self.y.z(),
+                self.z.y() * self.x.z() - self.x.y() * self.z.z(),
+                self.x.y() * self.y.z() - self.y.y() * self.x.z(),
             ),
             y: vec3(
-                self.y.z * self.z.x - self.z.z * self.y.x,
-                self.z.z * self.x.x - self.x.z * self.z.x,
-                self.x.z * self.y.x - self.y.z * self.x.x,
+                self.y.z() * self.z.x() - self.z.z() * self.y.x(),
+                self.z.z() * self.x.x() - self.x.z() * self.z.x(),
+                self.x.z() * self.y.x() - self.y.z() * self.x.x(),
             ),
             z: vec3(
-                self.y.x * self.z.y - self.z.x * self.y.y,
-                self.z.x * self.x.y - self.x.x * self.z.y,
-                self.x.x * self.y.y - self.y.x * self.x.y,
+                self.y.x() * self.z.y() - self.z.x() * self.y.y(),
+                self.z.x() * self.x.y() - self.x.x() * self.z.y(),
+                self.x.x() * self.y.y() - self.y.x() * self.x.y(),
             ),
         }
     }
@@ -581,13 +584,13 @@ impl M3x3 {
     #[inline]
     pub fn is_symmetric(&self) -> bool {
         // Should this be strict comparison?
-        self.x.y == self.y.x && self.x.z == self.z.x && self.y.z == self.z.y
+        self.x.y() == self.y.x() && self.x.z() == self.z.x() && self.y.z() == self.z.y()
     }
 
     #[inline]
     pub fn is_approx_symmetric(&self) -> bool {
         // Should this be strict comparison?
-        approx_eq(self.x.y, self.y.x) && approx_eq(self.x.z, self.z.x) && approx_eq(self.y.z, self.z.y)
+        approx_eq(self.x.y(), self.y.x()) && approx_eq(self.x.z(), self.z.x()) && approx_eq(self.y.z(), self.z.y())
     }
 
     pub fn diagonalizer(&self) -> Quat {
@@ -601,7 +604,7 @@ impl M3x3 {
         for _ in 0..max_steps {
             let qm = q.to_mat3();
             let diag = qm.transpose() * self * qm;
-            let off_diag = vec3(diag.y.z, diag.x.z, diag.x.y);
+            let off_diag = vec3(diag.y.z(), diag.x.z(), diag.x.y());
             let off_mag = off_diag.abs();
             let k = off_mag.max_index();
             // We shouldn't need epsilon here, we'll just do
@@ -664,10 +667,10 @@ impl M3x3 {
             q *= quat(0.0, 0.0, h, h);
         }
 
-        if q.x_dir().z < 0.0 {
+        if q.x_dir().z() < 0.0 {
             q *= quat(1.0, 0.0, 0.0, 0.0);
         }
-        if q.y_dir().y < 0.0 {
+        if q.y_dir().y() < 0.0 {
             q *= quat(0.0, 0.0, 1.0, 0.0);
         }
         if q.0.w < 0.0 {
@@ -839,9 +842,13 @@ impl M4x4 {
     }
 
     #[inline]
+    #[rustfmt::skip]
     pub fn from_translation(v: V3) -> M4x4 {
         M4x4::new(
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, v.x, v.y, v.z, 1.0,
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            v.x(), v.y(), v.z(), 1.0,
         )
     }
 
@@ -856,9 +863,13 @@ impl M4x4 {
     }
 
     #[inline]
+    #[rustfmt::skip]
     pub fn from_scale(v: V3) -> M4x4 {
         M4x4::new(
-            v.x, 0.0, 0.0, 0.0, 0.0, v.y, 0.0, 0.0, 0.0, 0.0, v.z, 0.0, 0.0, 0.0, 0.0, 1.0,
+            v.x(), 0.0, 0.0, 0.0,
+            0.0, v.y(), 0.0, 0.0,
+            0.0, 0.0, v.z(), 0.0,
+            0.0, 0.0, 0.0, 1.0,
         )
     }
 
@@ -908,12 +919,16 @@ impl M4x4 {
     }
 
     #[inline]
+    #[rustfmt::skip]
     pub fn look_towards(fwd: V3, up: V3) -> M4x4 {
         let f = fwd.norm_or(1.0, 0.0, 0.0);
         let s = f.cross(up).norm_or(0.0, 1.0, 0.0);
         let u = s.cross(f);
         M4x4::new(
-            s.x, u.x, -f.x, 0.0, s.y, u.y, -f.y, 0.0, s.z, u.z, -f.z, 0.0, 0.0, 0.0, 0.0, 1.0,
+            s.x(), u.x(), -f.x(), 0.0,
+            s.y(), u.y(), -f.y(), 0.0,
+            s.z(), u.z(), -f.z(), 0.0,
+            0.0, 0.0, 0.0, 1.0,
         )
     }
 
@@ -973,7 +988,10 @@ impl From<[[f32; 2]; 2]> for M2x2 {
 impl From<M3x3> for [f32; 9] {
     #[inline]
     fn from(m: M3x3) -> [f32; 9] {
-        [m.x.x, m.x.y, m.x.z, m.y.x, m.y.y, m.y.z, m.z.x, m.z.y, m.z.z]
+        let [xx, xy, xz] = m.x.arr();
+        let [yx, yy, yz] = m.y.arr();
+        let [zx, zy, zz] = m.z.arr();
+        [xx, xy, xz, yx, yy, yz, zx, zy, zz]
     }
 }
 

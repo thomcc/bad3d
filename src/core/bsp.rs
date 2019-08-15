@@ -1155,8 +1155,8 @@ impl Face {
         self.gu = geom::gradient(v0, v1, v2, t0.x, t1.x, t2.x);
         self.gv = geom::gradient(v0, v1, v2, t0.y, t1.y, t2.y);
 
-        self.ot.x = t0.x - dot(v0, self.gu);
-        self.ot.y = t0.y - dot(v0, self.gv);
+        self.ot.set_x(t0.x - dot(v0, self.gu));
+        self.ot.set_y(t0.y - dot(v0, self.gv));
     }
 
     pub fn area(&self) -> f32 {
@@ -1187,8 +1187,8 @@ impl Face {
         for v in self.vertex.iter_mut() {
             *v += offset;
         }
-        self.ot.x -= dot(offset, self.gu);
-        self.ot.y -= dot(offset, self.gv);
+        *self.ot.mx() -= dot(offset, self.gu);
+        *self.ot.my() -= dot(offset, self.gv);
     }
 
     pub fn rotate(&mut self, rot: Quat) {
@@ -1242,27 +1242,27 @@ impl Face {
     #[inline]
     pub fn vert_uv(&self, i: usize) -> V2 {
         vec2(
-            self.ot.x + dot(self.vertex[i], self.gu),
-            self.ot.y + dot(self.vertex[i], self.gv),
+            self.ot.x() + dot(self.vertex[i], self.gu),
+            self.ot.y() + dot(self.vertex[i], self.gv),
         )
     }
 
     #[inline]
     pub fn uv_at(&self, v: V3) -> V2 {
-        vec2(self.ot.x + dot(v, self.gu), self.ot.y + dot(v, self.gv))
+        vec2(self.ot.x() + dot(v, self.gu), self.ot.y() + dot(v, self.gv))
     }
 
     pub fn assign_tex(&mut self) {
         let n = self.plane.normal;
-        if n.x.abs() > n.y.abs() && n.x.abs() > n.z.abs() {
-            self.gu = vec3(0.0, n.x.signum(), 0.0);
+        if n.x().abs() > n.y().abs() && n.x().abs() > n.z().abs() {
+            self.gu = vec3(0.0, n.x().signum(), 0.0);
             self.gv = vec3(0.0, 0.0, 1.0);
-        } else if n.y.abs() > n.z.abs() {
-            self.gu = vec3(-n.y.signum(), 0.0, 0.0);
+        } else if n.y().abs() > n.z().abs() {
+            self.gu = vec3(-n.y().signum(), 0.0, 0.0);
             self.gv = vec3(0.0, 0.0, 1.0);
         } else {
             self.gu = vec3(1.0, 0.0, 0.0);
-            self.gv = vec3(0.0, n.z.signum(), 0.0);
+            self.gv = vec3(0.0, n.z().signum(), 0.0);
         }
     }
 

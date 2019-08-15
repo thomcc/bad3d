@@ -30,3 +30,6 @@ debug = true
 # opt-level = "s"
 lto = "thin"
 # debug-assertions = true
+# [profile.dev]
+# opt-level = 2
+

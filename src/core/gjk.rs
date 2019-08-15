@@ -261,9 +261,9 @@ impl Simplex {
         assert!(self.size > 0);
         if self.size == 3 {
             let b = geom::barycentric(self.points[0].p, self.points[1].p, self.points[2].p, self.v);
-            self.points[0].t = b.x;
-            self.points[1].t = b.y;
-            self.points[2].t = b.z;
+            self.points[0].t = b.x();
+            self.points[1].t = b.y();
+            self.points[2].t = b.z();
         }
 
         let mut pa = V3::zero();

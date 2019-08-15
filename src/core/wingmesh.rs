@@ -1322,22 +1322,22 @@ impl WingMesh {
     pub fn new_box(min: V3, max: V3) -> WingMesh {
         let mut result = WingMesh::new();
         result.verts = vec![
-            vec3(min.x, min.y, min.z),
-            vec3(min.x, min.y, max.z),
-            vec3(min.x, max.y, min.z),
-            vec3(min.x, max.y, max.z),
-            vec3(max.x, min.y, min.z),
-            vec3(max.x, min.y, max.z),
-            vec3(max.x, max.y, min.z),
-            vec3(max.x, max.y, max.z),
+            vec3(min.x(), min.y(), min.z()),
+            vec3(min.x(), min.y(), max.z()),
+            vec3(min.x(), max.y(), min.z()),
+            vec3(min.x(), max.y(), max.z()),
+            vec3(max.x(), min.y(), min.z()),
+            vec3(max.x(), min.y(), max.z()),
+            vec3(max.x(), max.y(), min.z()),
+            vec3(max.x(), max.y(), max.z()),
         ];
         result.faces = vec![
-            plane(-1.0, 0.0, 0.0, min.x),
-            plane(1.0, 0.0, 0.0, -max.x),
-            plane(0.0, -1.0, 0.0, min.y),
-            plane(0.0, 1.0, 0.0, -max.y),
-            plane(0.0, 0.0, -1.0, min.z),
-            plane(0.0, 0.0, 1.0, -max.z),
+            plane(-1.0, 0.0, 0.0, min.x()),
+            plane(1.0, 0.0, 0.0, -max.x()),
+            plane(0.0, -1.0, 0.0, min.y()),
+            plane(0.0, 1.0, 0.0, -max.y()),
+            plane(0.0, 0.0, -1.0, min.z()),
+            plane(0.0, 0.0, 1.0, -max.z()),
         ];
 
         result.edges = vec![

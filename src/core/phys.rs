@@ -654,7 +654,7 @@ impl ConstraintSet {
             r0r1,
             (p0, p1),
             vec3(1.0, 0.0, 0.0),
-            d.x,
+            d.x(),
             None,
             None,
         ));
@@ -662,7 +662,7 @@ impl ConstraintSet {
             r0r1,
             (p0, p1),
             vec3(0.0, 1.0, 0.0),
-            d.y,
+            d.y(),
             None,
             None,
         ));
@@ -670,7 +670,7 @@ impl ConstraintSet {
             r0r1,
             (p0, p1),
             vec3(0.0, 0.0, 1.0),
-            d.z,
+            d.z(),
             None,
             None,
         ))
@@ -688,11 +688,11 @@ impl ConstraintSet {
         let joint_min = joint_min.map(|f| f.to_radians());
         let joint_max = joint_max.map(|f| f.to_radians());
 
-        if joint_min.x == 0.0
-            && joint_max.x == 0.0
-            && joint_min.y == 0.0
-            && joint_max.y == 0.0
-            && joint_min.z < joint_max.z
+        if joint_min.x() == 0.0
+            && joint_max.x() == 0.0
+            && joint_min.y() == 0.0
+            && joint_max.y() == 0.0
+            && joint_min.z() < joint_max.z()
         {
             let cb = quat(0.0, -1.0, 0.0, 1.0).must_norm();
             return self.range_w(
@@ -700,8 +700,8 @@ impl ConstraintSet {
                 jb0 * cb,
                 rb1,
                 jb1 * cb,
-                vec3(joint_min.z.to_degrees(), 0.0, 0.0),
-                vec3(joint_max.z.to_degrees(), 0.0, 0.0),
+                vec3(joint_min.z().to_degrees(), 0.0, 0.0),
+                vec3(joint_max.z().to_degrees(), 0.0, 0.0),
             );
         }
         let handles = (rb0.map(|rb| rb.handle), rb1.map(|rb| rb.handle));
@@ -713,42 +713,42 @@ impl ConstraintSet {
         let M3x3 { x: xd1, y: yd1, z: zd1 } = jb1.to_mat3();
         let inv_dt = 1.0 / self.dt;
 
-        if joint_max.x == joint_min.x {
-            let spin = 2.0 * (-s.0.x + (joint_min.x * 0.5).sin()) * inv_dt;
+        if joint_max.x() == joint_min.x() {
+            let spin = 2.0 * (-s.0.x + (joint_min.x() * 0.5).sin()) * inv_dt;
             self.angular(AngularConstraint::new(handles, xd1, spin, (-f32::MAX, f32::MAX)));
-        } else if joint_max.x - joint_min.x < 360.0_f32.to_radians() {
+        } else if joint_max.x() - joint_min.x() < 360.0_f32.to_radians() {
             self.angular(AngularConstraint::new(
                 handles,
                 xd1,
-                2.0 * (-s.0.x + (joint_min.x * 0.5).sin()) * inv_dt,
+                2.0 * (-s.0.x + (joint_min.x() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
             self.angular(AngularConstraint::new(
                 handles,
                 -xd1,
-                2.0 * (s.0.x - (joint_max.x * 0.5).sin()) * inv_dt,
+                2.0 * (s.0.x - (joint_max.x() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
         }
 
-        if joint_max.y == joint_min.y {
+        if joint_max.y() == joint_min.y() {
             self.angular(AngularConstraint::new(
                 handles,
                 yd1,
-                self.params.joint_bias * 2.0 * (-s.0.y + joint_min.y) * inv_dt,
+                self.params.joint_bias * 2.0 * (-s.0.y + joint_min.y()) * inv_dt,
                 (-f32::MAX, f32::MAX),
             ));
         } else {
             self.angular(AngularConstraint::new(
                 handles,
                 yd1,
-                2.0 * (-s.0.y + (joint_min.y * 0.5).sin()) * inv_dt,
+                2.0 * (-s.0.y + (joint_min.y() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
             self.angular(AngularConstraint::new(
                 handles,
                 -yd1,
-                2.0 * (s.0.y - (joint_max.y * 0.5).sin()) * inv_dt,
+                2.0 * (s.0.y - (joint_max.y() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
         }

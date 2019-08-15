@@ -136,17 +136,10 @@ pub fn inertia<Idx: TriIndices>(verts: &[V3], tris: &[Idx], com: V3) -> M3x3 {
     diag /= volume * 10.0;
     offd /= volume * 20.0;
 
-    mat3(
-        diag.y + diag.z,
-        -offd.z,
-        -offd.y,
-        -offd.z,
-        diag.x + diag.z,
-        -offd.x,
-        -offd.y,
-        -offd.x,
-        diag.x + diag.y,
-    )
+    let [dx, dy, dz] = diag.arr();
+    let [ox, oy, oz] = offd.arr();
+
+    mat3(dy + dz, -oz, -oy, -oz, dx + dz, -ox, -oy, -ox, dx + dy)
 }
 
 /// returns (sq dist, (pt on line1, t for line1), (pt on line2, t for line2))
@@ -388,11 +381,12 @@ pub fn segment_over(p: Plane, v0: V3, v1: V3, nv0: V3) -> Option<SegmentTestInfo
 }
 
 pub fn tangent_point_on_cylinder(r: f32, h: f32, n: V3) -> V3 {
-    let xy_inv = safe_div1(1.0, (n.x * n.x + n.y * n.y).sqrt());
+    let [nx, ny, nz] = n.arr();
+    let xy_inv = safe_div1(1.0, (nx * nx + ny * ny).sqrt());
     vec3(
-        r * n.x * xy_inv,
-        r * n.y * xy_inv,
+        r * nx * xy_inv,
+        r * ny * xy_inv,
         // Reference point is at cyl. base. use h/2 and -h/2 for midpt
-        if n.z > 0.0 { h } else { 0.0 },
+        if nz > 0.0 { h } else { 0.0 },
     )
 }

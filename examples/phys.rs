@@ -436,7 +436,7 @@ fn main() -> Result<()> {
                         ui.input_float(im_str!("fixed fps value: "), &mut fix_phys_fps).build();
                     }
 
-                    ui.slider_float(im_str!("gravity z"), &mut scene.params.gravity.z, -30.0, 0.0)
+                    ui.slider_float(im_str!("gravity z"), scene.params.gravity.mz(), -30.0, 0.0)
                         .build();
 
                     ui.input_float(im_str!("restitution"), &mut scene.params.restitution)

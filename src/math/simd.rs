@@ -366,9 +366,9 @@ mod test {
     use super::*;
     fn naive_maxdot(dir: V3, s: &[V3]) -> V3 {
         let mut best = s[0];
-        let mut best_dot = best.x * dir.x + best.y * dir.y + best.z * dir.z;
+        let mut best_dot = best.x() * dir.x() + best.y() * dir.y() + best.z() * dir.z();
         for &v in s[1..].iter() {
-            let new_dot = v.x * dir.x + v.y * dir.y + v.z * dir.z;
+            let new_dot = v.x() * dir.x() + v.y() * dir.y() + v.z() * dir.z();
             if new_dot > best_dot {
                 best = v;
                 best_dot = new_dot;

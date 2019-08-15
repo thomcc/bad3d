@@ -48,6 +48,7 @@ pub struct FlyCam {
 }
 
 impl FlyCam {
+    #[rustfmt::skip]
     pub fn update(&mut self, update: CamUpdate) {
         let look_len = self.look.length();
         let up_len = self.up.length();
@@ -105,7 +106,7 @@ impl FlyCam {
             let (ps, pc) = (update.cursor_delta.y * self.mouse_speed).to_radians().sin_cos();
             let pm = 1.0 - pc;
 
-            let (ax, ay, az) = across.tup();
+            let [ax, ay, az] = across.arr();
 
             let (axx, axy, axz) = (ax * ax, ax * ay, ax * az);
             let (ayy, ayz) = (ay * ay, ay * az);
@@ -132,13 +133,15 @@ impl FlyCam {
         f = -f;
         // let t = M3x3::from_cols(s, u, f) * -self.eye;
         let t = vec3(
-            s.x * -self.eye.x + s.y * -self.eye.y + s.z * -self.eye.z,
-            u.x * -self.eye.x + u.y * -self.eye.y + u.z * -self.eye.z,
-            f.x * -self.eye.x + f.y * -self.eye.y + f.z * -self.eye.z,
+            s.x() * -self.eye.x() + s.y() * -self.eye.y() + s.z() * -self.eye.z(),
+            u.x() * -self.eye.x() + u.y() * -self.eye.y() + u.z() * -self.eye.z(),
+            f.x() * -self.eye.x() + f.y() * -self.eye.y() + f.z() * -self.eye.z(),
         );
-
-        self.view = mat4(
-            s.x, u.x, f.x, 0.0, s.y, u.y, f.y, 0.0, s.z, u.z, f.z, 0.0, t.x, t.y, t.z, 1.0,
+        self.view = M4x4::from_cols(
+            s.expand(0.0),
+            s.expand(0.0),
+            s.expand(0.0),
+            t.expand(1.0),
         );
     }
 }

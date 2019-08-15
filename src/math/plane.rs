@@ -27,7 +27,10 @@ impl fmt::Display for Plane {
         write!(
             f,
             "plane(({}, {}, {}), {})",
-            self.normal.x, self.normal.y, self.normal.z, self.offset
+            self.normal.x(),
+            self.normal.y(),
+            self.normal.z(),
+            self.offset
         )
     }
 }
@@ -72,16 +75,16 @@ impl Plane {
     #[inline]
     pub fn to_v4(&self) -> V4 {
         V4 {
-            x: self.normal.x,
-            y: self.normal.y,
-            z: self.normal.z,
+            x: self.normal.x(),
+            y: self.normal.y(),
+            z: self.normal.z(),
             w: self.offset,
         }
     }
 
     #[inline]
     pub fn tup(&self) -> (f32, f32, f32, f32) {
-        (self.normal.x, self.normal.y, self.normal.z, self.offset)
+        (self.normal.x(), self.normal.y(), self.normal.z(), self.offset)
     }
 
     #[inline]

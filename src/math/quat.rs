@@ -413,17 +413,17 @@ impl Quat {
     #[inline]
     pub fn yaw(self) -> f32 {
         let v = self.y_dir();
-        if v.x == 0.0 && v.y == 0.0 {
+        if v.x() == 0.0 && v.y() == 0.0 {
             0.0
         } else {
-            (-v.x).atan2(v.y)
+            (-v.x()).atan2(v.y())
         }
     }
 
     #[inline]
     pub fn pitch(self) -> f32 {
         let v = self.y_dir();
-        v.z.atan2((v.x * v.x + v.y * v.y).sqrt())
+        v.z().atan2((v.x() * v.x() + v.y() * v.y()).sqrt())
     }
 
     #[inline]
@@ -432,7 +432,7 @@ impl Quat {
         let q = Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), -q.yaw()) * q;
         let q = Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), -q.pitch()) * q;
         let v = q.x_dir();
-        (-v.z).atan2(v.x)
+        (-v.z()).atan2(v.x())
     }
 
     #[inline]

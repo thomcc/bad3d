@@ -90,19 +90,19 @@ impl Arbitrary for V3 {
     fn shrink(&self) -> Box<dyn Iterator<Item = V3>> {
         let iter = std::iter::empty();
         let copy = *self;
-        let iter = iter.chain(self.x.shrink().map(move |shr_value| {
+        let iter = iter.chain(self.x().shrink().map(move |shr_value| {
             let mut result = copy;
-            result.x = shr_value;
+            result.set_x(shr_value);
             result
         }));
-        let iter = iter.chain(self.y.shrink().map(move |shr_value| {
+        let iter = iter.chain(self.y().shrink().map(move |shr_value| {
             let mut result = copy;
-            result.y = shr_value;
+            result.set_y(shr_value);
             result
         }));
-        let iter = iter.chain(self.z.shrink().map(move |shr_value| {
+        let iter = iter.chain(self.z().shrink().map(move |shr_value| {
             let mut result = copy;
-            result.z = shr_value;
+            result.set_z(shr_value);
             result
         }));
         Box::new(iter)
@@ -151,7 +151,7 @@ impl Arbitrary for Quat {
         if ax.is_zero() {
             Quat::IDENTITY
         } else {
-            Quat::new(ax.x, ax.y, ax.z, 1.0).normalize().unwrap()
+            Quat::new(ax.x(), ax.y(), ax.z(), 1.0).normalize().unwrap()
         }
     }
 }

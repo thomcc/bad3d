@@ -133,7 +133,7 @@ impl SceneObj {
         let mesh = match shape {
             Shape::Rect(size) => WingMesh::new_box(size * -0.5, size * 0.5),
             Shape::Octahedron(v) => {
-                let s = vec3(1.0 / v.x, 1.0 / v.y, 1.0 / v.z);
+                let s = v.inverse();
                 WingMesh::new_box(-s, s).dual()
             }
             Shape::Cylinder { sides, r, h } => WingMesh::new_cylinder(sides, r, h),
