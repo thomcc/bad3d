@@ -715,19 +715,19 @@ impl ConstraintSet {
         let inv_dt = 1.0 / self.dt;
 
         if joint_max.x() == joint_min.x() {
-            let spin = 2.0 * (-s.0.x + (joint_min.x() * 0.5).sin()) * inv_dt;
+            let spin = 2.0 * (-s.0.x() + (joint_min.x() * 0.5).sin()) * inv_dt;
             self.angular(AngularConstraint::new(handles, xd1, spin, (-f32::MAX, f32::MAX)));
         } else if joint_max.x() - joint_min.x() < 360.0_f32.to_radians() {
             self.angular(AngularConstraint::new(
                 handles,
                 xd1,
-                2.0 * (-s.0.x + (joint_min.x() * 0.5).sin()) * inv_dt,
+                2.0 * (-s.0.x() + (joint_min.x() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
             self.angular(AngularConstraint::new(
                 handles,
                 -xd1,
-                2.0 * (s.0.x - (joint_max.x() * 0.5).sin()) * inv_dt,
+                2.0 * (s.0.x() - (joint_max.x() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
         }
@@ -736,27 +736,27 @@ impl ConstraintSet {
             self.angular(AngularConstraint::new(
                 handles,
                 yd1,
-                self.params.joint_bias * 2.0 * (-s.0.y + joint_min.y()) * inv_dt,
+                self.params.joint_bias * 2.0 * (-s.0.y() + joint_min.y()) * inv_dt,
                 (-f32::MAX, f32::MAX),
             ));
         } else {
             self.angular(AngularConstraint::new(
                 handles,
                 yd1,
-                2.0 * (-s.0.y + (joint_min.y() * 0.5).sin()) * inv_dt,
+                2.0 * (-s.0.y() + (joint_min.y() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
             self.angular(AngularConstraint::new(
                 handles,
                 -yd1,
-                2.0 * (s.0.y - (joint_max.y() * 0.5).sin()) * inv_dt,
+                2.0 * (s.0.y() - (joint_max.y() * 0.5).sin()) * inv_dt,
                 (0.0, f32::MAX),
             ));
         }
         self.angular(AngularConstraint::new(
             handles,
             zd1,
-            self.params.joint_bias * 2.0 * -t.0.z * inv_dt,
+            self.params.joint_bias * 2.0 * -t.0.z() * inv_dt,
             (-f32::MAX, f32::MAX),
         ))
     }
@@ -785,7 +785,7 @@ impl ConstraintSet {
         let q1 = r1.map(|rb| rb.pose.orientation).unwrap_or_default();
         let dq = {
             let r = q1 * (q0 * target).conj();
-            if r.0.w < 0.0 {
+            if r.0.w() < 0.0 {
                 -r
             } else {
                 r
@@ -802,7 +802,7 @@ impl ConstraintSet {
         self.angular(AngularConstraint::new(
             handles,
             axis,
-            -self.params.joint_bias * clamp(dq.0.w, -1.0, 1.0).acos() * 2.0 * inv_dt,
+            -self.params.joint_bias * clamp(dq.0.w(), -1.0, 1.0).acos() * 2.0 * inv_dt,
             (-max_torque, max_torque),
         ));
 

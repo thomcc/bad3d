@@ -90,21 +90,9 @@ impl Arbitrary for V3 {
     fn shrink(&self) -> Box<dyn Iterator<Item = V3>> {
         let iter = std::iter::empty();
         let copy = *self;
-        let iter = iter.chain(self.x().shrink().map(move |shr_value| {
-            let mut result = copy;
-            result.set_x(shr_value);
-            result
-        }));
-        let iter = iter.chain(self.y().shrink().map(move |shr_value| {
-            let mut result = copy;
-            result.set_y(shr_value);
-            result
-        }));
-        let iter = iter.chain(self.z().shrink().map(move |shr_value| {
-            let mut result = copy;
-            result.set_z(shr_value);
-            result
-        }));
+        let iter = iter.chain(self.x().shrink().map(move |shr_value| copy.with_x(shr_value)));
+        let iter = iter.chain(self.y().shrink().map(move |shr_value| copy.with_y(shr_value)));
+        let iter = iter.chain(self.z().shrink().map(move |shr_value| copy.with_z(shr_value)));
         Box::new(iter)
     }
 }
@@ -121,26 +109,10 @@ impl Arbitrary for V4 {
     fn shrink(&self) -> Box<dyn Iterator<Item = V4>> {
         let iter = std::iter::empty();
         let copy = *self;
-        let iter = iter.chain(self.x.shrink().map(move |shr_value| {
-            let mut result = copy;
-            result.x = shr_value;
-            result
-        }));
-        let iter = iter.chain(self.y.shrink().map(move |shr_value| {
-            let mut result = copy;
-            result.y = shr_value;
-            result
-        }));
-        let iter = iter.chain(self.z.shrink().map(move |shr_value| {
-            let mut result = copy;
-            result.z = shr_value;
-            result
-        }));
-        let iter = iter.chain(self.w.shrink().map(move |shr_value| {
-            let mut result = copy;
-            result.w = shr_value;
-            result
-        }));
+        let iter = iter.chain(self.x().shrink().map(move |shr_value| copy.with_x(shr_value)));
+        let iter = iter.chain(self.y().shrink().map(move |shr_value| copy.with_y(shr_value)));
+        let iter = iter.chain(self.z().shrink().map(move |shr_value| copy.with_z(shr_value)));
+        let iter = iter.chain(self.w().shrink().map(move |shr_value| copy.with_w(shr_value)));
         Box::new(iter)
     }
 }

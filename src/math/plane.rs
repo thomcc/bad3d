@@ -74,12 +74,7 @@ impl Plane {
 
     #[inline]
     pub fn to_v4(&self) -> V4 {
-        V4 {
-            x: self.normal.x(),
-            y: self.normal.y(),
-            z: self.normal.z(),
-            w: self.offset,
-        }
+        vec4(self.normal.x(), self.normal.y(), self.normal.z(), self.offset)
     }
 
     #[inline]
@@ -89,7 +84,7 @@ impl Plane {
 
     #[inline]
     pub fn from_v4(v: V4) -> Plane {
-        Plane::new(v.xyz(), v.w)
+        Plane::new(v.xyz(), v.w())
     }
 
     #[inline]

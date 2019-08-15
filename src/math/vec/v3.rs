@@ -965,7 +965,7 @@ impl From<V2> for V3 {
 impl From<V4> for V3 {
     #[inline]
     fn from(v: V4) -> V3 {
-        vec3(v.x, v.y, v.z)
+        v.xyz()
     }
 }
 

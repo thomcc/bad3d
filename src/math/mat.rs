@@ -44,12 +44,11 @@ impl M3x3 {
 }
 
 impl M4x4 {
-    #[rustfmt::skip]
     pub const IDENTITY: M4x4 = M4x4 {
-        x: V4 { x: 1.0, y: 0.0, z: 0.0, w: 0.0 },
-        y: V4 { x: 0.0, y: 1.0, z: 0.0, w: 0.0 },
-        z: V4 { x: 0.0, y: 0.0, z: 1.0, w: 0.0 },
-        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 },
+        x: V4::POS_X,
+        y: V4::POS_Y,
+        z: V4::POS_Z,
+        w: V4::POS_W,
     };
 }
 
@@ -70,12 +69,11 @@ impl M3x3 {
 }
 
 impl M4x4 {
-    #[rustfmt::skip]
     pub const ZERO: M4x4 = M4x4 {
-        x: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
-        y: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
-        z: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
-        w: V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 },
+        x: V4::ZERO,
+        y: V4::ZERO,
+        z: V4::ZERO,
+        w: V4::ZERO,
     };
 }
 
@@ -133,7 +131,7 @@ pub fn mat3(
 
 #[inline]
 #[rustfmt::skip]
-pub const fn mat4(
+pub fn mat4(
     m00: f32, m01: f32, m02: f32, m03: f32,
     m10: f32, m11: f32, m12: f32, m13: f32,
     m20: f32, m21: f32, m22: f32, m23: f32,
@@ -167,7 +165,7 @@ impl<'a> Mul<V4> for &'a M4x4 {
     type Output = V4;
     #[inline]
     fn mul(self, v: V4) -> V4 {
-        self.x * v.x + self.y * v.y + self.z * v.z + self.w * v.w
+        self.x * v.x() + self.y * v.y() + self.z * v.z() + self.w * v.w()
     }
 }
 
@@ -666,8 +664,8 @@ impl M3x3 {
             let axis_val = sgn * ((1.0 - cosine) * 0.5).sqrt();
             // Negated to go from the matrix to the diagonal and not vice versa.
             jacobi_rot[k] = -axis_val;
-            jacobi_rot.0.w = (1.0 - axis_val * axis_val).sqrt();
-            if jacobi_rot.0.w == 1.0 {
+            *jacobi_rot.0.mw() = (1.0 - axis_val * axis_val).sqrt();
+            if jacobi_rot.0.w() == 1.0 {
                 // Hit numeric precision limit.
                 break;
             }
@@ -700,7 +698,7 @@ impl M3x3 {
         if q.y_dir().y() < 0.0 {
             q *= quat(0.0, 0.0, 1.0, 0.0);
         }
-        if q.0.w < 0.0 {
+        if q.0.w() < 0.0 {
             q = -q;
         }
         q
@@ -710,17 +708,17 @@ impl M3x3 {
 impl M4x4 {
     #[inline]
     #[rustfmt::skip]
-    pub const fn new(
+    pub fn new(
         xx: f32, xy: f32, xz: f32, xw: f32,
         yx: f32, yy: f32, yz: f32, yw: f32,
         zx: f32, zy: f32, zz: f32, zw: f32,
         wx: f32, wy: f32, wz: f32, ww: f32,
     ) -> M4x4 {
         M4x4 {
-            x: V4 { x: xx, y: xy, z: xz, w: xw },
-            y: V4 { x: yx, y: yy, z: yz, w: yw },
-            z: V4 { x: zx, y: zy, z: zz, w: zw },
-            w: V4 { x: wx, y: wy, z: wz, w: ww },
+            x: vec4(xx, xy, xz, xw),
+            y: vec4(yx, yy, yz, yw),
+            z: vec4(zx, zy, zz, zw),
+            w: vec4(wx, wy, wz, ww),
         }
     }
 
@@ -731,12 +729,12 @@ impl M4x4 {
 
     #[inline]
     #[rustfmt::skip]
-    pub const fn from_rows(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
+    pub fn from_rows(x: V4, y: V4, z: V4, w: V4) -> M4x4 {
         mat4(
-            x.x, y.x, z.x, w.x,
-            x.y, y.y, z.y, w.y,
-            x.z, y.z, z.z, w.z,
-            x.w, y.w, z.w, w.w,
+            x.x(), y.x(), z.x(), w.x(),
+            x.y(), y.y(), z.y(), w.y(),
+            x.z(), y.z(), z.z(), w.z(),
+            x.w(), y.w(), z.w(), w.w(),
         )
     }
 
@@ -746,109 +744,52 @@ impl M4x4 {
     }
 
     #[inline]
-    pub const fn diagonal(&self) -> V4 {
-        vec4(self.x.x, self.y.y, self.z.z, self.w.w)
+    pub fn diagonal(&self) -> V4 {
+        vec4(self.x.x(), self.y.y(), self.z.z(), self.w.w())
     }
 
     #[inline]
     pub fn determinant(&self) -> f32 {
-        self.x.x
-            * (self.y.y * self.z.z * self.w.w + self.w.y * self.y.z * self.z.w + self.z.y * self.w.z * self.y.w
-                - self.y.y * self.w.z * self.z.w
-                - self.z.y * self.y.z * self.w.w
-                - self.w.y * self.z.z * self.y.w)
-            + self.x.y
-                * (self.y.z * self.w.w * self.z.x + self.z.z * self.y.w * self.w.x + self.w.z * self.z.w * self.y.x
-                    - self.y.z * self.z.w * self.w.x
-                    - self.w.z * self.y.w * self.z.x
-                    - self.z.z * self.w.w * self.y.x)
-            + self.x.z
-                * (self.y.w * self.z.x * self.w.y + self.w.w * self.y.x * self.z.y + self.z.w * self.w.x * self.y.y
-                    - self.y.w * self.w.x * self.z.y
-                    - self.z.w * self.y.x * self.w.y
-                    - self.w.w * self.z.x * self.y.y)
-            + self.x.w
-                * (self.y.x * self.w.y * self.z.z + self.z.x * self.y.y * self.w.z + self.w.x * self.z.y * self.y.z
-                    - self.y.x * self.z.y * self.w.z
-                    - self.w.x * self.y.y * self.z.z
-                    - self.z.x * self.w.y * self.y.z)
+        let [xx, xy, xz, xw] = self.x.arr();
+        let [yx, yy, yz, yw] = self.y.arr();
+        let [zx, zy, zz, zw] = self.z.arr();
+        let [wx, wy, wz, ww] = self.w.arr();
+        xx * (yy * zz * ww + wy * yz * zw + zy * wz * yw - yy * wz * zw - zy * yz * ww - wy * zz * yw)
+            + xy * (yz * ww * zx + zz * yw * wx + wz * zw * yx - yz * zw * wx - wz * yw * zx - zz * ww * yx)
+            + xz * (yw * zx * wy + ww * yx * zy + zw * wx * yy - yw * wx * zy - zw * yx * wy - ww * zx * yy)
+            + xw * (yx * wy * zz + zx * yy * wz + wx * zy * yz - yx * zy * wz - wx * yy * zz - zx * wy * yz)
     }
 
     #[inline]
     pub fn adjugate(&self) -> M4x4 {
-        let M4x4 { x, y, z, w } = *self;
+        let [xx, xy, xz, xw] = self.x.arr();
+        let [yx, yy, yz, yw] = self.y.arr();
+        let [zx, zy, zz, zw] = self.z.arr();
+        let [wx, wy, wz, ww] = self.w.arr();
         M4x4 {
             x: vec4(
-                y.y * z.z * w.w + w.y * y.z * z.w + z.y * w.z * y.w
-                    - y.y * w.z * z.w
-                    - z.y * y.z * w.w
-                    - w.y * z.z * y.w,
-                x.y * w.z * z.w + z.y * x.z * w.w + w.y * z.z * x.w
-                    - w.y * x.z * z.w
-                    - z.y * w.z * x.w
-                    - x.y * z.z * w.w,
-                x.y * y.z * w.w + w.y * x.z * y.w + y.y * w.z * x.w
-                    - x.y * w.z * y.w
-                    - y.y * x.z * w.w
-                    - w.y * y.z * x.w,
-                x.y * z.z * y.w + y.y * x.z * z.w + z.y * y.z * x.w
-                    - x.y * y.z * z.w
-                    - z.y * x.z * y.w
-                    - y.y * z.z * x.w,
+                yy * zz * ww + wy * yz * zw + zy * wz * yw - yy * wz * zw - zy * yz * ww - wy * zz * yw,
+                xy * wz * zw + zy * xz * ww + wy * zz * xw - wy * xz * zw - zy * wz * xw - xy * zz * ww,
+                xy * yz * ww + wy * xz * yw + yy * wz * xw - xy * wz * yw - yy * xz * ww - wy * yz * xw,
+                xy * zz * yw + yy * xz * zw + zy * yz * xw - xy * yz * zw - zy * xz * yw - yy * zz * xw,
             ),
             y: vec4(
-                y.z * w.w * z.x + z.z * y.w * w.x + w.z * z.w * y.x
-                    - y.z * z.w * w.x
-                    - w.z * y.w * z.x
-                    - z.z * w.w * y.x,
-                x.z * z.w * w.x + w.z * x.w * z.x + z.z * w.w * x.x
-                    - x.z * w.w * z.x
-                    - z.z * x.w * w.x
-                    - w.z * z.w * x.x,
-                x.z * w.w * y.x + y.z * x.w * w.x + w.z * y.w * x.x
-                    - x.z * y.w * w.x
-                    - w.z * x.w * y.x
-                    - y.z * w.w * x.x,
-                x.z * y.w * z.x + z.z * x.w * y.x + y.z * z.w * x.x
-                    - x.z * z.w * y.x
-                    - y.z * x.w * z.x
-                    - z.z * y.w * x.x,
+                yz * ww * zx + zz * yw * wx + wz * zw * yx - yz * zw * wx - wz * yw * zx - zz * ww * yx,
+                xz * zw * wx + wz * xw * zx + zz * ww * xx - xz * ww * zx - zz * xw * wx - wz * zw * xx,
+                xz * ww * yx + yz * xw * wx + wz * yw * xx - xz * yw * wx - wz * xw * yx - yz * ww * xx,
+                xz * yw * zx + zz * xw * yx + yz * zw * xx - xz * zw * yx - yz * xw * zx - zz * yw * xx,
             ),
             z: vec4(
-                y.w * z.x * w.y + w.w * y.x * z.y + z.w * w.x * y.y
-                    - y.w * w.x * z.y
-                    - z.w * y.x * w.y
-                    - w.w * z.x * y.y,
-                x.w * w.x * z.y + z.w * x.x * w.y + w.w * z.x * x.y
-                    - x.w * z.x * w.y
-                    - w.w * x.x * z.y
-                    - z.w * w.x * x.y,
-                x.w * y.x * w.y + w.w * x.x * y.y + y.w * w.x * x.y
-                    - x.w * w.x * y.y
-                    - y.w * x.x * w.y
-                    - w.w * y.x * x.y,
-                x.w * z.x * y.y + y.w * x.x * z.y + z.w * y.x * x.y
-                    - x.w * y.x * z.y
-                    - z.w * x.x * y.y
-                    - y.w * z.x * x.y,
+                yw * zx * wy + ww * yx * zy + zw * wx * yy - yw * wx * zy - zw * yx * wy - ww * zx * yy,
+                xw * wx * zy + zw * xx * wy + ww * zx * xy - xw * zx * wy - ww * xx * zy - zw * wx * xy,
+                xw * yx * wy + ww * xx * yy + yw * wx * xy - xw * wx * yy - yw * xx * wy - ww * yx * xy,
+                xw * zx * yy + yw * xx * zy + zw * yx * xy - xw * yx * zy - zw * xx * yy - yw * zx * xy,
             ),
             w: vec4(
-                y.x * w.y * z.z + z.x * y.y * w.z + w.x * z.y * y.z
-                    - y.x * z.y * w.z
-                    - w.x * y.y * z.z
-                    - z.x * w.y * y.z,
-                x.x * z.y * w.z + w.x * x.y * z.z + z.x * w.y * x.z
-                    - x.x * w.y * z.z
-                    - z.x * x.y * w.z
-                    - w.x * z.y * x.z,
-                x.x * w.y * y.z + y.x * x.y * w.z + w.x * y.y * x.z
-                    - x.x * y.y * w.z
-                    - w.x * x.y * y.z
-                    - y.x * w.y * x.z,
-                x.x * y.y * z.z + z.x * x.y * y.z + y.x * z.y * x.z
-                    - x.x * z.y * y.z
-                    - y.x * x.y * z.z
-                    - z.x * y.y * x.z,
+                yx * wy * zz + zx * yy * wz + wx * zy * yz - yx * zy * wz - wx * yy * zz - zx * wy * yz,
+                xx * zy * wz + wx * xy * zz + zx * wy * xz - xx * wy * zz - zx * xy * wz - wx * zy * xz,
+                xx * wy * yz + yx * xy * wz + wx * yy * xz - xx * yy * wz - wx * xy * yz - yx * wy * xz,
+                xx * yy * zz + zx * xy * yz + yx * zy * xz - xx * zy * yz - yx * xy * zz - zx * yy * xz,
             ),
         }
     }
@@ -1047,11 +988,15 @@ impl From<M4x4> for [f32; 16] {
     #[inline]
     #[rustfmt::skip]
     fn from(m: M4x4) -> [f32; 16] {
+        let [xx, xy, xz, xw] = m.x.arr();
+        let [yx, yy, yz, yw] = m.y.arr();
+        let [zx, zy, zz, zw] = m.z.arr();
+        let [wx, wy, wz, ww] = m.w.arr();
         [
-            m.x.x, m.x.y, m.x.z, m.x.w,
-            m.y.x, m.y.y, m.y.z, m.y.w,
-            m.z.x, m.z.y, m.z.z, m.z.w,
-            m.w.x, m.w.y, m.w.z, m.w.w,
+            xx, xy, xz, xw,
+            yx, yy, yz, yw,
+            zx, zy, zz, zw,
+            wx, wy, wz, ww,
         ]
     }
 }

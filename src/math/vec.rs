@@ -6,8 +6,10 @@ use std::{self, fmt, slice};
 mod iter;
 #[macro_use]
 mod v3;
+mod v4;
 pub use iter::VecIter;
 pub use v3::{vec3, V3};
+pub use v4::{vec4, V4};
 
 #[cfg(not(target_feature = "sse2"))]
 #[doc(hidden)]
@@ -25,20 +27,6 @@ pub const fn vec2(x: f32, y: f32) -> V2 {
     V2 { x, y }
 }
 
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
-#[repr(C, align(16))]
-pub struct V4 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
-}
-
-#[inline]
-pub const fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
-    V4 { x, y, z, w }
-}
-
 impl fmt::Display for V2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "vec2({}, {})", self.x, self.y)
@@ -47,7 +35,7 @@ impl fmt::Display for V2 {
 
 impl fmt::Display for V4 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "vec4({}, {}, {}, {})", self.x, self.y, self.z, self.w)
+        write!(f, "vec4({}, {}, {}, {})", self.x(), self.y(), self.z(), self.w())
     }
 }
 
@@ -106,18 +94,6 @@ impl Fold for V2 {
     #[inline]
     fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
         f(f(init, o.x, self.x), o.y, self.y)
-    }
-}
-
-impl Fold for V4 {
-    #[inline]
-    fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32 {
-        f(f(f(self.x, self.y), self.z), self.w)
-    }
-
-    #[inline]
-    fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
-        f(f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z), o.w, self.w)
     }
 }
 
@@ -658,7 +634,13 @@ do_vec_boilerplate!(V2 { x: 0, y: 1 }, 2, (f32, f32));
 
 // do_vec_boilerplate!(V3 { x: 0, y: 1, z: 2 }, 3, (f32, f32, f32));
 
-do_vec_boilerplate!(V4 { x: 0, y: 1, z: 2, w: 3 }, 4, (f32, f32, f32, f32));
+// do_vec_boilerplate!(V4 { x: 0, y: 1, z: 2, w: 3 }, 4, (f32, f32, f32, f32));
+
+impl_index_op!(V4, usize, f32);
+impl_index_op!(V4, Range<usize>, [f32]);
+impl_index_op!(V4, RangeFrom<usize>, [f32]);
+impl_index_op!(V4, RangeTo<usize>, [f32]);
+impl_index_op!(V4, RangeFull, [f32]);
 
 impl_index_op!(V3, usize, f32);
 impl_index_op!(V3, Range<usize>, [f32]);
@@ -734,31 +716,20 @@ impl From<V3> for V2 {
 impl From<V3> for V4 {
     #[inline]
     fn from(v: V3) -> V4 {
-        V4 {
-            x: v.x(),
-            y: v.y(),
-            z: v.z(),
-            w: 0.0,
-        }
+        V4::expand(v, 0.0)
     }
 }
-
 impl From<V4> for V2 {
     #[inline]
     fn from(v: V4) -> V2 {
-        V2 { x: v.x, y: v.y }
+        V2 { x: v.x(), y: v.y() }
     }
 }
 
 impl From<V2> for V4 {
     #[inline]
     fn from(v: V2) -> V4 {
-        V4 {
-            x: v.x,
-            y: v.y,
-            z: 0.0,
-            w: 0.0,
-        }
+        vec4(v.x, v.y, 0.0, 0.0)
     }
 }
 
@@ -776,109 +747,11 @@ impl IntoIterator for V4 {
     type IntoIter = VecIter<f32>;
     #[inline]
     fn into_iter(self) -> VecIter<f32> {
-        VecIter::new([self.x, self.y, self.z, self.w], 4)
+        VecIter::new(self.arr(), 4)
     }
 }
 
 #[inline]
 pub fn cross(a: V3, b: V3) -> V3 {
     a.cross(b)
-}
-
-impl V4 {
-    #[inline]
-    pub fn expand(v: V3, w: f32) -> V4 {
-        V4 {
-            x: v.x(),
-            y: v.y(),
-            z: v.z(),
-            w,
-        }
-    }
-    #[inline]
-    pub fn xyz(self) -> V3 {
-        vec3(self.x, self.y, self.z)
-    }
-    #[inline]
-    pub fn norm_or_unit(self) -> V4 {
-        self.norm_or(0.0, 0.0, 0.0, 1.0)
-    }
-    #[inline]
-    pub fn to_arr(self) -> [f32; 4] {
-        self.into()
-    }
-
-    #[inline]
-    pub fn dot(self, o: V4) -> f32 {
-        self.x * o.x + self.y * o.y + self.z * o.z + self.w * o.w
-    }
-
-    #[inline]
-    pub fn outer_prod(self, o: V4) -> M4x4 {
-        M4x4 {
-            x: self * o.x,
-            y: self * o.y,
-            z: self * o.z,
-            w: self * o.w,
-        }
-    }
-    #[inline]
-    pub fn to_arr8(self) -> [u8; 4] {
-        [
-            (self.x * 255.0).trunc() as u8,
-            (self.y * 255.0).trunc() as u8,
-            (self.z * 255.0).trunc() as u8,
-            (self.w * 255.0).trunc() as u8,
-        ]
-    }
-
-    #[inline]
-    #[allow(clippy::collapsible_if)]
-    #[rustfmt::skip]
-    pub fn max_index(&self) -> usize {
-        if self.x > self.y {
-            // y out
-            if self.x > self.z {
-                if self.x > self.w { 0 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z > self.w { 2 } else { 3 }
-            } // x out
-        } else {
-            // x out
-            if self.y > self.z {
-                if self.y > self.w { 1 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z > self.w { 2 } else { 3 }
-            } // y out
-        }
-    }
-
-    #[inline]
-    #[allow(clippy::collapsible_if)]
-    #[rustfmt::skip]
-    pub fn min_index(&self) -> usize {
-        if self.x < self.y {
-            // y out
-            if self.x < self.z {
-                if self.x < self.w { 0 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z < self.w { 2 } else { 3 }
-            } // x out
-        } else {
-            // x out
-            if self.y < self.z {
-                if self.y < self.w { 1 } else { 3 }
-            }
-            // z out
-            else {
-                if self.z < self.w { 2 } else { 3 }
-            } // y out
-        }
-    }
 }

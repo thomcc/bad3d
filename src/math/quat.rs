@@ -10,13 +10,20 @@ use std::ops::*;
 pub struct Quat(pub V4);
 
 #[inline]
-pub const fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
-    Quat(V4 { x, y, z, w })
+pub fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
+    Quat(vec4(x, y, z, w))
 }
 
 impl std::fmt::Display for Quat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "quat({}, {}, {}, {})", self.0.x, self.0.y, self.0.z, self.0.w)
+        write!(
+            f,
+            "quat({}, {}, {}, {})",
+            self.0.x(),
+            self.0.y(),
+            self.0.z(),
+            self.0.w()
+        )
     }
 }
 
@@ -63,7 +70,7 @@ impl AsMut<Quat> for V4 {
 impl From<Quat> for (f32, f32, f32, f32) {
     #[inline]
     fn from(q: Quat) -> Self {
-        (q.0.x, q.0.y, q.0.z, q.0.w)
+        q.0.into()
     }
 }
 
@@ -178,13 +185,13 @@ impl DivAssign<f32> for Quat {
 
 impl Quat {
     #[inline]
-    pub const fn new(x: f32, y: f32, z: f32, w: f32) -> Quat {
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quat {
         quat(x, y, z, w)
     }
 
     #[inline]
     pub fn angle(self) -> f32 {
-        self.0.w.acos() * 2.0
+        self.0.w().acos() * 2.0
     }
 
     #[inline]
@@ -209,7 +216,7 @@ impl Quat {
 
     #[inline]
     pub fn conj(self) -> Quat {
-        quat(-self.0.x, -self.0.y, -self.0.z, self.0.w)
+        quat(-self.0.x(), -self.0.y(), -self.0.z(), self.0.w())
     }
 
     #[inline]
@@ -265,12 +272,17 @@ impl Quat {
 
     #[inline]
     pub fn tup(self) -> (f32, f32, f32, f32) {
-        (self.0.x, self.0.y, self.0.z, self.0.w)
+        self.0.tup()
+    }
+
+    #[inline]
+    pub fn arr(self) -> [f32; 4] {
+        self.0.arr()
     }
 
     #[inline]
     pub fn x_dir(self) -> V3 {
-        let Quat(V4 { x, y, z, w }) = self;
+        let [x, y, z, w] = self.arr();
         vec3(
             w * w + x * x - y * y - z * z,
             (x * y + z * w) * 2.0,
@@ -280,7 +292,7 @@ impl Quat {
 
     #[inline]
     pub fn y_dir(self) -> V3 {
-        let Quat(V4 { x, y, z, w }) = self;
+        let [x, y, z, w] = self.arr();
         vec3(
             (x * y - z * w) * 2.0,
             w * w - x * x + y * y - z * z,
@@ -290,7 +302,7 @@ impl Quat {
 
     #[inline]
     pub fn z_dir(self) -> V3 {
-        let Quat(V4 { x, y, z, w }) = self;
+        let [x, y, z, w] = self.arr();
         vec3(
             (z * x + y * w) * 2.0,
             (y * z - x * w) * 2.0,
@@ -300,21 +312,22 @@ impl Quat {
 
     #[inline]
     pub fn to_mat3(self) -> M3x3 {
-        let x2 = self.0.x + self.0.x;
-        let y2 = self.0.y + self.0.y;
-        let z2 = self.0.z + self.0.z;
+        let [x, y, z, w] = self.0.arr();
+        let x2 = x + x;
+        let y2 = y + y;
+        let z2 = z + z;
 
-        let xx = self.0.x * x2;
-        let yx = self.0.y * x2;
-        let yy = self.0.y * y2;
+        let xx = x * x2;
+        let yx = y * x2;
+        let yy = y * y2;
 
-        let zx = self.0.z * x2;
-        let zy = self.0.z * y2;
-        let zz = self.0.z * z2;
+        let zx = z * x2;
+        let zy = z * y2;
+        let zz = z * z2;
 
-        let wx = self.0.w * x2;
-        let wy = self.0.w * y2;
-        let wz = self.0.w * z2;
+        let wx = w * x2;
+        let wy = w * y2;
+        let wz = w * z2;
 
         mat3(
             1.0 - yy - zz,
@@ -450,18 +463,8 @@ impl Quat {
         Self::IDENTITY
     }
 
-    pub const ZERO: Quat = Quat(V4 {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-        w: 0.0,
-    });
-    pub const IDENTITY: Quat = Quat(V4 {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-        w: 1.0,
-    });
+    pub const ZERO: Quat = Quat(V4::ZERO);
+    pub const IDENTITY: Quat = Quat(V4::POS_W);
 }
 
 impl Lerp for Quat {
