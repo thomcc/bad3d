@@ -14,6 +14,9 @@ pub use v4::{vec4, V4};
 #[cfg(not(target_feature = "sse2"))]
 #[doc(hidden)]
 pub use v3::__v3_const;
+#[cfg(not(target_feature = "sse2"))]
+#[doc(hidden)]
+pub use v4::__v4_const;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]

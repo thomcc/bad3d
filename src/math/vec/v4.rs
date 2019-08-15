@@ -1,11 +1,104 @@
 use super::*;
-#[derive(Copy, Clone, Debug, Default, PartialEq)]
-#[repr(C, align(16))]
-pub struct V4 {
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+
+cfg_if::cfg_if! {
+    if #[cfg(target_feature = "sse2")] {
+        use std::arch::x86_64::{self as sse, __m128};
+
+        #[derive(Copy, Clone)]
+        #[repr(transparent)]
+        pub struct V4(pub(crate) __m128);
+
+        #[macro_export]
+        macro_rules! vec4_const {
+            ($x:expr; 4) => {
+                vec4_const![$x, $x, $x, $x]
+            };
+            ($x:expr, $y:expr, $z:expr, $w:expr) => {{
+                const V4ARR: $crate::util::Align16<[f32; 4]> = $crate::util::Align16([$x, $y, $z, $w]);
+                const VV: V4 =
+                    unsafe {
+                        $crate::util::ConstTransmuter::<
+                            $crate::util::Align16<[f32; 4]>,
+                            V4
+                        > { from: V4ARR }.to
+                    };
+                VV
+            }};
+        }
+
+        macro_rules! simd_mask_u4 {
+            ($x:expr; 4) => {
+                simd_mask_u4![$x, $x, $x, $x]
+            };
+            ($x:expr; 3) => {
+                simd_mask_u4![$x, $x, $x, 0u32]
+            };
+            ($x:expr, $y:expr, $z:expr, $w:expr) => {{
+                const MASKARR: $crate::util::Align16<[u32; 4]> = $crate::util::Align16([$x, $y, $z, $w]);
+                const MASK: sse::__m128 =
+                    unsafe {
+                        $crate::util::ConstTransmuter::<
+                            $crate::util::Align16<[u32; 4]>,
+                            sse::__m128,
+                        > { from: MASKARR }.to
+                    };
+                MASK
+            }};
+        }
+
+        impl Default for V4 {
+            #[inline(always)]
+            fn default()-> Self {
+                unsafe { V4(sse::_mm_setzero_ps()) }
+            }
+        }
+
+        const ABS_MASK: __m128 = simd_mask_u4![0x7fff_ffffu32; 4];
+        const SIGN_MASK: __m128 = simd_mask_u4![0x8000_0000u32; 4];
+        // duplicated in simd.rs :/
+        // macro_rules! shuf {
+        //     ($A:expr, $B:expr, $C:expr, $D:expr) => {
+        //         (($D << 6) | ($C << 4) | ($B << 2) | $A) & 0xff
+        //     };
+        // }
+    } else {
+
+        #[derive(Copy, Clone, Default)]
+        #[repr(C, align(16))]
+        pub struct V4 {
+            x: f32,
+            y: f32,
+            z: f32,
+            w: f32,
+        }
+
+        #[doc(hidden)]
+        pub const fn __v4_const(x: f32, y: f32, z: f32, w: f32) -> V3 {
+            V3 { x, y, z, w }
+        }
+        #[macro_export]
+        macro_rules! vec4_const {
+            ($x:expr, $y:expr, $z:expr, $w:expr) => {{
+                const VV: V4 = $crate::math::vec::__v4_const($x, $y, $z, $w);
+                VV
+            }};
+            ($x:expr; 4) => {
+                const VV: V4 = $crate::math::vec::__v4_const($x, $x, $x, $x);
+                VV
+            };
+        }
+    }
+}
+
+impl std::fmt::Debug for V4 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("vec4")
+            .field(&self[0])
+            .field(&self[1])
+            .field(&self[2])
+            .field(&self[3])
+            .finish()
+    }
 }
 
 #[inline]
@@ -16,12 +109,32 @@ pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
 impl Fold for V4 {
     #[inline]
     fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32 {
-        f(f(f(self.x, self.y), self.z), self.w)
+        f(f(f(self.x(), self.y()), self.z()), self.w())
     }
 
     #[inline]
     fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
-        f(f(f(f(init, o.x, self.x), o.y, self.y), o.z, self.z), o.w, self.w)
+        f(
+            f(f(f(init, o.x(), self.x()), o.y(), self.y()), o.z(), self.z()),
+            o.w(),
+            self.w(),
+        )
+    }
+}
+
+impl PartialEq for V4 {
+    #[inline]
+    fn eq(&self, o: &V4) -> bool {
+        simd_match! {
+            "sse2" => unsafe {
+                let v = sse::_mm_cmpeq_ps(self.0, o.0);
+                let m = sse::_mm_movemask_ps(v);
+                m == 0b1111
+            },
+            _ => {
+                self.x == o.x && self.y == o.y && self.z == o.z && self.w == o.w
+            }
+        }
     }
 }
 impl AsRef<[f32; 4]> for V4 {
@@ -84,11 +197,16 @@ impl Neg for V4 {
     type Output = Self;
     #[inline]
     fn neg(self) -> Self {
-        Self {
-            x: -self.x,
-            y: -self.y,
-            z: -self.z,
-            w: -self.w,
+        simd_match! {
+            "sse2" => unsafe {
+                V4(sse::_mm_xor_ps(self.0, SIGN_MASK))
+            },
+            _ => Self {
+                x: -self.x,
+                y: -self.y,
+                z: -self.z,
+                w: -self.w,
+            }
         }
     }
 }
@@ -97,11 +215,16 @@ impl Add for V4 {
     type Output = Self;
     #[inline]
     fn add(self, o: Self) -> Self {
-        Self {
-            x: self.x + o.x,
-            y: self.y + o.y,
-            z: self.z + o.z,
-            w: self.w + o.w,
+        simd_match! {
+            "sse2" => unsafe {
+                V4(sse::_mm_add_ps(self.0, o.0))
+            },
+            _ => Self {
+                x: self.x + o.x,
+                y: self.y + o.y,
+                z: self.z + o.z,
+                w: self.w + o.w,
+            }
         }
     }
 }
@@ -110,11 +233,16 @@ impl Sub for V4 {
     type Output = Self;
     #[inline]
     fn sub(self, o: Self) -> Self {
-        Self {
-            x: self.x - o.x,
-            y: self.y - o.y,
-            z: self.z - o.z,
-            w: self.w - o.w,
+        simd_match! {
+            "sse2" => unsafe {
+                V4(sse::_mm_sub_ps(self.0, o.0))
+            },
+            _ => Self {
+                x: self.x - o.x,
+                y: self.y - o.y,
+                z: self.z - o.z,
+                w: self.w - o.w,
+            }
         }
     }
 }
@@ -123,11 +251,16 @@ impl Mul for V4 {
     type Output = Self;
     #[inline]
     fn mul(self, o: Self) -> Self {
-        Self {
-            x: self.x * o.x,
-            y: self.y * o.y,
-            z: self.z * o.z,
-            w: self.w * o.w,
+        simd_match! {
+            "sse2" => unsafe {
+                V4(sse::_mm_mul_ps(self.0, o.0))
+            },
+            _ => Self {
+                x: self.x * o.x,
+                y: self.y * o.y,
+                z: self.z * o.z,
+                w: self.w * o.w,
+            }
         }
     }
 }
@@ -137,11 +270,16 @@ impl Div for V4 {
     #[inline]
     fn div(self, o: Self) -> Self {
         debug_assert!(!o.any_zero());
-        Self {
-            x: self.x / o.x,
-            y: self.y / o.y,
-            z: self.z / o.z,
-            w: self.w / o.w,
+        simd_match! {
+            "sse2" => unsafe {
+                V4(sse::_mm_div_ps(self.0, o.0))
+            },
+            _ => Self {
+                x: self.x / o.x,
+                y: self.y / o.y,
+                z: self.z / o.z,
+                w: self.w / o.w,
+            }
         }
     }
 }
@@ -150,12 +288,7 @@ impl Mul<f32> for V4 {
     type Output = Self;
     #[inline]
     fn mul(self, o: f32) -> Self {
-        Self {
-            x: self.x * o,
-            y: self.y * o,
-            z: self.z * o,
-            w: self.w * o,
-        }
+        self * V4::splat(o)
     }
 }
 
@@ -182,12 +315,7 @@ impl Div<V4> for f32 {
     #[inline]
     fn div(self, v: V4) -> V4 {
         debug_assert!(!v.any_zero());
-        V4 {
-            x: self / v.x,
-            y: self / v.y,
-            z: self / v.z,
-            w: self / v.w,
-        }
+        V4::splat(self) / v
     }
 }
 
@@ -235,19 +363,19 @@ impl SubAssign for V4 {
 
 #[rustfmt::skip]
 impl V4 {
-    pub const ZERO: V4 = V4 { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
-    pub const ONES: V4 = V4 { x: 1.0, y: 1.0, z: 1.0, w: 1.0, };
-    pub const NEG_ONES: V4 = V4 { x: -1.0, y: -1.0, z: -1.0, w: -1.0, };
+    pub const ZERO: V4 = vec4_const![0.0, 0.0, 0.0, 0.];
+    pub const ONES: V4 = vec4_const![1.0, 1.0, 1.0, 1.0];
+    pub const NEG_ONES: V4 = vec4_const![-1.0, -1.0, -1.0, -1.0];
 
-    pub const POS_X: V4 = V4 { x: 1.0, y: 0.0, z: 0.0, w: 0.0, };
-    pub const POS_Y: V4 = V4 { x: 0.0, y: 1.0, z: 0.0, w: 0.0, };
-    pub const POS_Z: V4 = V4 { x: 0.0, y: 0.0, z: 1.0, w: 0.0, };
-    pub const POS_W: V4 = V4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0, };
+    pub const POS_X: V4 = vec4_const![1.0, 0.0, 0.0, 0.0];
+    pub const POS_Y: V4 = vec4_const![0.0, 1.0, 0.0, 0.0];
+    pub const POS_Z: V4 = vec4_const![0.0, 0.0, 1.0, 0.0];
+    pub const POS_W: V4 = vec4_const![0.0, 0.0, 0.0, 1.0];
 
-    pub const NEG_X: V4 = V4 { x: -1.0, y: 0.0, z: 0.0, w: 0.0, };
-    pub const NEG_Y: V4 = V4 { x: 0.0, y: -1.0, z: 0.0, w: 0.0, };
-    pub const NEG_Z: V4 = V4 { x: 0.0, y: 0.0, z: -1.0, w: 0.0, };
-    pub const NEG_W: V4 = V4 { x: 0.0, y: 0.0, z: 0.0, w: -1.0, };
+    pub const NEG_X: V4 = vec4_const![-1.0, 0.0, 0.0, 0.0];
+    pub const NEG_Y: V4 = vec4_const![0.0, -1.0, 0.0, 0.0];
+    pub const NEG_Z: V4 = vec4_const![0.0, 0.0, -1.0, 0.0];
+    pub const NEG_W: V4 = vec4_const![0.0, 0.0, 0.0, -1.0];
 
     #[inline(always)] pub fn x(&self) -> f32 { self[0] }
     #[inline(always)] pub fn y(&self) -> f32 { self[1] }
@@ -283,12 +411,21 @@ impl V4 {
 
     #[inline]
     pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
-        Self { x, y, z, w }
+        simd_match! {
+            "sse2" => unsafe { V4(sse::_mm_set_ps(w, z, y, x)) },
+            _ => Self { x, y, z, w },
+        }
     }
 
     #[inline]
     pub fn splat(v: f32) -> Self {
-        Self { x: v, y: v, z: v, w: v }
+        simd_match! {
+            "sse2" => unsafe {
+                let v = sse::_mm_set_ss(v);
+                V4(sse::_mm_shuffle_ps(v, v, shuf![0, 0, 0, 0]))
+            },
+            _ => Self::new(v, v, v, v),
+        }
     }
 
     #[inline]
@@ -302,12 +439,12 @@ impl V4 {
 
     #[inline]
     pub fn as_ptr(&self) -> *const f32 {
-        &self.x as *const f32
+        self as *const V4 as *const f32
     }
 
     #[inline]
     pub fn as_mut_ptr(&mut self) -> *mut f32 {
-        &mut self.x as *mut f32
+        self as *mut V4 as *mut f32
     }
 
     #[inline]
@@ -322,7 +459,7 @@ impl V4 {
 
     #[inline]
     pub fn tup(self) -> (f32, f32, f32, f32) {
-        self.into()
+        (self[0], self[1], self[2], self[3])
     }
 
     #[inline]
@@ -356,29 +493,47 @@ impl V4 {
 
     #[inline]
     pub fn abs(self) -> Self {
-        self.map(|x| x.abs())
+        simd_match! {
+            "sse2" => unsafe { V4(sse::_mm_and_ps(self.0, ABS_MASK)) },
+            _ => self.map(|x| x.abs()),
+        }
     }
 
     #[inline]
     pub fn floor(self) -> Self {
-        self.map(|x| x.floor())
+        simd_match! {
+            "sse4.1" => unsafe { V4(sse::_mm_floor_ps(self.0)) },
+            _ => self.map(|x| x.floor()),
+        }
     }
     #[inline]
     pub fn ceil(self) -> Self {
-        self.map(|x| x.ceil())
+        simd_match! {
+            "sse4.1" => unsafe { V4(sse::_mm_ceil_ps(self.0)) },
+            _ => self.map(|x| x.ceil()),
+        }
     }
     #[inline]
     pub fn round(self) -> Self {
-        self.map(|x| x.round())
+        simd_match! {
+            "sse4.1" => unsafe { V4(sse::_mm_round_ps(self.0, sse::_MM_FROUND_TO_NEAREST_INT)) },
+            _ => self.map(|x| x.round()),
+        }
     }
 
     #[inline]
     pub fn min(self, o: Self) -> Self {
-        self.map2(o, |a, b| a.min(b))
+        simd_match! {
+            "sse2" => unsafe { V4(sse::_mm_min_ps(self.0, o.0)) },
+            _ => self.map2(o, |a, b| a.min(b)),
+        }
     }
     #[inline]
     pub fn max(self, o: Self) -> Self {
-        self.map2(o, |a, b| a.max(b))
+        simd_match! {
+            "sse2" => unsafe { V4(sse::_mm_max_ps(self.0, o.0)) },
+            _ => self.map2(o, |a, b| a.max(b)),
+        }
     }
 
     #[inline]
@@ -415,12 +570,12 @@ impl V4 {
 
     #[inline]
     pub fn clamp(self, min: Self, max: Self) -> Self {
-        self.map3(min, max, clamp)
+        self.max(min).min(max)
     }
 
     #[inline]
     pub fn lerp(self, b: Self, t: f32) -> Self {
-        self.map2(b, |x, y| x.lerp(y, t))
+        self * (1.0 - t) + b * t
     }
 
     #[inline]
@@ -504,7 +659,16 @@ impl V4 {
     }
     #[inline]
     pub fn any_zero(self) -> bool {
-        (self.x == 0.0) | (self.y == 0.0) | (self.z == 0.0) | (self.w == 0.0)
+        simd_match! {
+            "sse2" => unsafe {
+                let m = sse::_mm_movemask_ps(
+                    sse::_mm_cmpeq_ps(self.0, sse::_mm_setzero_ps()));
+                m != 0
+            },
+            _ => {
+                (self.x != 0.0) | (self.y != 0.0) | (self.z != 0.0) | (self.w != 0)
+            }
+        }
     }
 
     #[inline]
@@ -573,12 +737,12 @@ impl ApproxEq for V4 {
 impl Map for V4 {
     #[inline]
     fn map3<F: Fn(f32, f32, f32) -> f32>(self, a: Self, b: Self, f: F) -> Self {
-        Self {
-            x: f(self.x, a.x, b.x),
-            y: f(self.y, a.y, b.y),
-            z: f(self.z, a.z, b.z),
-            w: f(self.w, a.w, b.w),
-        }
+        vec4(
+            f(self.x(), a.x(), b.x()),
+            f(self.y(), a.y(), b.y()),
+            f(self.z(), a.z(), b.z()),
+            f(self.w(), a.w(), b.w()),
+        )
     }
 }
 
@@ -598,11 +762,15 @@ impl VecType for V4 {
 impl V4 {
     #[inline]
     pub fn expand(v: V3, w: f32) -> V4 {
-        V4 {
-            x: v.x(),
-            y: v.y(),
-            z: v.z(),
-            w,
+        simd_match! {
+            "sse2" => V4(v.0).with_w(w),
+            _ => V4 {
+                x: v.x(),
+                y: v.y(),
+                z: v.z(),
+                w,
+            }
+
         }
     }
     #[inline]
