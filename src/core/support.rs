@@ -36,6 +36,6 @@ impl<'a, T: Support + ?Sized> Support for TransformedSupport<'a, T> {
 impl Support for [V3] {
     // #[inline]
     fn support(&self, dir: V3) -> V3 {
-        crate::math::geom::max_dir(self, dir)
+        geom::max_dir(dir, self).unwrap()
     }
 }

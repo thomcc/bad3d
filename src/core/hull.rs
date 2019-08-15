@@ -117,7 +117,7 @@ impl HullTri {
         let (v0, v1, v2) = tri(verts, self.vi);
         let n = geom::tri_normal(v0, v1, v2);
 
-        let vmax = max_dir_index(verts, n).unwrap();
+        let vmax = geom::max_dir_index(n, verts).unwrap();
         self.max_v = vmax as i32;
 
         if extreme_map.is_some() && extreme_map.unwrap()[vmax] {
@@ -240,8 +240,8 @@ fn find_extrudable(tris: &[HullTri], epsilon: f32) -> Option<usize> {
 fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b0 = vec3(0.01, 0.02, 1.0);
 
-    let p0 = max_dir_index(verts, b0).unwrap();
-    let p1 = max_dir_index(verts, -b0).unwrap();
+    let p0 = geom::max_dir_index(b0, verts).unwrap();
+    let p1 = geom::max_dir_index(-b0, verts).unwrap();
 
     let b0 = verts[p0] - verts[p1];
 
@@ -254,10 +254,10 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
 
     let b1 = (if b1.length_sq() > b2.length_sq() { b1 } else { b2 }).must_norm();
 
-    let p2 = max_dir_index(verts, b1).unwrap();
+    let p2 = geom::max_dir_index(b1, verts).unwrap();
 
     let p2 = if p2 == p0 || p2 == p1 {
-        max_dir_index(verts, -b1).unwrap()
+        geom::max_dir_index(-b1, verts).unwrap()
     } else {
         p2
     };
@@ -270,10 +270,10 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
 
     let b2 = cross(b1, b0);
 
-    let p3 = max_dir_index(verts, b2).unwrap();
+    let p3 = geom::max_dir_index(b2, verts).unwrap();
 
     let p3 = if p3 == p0 || p3 == p1 || p3 == p2 {
-        max_dir_index(verts, -b2).unwrap()
+        geom::max_dir_index(-b2, verts).unwrap()
     } else {
         p3
     };
@@ -479,7 +479,7 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<(Vec<
     let vert_count = verts.len();
 
     let mut is_extreme = vec![false; vert_count];
-    let (min_bound, max_bound) = compute_bounds(verts)?;
+    let (min_bound, max_bound) = geom::compute_bounds(verts)?;
 
     let epsilon = max_bound.dist(min_bound) * 0.001_f32;
 

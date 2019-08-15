@@ -478,7 +478,7 @@ impl Mul<V3> for Quat {
         simd_match! {
             "sse2" => {
                 super::simd::quat_rot3(self, o)
-            }
+            },
             _ => {
                 naive_quat_rot3(self, o)
             }

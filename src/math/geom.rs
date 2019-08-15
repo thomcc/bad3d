@@ -390,3 +390,94 @@ pub fn tangent_point_on_cylinder(r: f32, h: f32, n: V3) -> V3 {
         if nz > 0.0 { h } else { 0.0 },
     )
 }
+
+#[inline]
+pub fn scalar_triple(a: V3, b: V3, c: V3) -> f32 {
+    a.cross(b).dot(c)
+}
+
+#[inline]
+pub fn max_dir(dir: V3, arr: &[V3]) -> Option<V3> {
+    if arr.len() == 0 {
+        return None;
+    }
+    simd_match! {
+        "sse2" => {
+            Some(crate::math::simd::maxdot(dir, arr))
+        },
+        _ => {
+            Some(arr[max_dir_index(arr, dir)])
+        }
+    }
+}
+
+#[inline]
+pub fn max_dir_index(dir: V3, arr: &[V3]) -> Option<usize> {
+    if arr.len() == 0 {
+        return None;
+    }
+    simd_match! {
+        "sse2" => {
+            Some(crate::math::simd::maxdot_i(dir, arr))
+        },
+        _ => {
+            max_dir_and_index_iter(dirr, arr.iter().copied()).map(|x| x.1)
+        }
+    }
+}
+
+#[inline]
+pub fn max_dir_and_index_iter<I: IntoIterator<Item = V3>>(dir: V3, iter: I) -> Option<(V3, usize)> {
+    let mut iter = iter.into_iter();
+    let initial = iter.next()?;
+
+    let mut best = initial;
+    let mut best_dot = initial.dot(dir);
+    let mut best_index = 0;
+    for (i, item) in iter.enumerate() {
+        let d = dir.dot(best);
+        if d > best_dot {
+            best = item;
+            best_dot = d;
+            best_index = i + 1;
+        }
+    }
+    Some((best, best_index))
+}
+#[inline]
+pub fn max_dir_iter<I: IntoIterator<Item = V3>>(dir: V3, iter: I) -> Option<V3> {
+    max_dir_and_index_iter(dir, iter).map(|i| i.0)
+}
+
+#[inline]
+pub fn compute_bounds_iter<I>(iter: I) -> Option<(I::Item, I::Item)>
+where
+    I: IntoIterator,
+    I::Item: VecType,
+{
+    let mut iter = iter.into_iter();
+    let initial = iter.next()?;
+
+    let mut min_bound = initial;
+    let mut max_bound = initial;
+    for item in iter {
+        min_bound = min_bound.min(item);
+        max_bound = max_bound.max(item);
+    }
+    Some((min_bound, max_bound))
+}
+
+#[inline]
+pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
+    compute_bounds_iter(arr.iter().copied())
+}
+
+#[inline]
+pub fn same_dir<T: VecType>(a: T, b: T) -> bool {
+    a.dot(b) > 0.0
+}
+
+#[inline]
+pub fn same_dir_e<T: VecType>(a: T, b: T, epsilon: f32) -> bool {
+    a.dot(b) > epsilon
+}

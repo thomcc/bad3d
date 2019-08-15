@@ -251,8 +251,8 @@ pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
         let mut i = 0;
         // We have an assert above that both the size and alignment match.
         let s = core::slice::from_raw_parts(vs.as_ptr() as *const __m128, vs.len());
-        let mut best = x86_64::_mm_set1_ps(-10000.0);
-        let mut best4 = x86_64::_mm_set1_ps(-10000.2);
+        let mut best = x86_64::_mm_set1_ps(std::f32::MIN);
+        let mut best4 = x86_64::_mm_set1_ps(std::f32::MIN);
         let dir = v.into_x86();
 
         let d_xyxy = x86_64::_mm_movelh_ps(dir, dir);
@@ -370,6 +370,7 @@ pub fn maxdot(v: V3, vs: &[V3]) -> V3 {
 mod test {
     use super::*;
     fn naive_maxdot(dir: V3, s: &[V3]) -> V3 {
+        // geom::max_dir_iter(dir, s.iter().copied());
         let mut best = s[0];
         let mut best_dot = best.x() * dir.x() + best.y() * dir.y() + best.z() * dir.z();
         for &v in s[1..].iter() {
@@ -415,6 +416,17 @@ mod test {
         let r0 = V3::naive_dot3(a, b, c, d);
         let r1 = dot3(a, b, c, d);
         assert!(r0.approx_eq(&r1), "{}, {}", r0, r1);
+        let d0 = naive_maxdot(vec3(0.0, 0.0, 1.0), &[vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)]);
+        let d1 = super::maxdot(vec3(0.0, 0.0, 1.0), &[vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)]);
+
+        assert_eq!(d0, d1);
+        assert_eq!(
+            super::maxdot_i(vec3(0.0, 0.0, 1.0), &[vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)]),
+            1
+        );
+        let ds = vec3(42.0, 55.417053, -40.881634);
+        let dv = &[vec3(-46.167755, -98.00792, 64.66603)];
+        assert_eq!(naive_maxdot(ds, dv), super::maxdot(ds, dv));
     }
 
 }

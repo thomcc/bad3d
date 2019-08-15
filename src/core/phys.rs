@@ -194,7 +194,8 @@ impl RigidBody {
         res.inv_tensor_massless = inertia.inverse().unwrap();
         res.inv_tensor = res.inv_tensor_massless * mi;
 
-        let bounds = compute_bounds_i(&mut res.shapes.iter().flat_map(|shape| shape.vertices.iter().cloned())).unwrap();
+        let bounds =
+            geom::compute_bounds_iter(res.shapes.iter().flat_map(|shape| shape.vertices.iter().copied())).unwrap();
 
         let radius = res
             .shapes
@@ -632,7 +633,7 @@ impl ConstraintSet {
         let pos = {
             let crot = rb.pose.orientation.conj();
             let dir = crot * plane.normal;
-            max_dir(&rb.shapes[0].vertices[..], dir).unwrap()
+            geom::max_dir(dir, &rb.shapes[0].vertices).unwrap()
         };
 
         self.along_direction(
