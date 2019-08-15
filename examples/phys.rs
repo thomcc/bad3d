@@ -144,7 +144,7 @@ fn main() -> Result<()> {
         },
         gui.clone(),
     )?;
-    let log = bad3d::util::PerfLog::new();
+
     use bad3d::phys::PhysScene;
     let mut scene = PhysScene::default();
     scene
@@ -467,7 +467,7 @@ fn main() -> Result<()> {
                     .default_open(true)
                     .build()
                 {
-                    let mut s = log.sections.lock().unwrap();
+                    let mut s = scene.log.sections.lock().unwrap();
                     s.sort_by_key(|a| a.2);
 
                     for (s, t, _) in s.iter() {

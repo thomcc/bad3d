@@ -34,7 +34,7 @@ use std::rc::Rc;
 use std::time::Instant;
 use std::{f32, u16};
 
-const GRAVITY: V3 = vec3(0.0, 0.0, -9.8);
+const GRAVITY: V3 = bad3d::vec3_const![0.0, 0.0, -9.8];
 
 const DAMP_AIR: f32 = 1.0;
 const DAMP_GROUND: f32 = 10.0;

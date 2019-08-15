@@ -36,11 +36,10 @@ impl M2x2 {
 }
 
 impl M3x3 {
-    #[rustfmt::skip]
     pub const IDENTITY: M3x3 = M3x3 {
-        x: vec3(1.0, 0.0, 0.0),
-        y: vec3(0.0, 1.0, 0.0),
-        z: vec3(0.0, 0.0, 1.0),
+        x: V3::POS_X,
+        y: V3::POS_Y,
+        z: V3::POS_Z,
     };
 }
 
@@ -124,7 +123,7 @@ pub const fn mat2(m00: f32, m01: f32, m10: f32, m11: f32) -> M2x2 {
 
 #[inline]
 #[rustfmt::skip]
-pub const fn mat3(
+pub fn mat3(
     m00: f32, m01: f32, m02: f32,
     m10: f32, m11: f32, m12: f32,
     m20: f32, m21: f32, m22: f32,
@@ -439,7 +438,7 @@ impl M2x2 {
 impl M3x3 {
     #[inline]
     #[rustfmt::skip]
-    pub const fn new(
+    pub fn new(
         xx: f32, xy: f32, xz: f32,
         yx: f32, yy: f32, yz: f32,
         zx: f32, zy: f32, zz: f32,

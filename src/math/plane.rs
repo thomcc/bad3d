@@ -257,6 +257,6 @@ impl Plane {
 }
 
 #[inline]
-pub const fn plane(nx: f32, ny: f32, nz: f32, o: f32) -> Plane {
+pub fn plane(nx: f32, ny: f32, nz: f32, o: f32) -> Plane {
     Plane::new(vec3(nx, ny, nz), o)
 }

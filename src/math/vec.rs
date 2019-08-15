@@ -4,9 +4,14 @@ use crate::math::traits::*;
 use std::ops::*;
 use std::{self, fmt, slice};
 mod iter;
+#[macro_use]
 mod v3;
 pub use iter::VecIter;
 pub use v3::{vec3, V3};
+
+#[cfg(not(target_feature = "sse2"))]
+#[doc(hidden)]
+pub use v3::__v3_const;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]
