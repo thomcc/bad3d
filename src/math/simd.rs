@@ -44,16 +44,12 @@ impl Quat {
 
 impl V3 {
     #[inline(always)]
-    fn as_x86(&self) -> &__m128 {
-        unsafe { &*(self as *const V3 as *const __m128) }
-    }
-    #[inline(always)]
     fn into_x86(self) -> __m128 {
-        *self.as_x86()
+        self.0
     }
     #[inline(always)]
     fn from_x86(m: __m128) -> Self {
-        unsafe { *(&m as *const __m128 as *const V3) }
+        Self(m)
     }
 }
 
@@ -183,8 +179,8 @@ unsafe fn clear_w(v: __m128) -> __m128 {
 pub fn quat_rot3(rot: Quat, v: V3) -> V3 {
     unsafe {
         let rot = rot.into_x86();
-        let v = v.into_x86();
-        V3::from_x86(quatrot3(rot, v))
+        let v = v.0;
+        V3(quatrot3(rot, v))
     }
 }
 
@@ -231,7 +227,7 @@ unsafe fn do_dot3(v: __m128, a: __m128, b: __m128, c: __m128) -> __m128 {
 }
 
 pub fn dot3(v: V3, a: V3, b: V3, c: V3) -> V3 {
-    unsafe { V3::from_x86(do_dot3(v.into_x86(), a.into_x86(), b.into_x86(), c.into_x86())) }
+    unsafe { V3(do_dot3(v.0, a.0, b.0, c.0)) }
 }
 
 pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
@@ -241,7 +237,7 @@ pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
         // We have an assert above that both the size and alignment match.
         let mut best = sse::_mm_set1_ps(std::f32::MIN);
         let mut best4 = sse::_mm_set1_ps(std::f32::MIN);
-        let dir = v.into_x86();
+        let dir = v.0;
 
         let d_xyxy = sse::_mm_movelh_ps(dir, dir);
         let d_zzzz = sse::_mm_shuffle_ps(dir, dir, shuf![2, 2, 2, 2]);

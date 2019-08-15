@@ -1,5 +1,7 @@
 use crate::math::prelude::*;
 use crate::util;
+use smallbitvec::SmallBitVec;
+use smallvec::{smallvec, SmallVec};
 use std::{f32, i32, isize, ops::*, usize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -113,7 +115,7 @@ impl HullTri {
         self.ni[idx] = new_value;
     }
 
-    fn update(&mut self, verts: &[V3], extreme_map: Option<&[bool]>) {
+    fn update(&mut self, verts: &[V3], extreme_map: Option<&SmallBitVec>) {
         let (v0, v1, v2) = tri(verts, self.vi);
         let n = geom::tri_normal(v0, v1, v2);
 
@@ -177,17 +179,22 @@ fn fix_back_to_back(tris: &mut [HullTri], s: usize, t: usize) {
 
 #[inline]
 fn check_tri(tris: &[HullTri], t: &HullTri) {
-    debug_assert!(tris[t.id as usize].id == t.id);
-    debug_assert!(tris[t.id as usize].id == t.id);
-    for i in 0..3 {
-        let (i1, i2) = next_mod3(i);
-        let (a, b) = (t.vi[i1], t.vi[i2]);
-        debug_assert!(a != b);
-        debug_assert!(tris[t.ni[i] as usize].get_neib(b, a) == t.id);
+    if cfg!(debug_assertions) {
+        debug_assert!(tris[t.id as usize].id == t.id);
+        debug_assert!(tris[t.id as usize].id == t.id);
+        for i in 0..3 {
+            let (i1, i2) = next_mod3(i);
+            let (a, b) = (t.vi[i1], t.vi[i2]);
+            debug_assert!(a != b);
+            debug_assert!(tris[t.ni[i] as usize].get_neib(b, a) == t.id);
+        }
     }
 }
 
-fn extrude(tris: &mut Vec<HullTri>, t0: usize, v: usize) {
+fn extrude<A>(tris: &mut SmallVec<A>, t0: usize, v: usize)
+where
+    A: smallvec::Array<Item = HullTri>, // V: DerefMut<Target = [HullTri]> + Extend<HullTri>
+{
     let bu = tris.len();
     let b = bu as i32;
 
@@ -195,6 +202,7 @@ fn extrude(tris: &mut Vec<HullTri>, t0: usize, v: usize) {
     let t = tris[t0].vi;
 
     let vi = v as i32;
+    tris.reserve(3);
 
     tris.push(HullTri::new(int3(vi, t[1], t[2]), int3(n[0], b + 1, b + 2), b));
     tris[n[0] as usize].set_neib(t[1], t[2], b);
@@ -295,7 +303,7 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     }
 }
 
-fn remove_dead(tris: &mut Vec<HullTri>) {
+fn remove_dead<A: smallvec::Array<Item = HullTri>>(tris: &mut SmallVec<A>) {
     for j in (0..tris.len()).rev() {
         if !tris[j].dead() {
             continue;
@@ -308,7 +316,10 @@ fn remove_dead(tris: &mut Vec<HullTri>) {
 
 // fix flipped/skinny tris. vert_id is the id of the vertex most recently added to the hull.
 // since we only need to consider those triangles (hopefully others won't be broken...)
-fn fix_degenerate_tris(tris: &mut Vec<HullTri>, verts: &[V3], center: V3, vert_id: usize, epsilon: f32) {
+fn fix_degenerate_tris<A>(tris: &mut SmallVec<A>, verts: &[V3], center: V3, vert_id: usize, epsilon: f32)
+where
+    A: smallvec::Array<Item = HullTri>,
+{
     let mut i: isize = tris.len() as isize;
     loop {
         i -= 1;
@@ -343,7 +354,10 @@ fn fix_degenerate_tris(tris: &mut Vec<HullTri>, verts: &[V3], center: V3, vert_i
 }
 
 // extrude any triangles who would be below the hull containing the new vertex
-fn grow_hull(tris: &mut Vec<HullTri>, verts: &[V3], vert_id: usize, epsilon: f32) {
+fn grow_hull<A>(tris: &mut SmallVec<A>, verts: &[V3], vert_id: usize, epsilon: f32)
+where
+    A: smallvec::Array<Item = HullTri>,
+{
     for j in (0..tris.len()).rev() {
         if tris[j].dead() {
             continue;
@@ -378,8 +392,9 @@ pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -
     let mut plane = Plane::new(V3::zero(), -f32::MAX);
     let epsilon = 0.01f32; // ...
 
-    let mut verts = vec![simp.0, simp.1, simp.2, simp.3];
-    let mut tris = Vec::from(&build_simplex(0, 1, 2, 3)[..]);
+    let mut verts: SmallVec<[V3; 64]> = smallvec![simp.0, simp.1, simp.2, simp.3];
+    // let mut verts = vec![simp.0, simp.1, simp.2, simp.3];
+    let mut tris: SmallVec<[HullTri; 64]> = SmallVec::from(&build_simplex(0, 1, 2, 3)[..]);
 
     let center = 0.25 * (simp.0 + simp.1 + simp.2 + simp.3);
 
@@ -478,21 +493,21 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<(Vec<
     };
     let vert_count = verts.len();
 
-    let mut is_extreme = vec![false; vert_count];
+    let mut is_extreme = smallbitvec::sbvec![false; vert_count];
     let (min_bound, max_bound) = geom::compute_bounds(verts)?;
 
     let epsilon = max_bound.dist(min_bound) * 0.001_f32;
 
     let (p0, p1, p2, p3) = find_simplex(verts)?;
 
-    let mut tris = Vec::from(&build_simplex(p0, p1, p2, p3)[..]);
+    let mut tris: SmallVec<[HullTri; 64]> = SmallVec::from(&build_simplex(p0, p1, p2, p3)[..]);
 
     let center = (verts[p0] + verts[p1] + verts[p2] + verts[p3]) * 0.25;
 
-    is_extreme[p0] = true;
-    is_extreme[p1] = true;
-    is_extreme[p2] = true;
-    is_extreme[p3] = true;
+    is_extreme.set(p0, true);
+    is_extreme.set(p1, true);
+    is_extreme.set(p2, true);
+    is_extreme.set(p3, true);
 
     for t in &mut tris {
         debug_assert!(t.id >= 0);
@@ -511,7 +526,7 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<(Vec<
         let v = tris[te].max_v as usize;
         debug_assert!(!is_extreme[v]);
 
-        is_extreme[v] = true;
+        is_extreme.set(v, true);
 
         grow_hull(&mut tris, &verts, v, epsilon);
 

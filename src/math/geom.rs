@@ -435,7 +435,7 @@ pub fn max_dir_and_index_iter<I: IntoIterator<Item = V3>>(dir: V3, iter: I) -> O
     let mut best_dot = initial.dot(dir);
     let mut best_index = 0;
     for (i, item) in iter.enumerate() {
-        let d = dir.dot(best);
+        let d = dir.dot(item);
         if d > best_dot {
             best = item;
             best_dot = d;

@@ -12,6 +12,7 @@ chek = "0.1.0"
 smallvec = "0.6.10"
 almost = "0.2.0"
 cfg-if = "0.1.9"
+smallbitvec = "2.4.0"
 
 [dev-dependencies]
 rand = "0.6"

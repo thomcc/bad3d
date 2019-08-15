@@ -141,6 +141,22 @@ pub fn compile(faces: Vec<Face>, space: WingMesh) -> Box<BspNode> {
     compile_lt(faces, space, LeafType::NotLeaf)
 }
 
+fn min_face_plane(faces: &[Face], space: &WingMesh) -> (f32, Plane) {
+    let mut min_val = f32::MAX;
+    let mut split = Plane::zero();
+    for (i, face) in faces.iter().enumerate() {
+        if i > FACE_TEST_LIMIT {
+            break;
+        }
+        let val = plane_cost(&faces, face.plane, &space);
+        if val < min_val {
+            min_val = val;
+            split = faces[i].plane;
+        }
+    }
+    (min_val, split)
+}
+
 pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<BspNode> {
     if faces.is_empty() {
         return Box::new(BspNode {
@@ -152,22 +168,9 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
 
     faces.sort_by_key(|a| OrdFloat(a.area()));
 
-    let mut min_val = f32::MAX;
+    let (mut min_val, mut split) = min_face_plane(&faces, &space);
 
-    let mut split = Plane::zero();
-
-    for (i, face) in faces.iter().enumerate() {
-        if i > FACE_TEST_LIMIT {
-            break;
-        }
-        let val = plane_cost(&faces, face.plane, &space);
-        if val < min_val {
-            min_val = val;
-            split = faces[i].plane;
-        }
-    }
-
-    assert!(!split.normal.approx_zero());
+    debug_assert!(!split.normal.approx_zero());
 
     if ALLOW_AXIAL != 0 && faces.len() > 8 {
         for face in faces.iter() {
@@ -177,7 +180,7 @@ pub fn compile_lt(mut faces: Vec<Face>, space: WingMesh, side: LeafType) -> Box<
                     if (ALLOW_AXIAL & mask) != 0 {
                         let mut n = V3::zero();
                         n[c] = 1.0;
-                        let (val, count) = plane_cost_c(&faces[..], Plane::new(n, -v[c]), &space);
+                        let (val, count) = plane_cost_c(&faces, Plane::new(n, -v[c]), &space);
                         if val < min_val && (count[OVER] * count[UNDER] > 0.0 || count[SPLIT] > 0.0) {
                             min_val = val;
                             split = Plane::new(n, -v[c]);

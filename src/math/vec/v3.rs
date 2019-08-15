@@ -6,7 +6,7 @@ cfg_if::cfg_if! {
 
         #[derive(Copy, Clone)]
         #[repr(transparent)]
-        pub struct V3(__m128);
+        pub struct V3(pub(crate) __m128);
 
         #[macro_export]
         macro_rules! vec3_const {
@@ -1024,6 +1024,10 @@ impl V3 {
     #[inline(always)] pub fn zzx(self) -> Self { unsafe { V3(sse::_mm_shuffle_ps(self.0, self.0, shuf![2, 2, 0, 3])) } }
     #[inline(always)] pub fn zzy(self) -> Self { unsafe { V3(sse::_mm_shuffle_ps(self.0, self.0, shuf![2, 2, 1, 3])) } }
     #[inline(always)] pub fn zzz(self) -> Self { unsafe { V3(sse::_mm_shuffle_ps(self.0, self.0, shuf![2, 2, 2, 3])) } }
+
+    #[inline(always)] pub fn sse_xxxx(self) -> __m128 { unsafe { sse::_mm_shuffle_ps(self.0, self.0, shuf![0, 0, 0, 0]) } }
+    #[inline(always)] pub fn sse_yyyy(self) -> __m128 { unsafe { sse::_mm_shuffle_ps(self.0, self.0, shuf![1, 1, 1, 1]) } }
+    #[inline(always)] pub fn sse_zzzz(self) -> __m128 { unsafe { sse::_mm_shuffle_ps(self.0, self.0, shuf![2, 2, 2, 2]) } }
 }
 #[cfg(not(target_feature = "sse2"))]
 #[rustfmt::skip]

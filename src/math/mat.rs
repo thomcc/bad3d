@@ -159,7 +159,7 @@ impl<'a> Mul<V3> for &'a M3x3 {
     type Output = V3;
     #[inline]
     fn mul(self, v: V3) -> V3 {
-        self.x * v.x() + self.y * v.y() + self.z * v.z()
+        self.x * v.xxx() + self.y * v.yyy() + self.z * v.zzz()
     }
 }
 
@@ -295,12 +295,6 @@ macro_rules! do_mat_boilerplate {
             type Output = $Mn;
             #[inline] fn sub(self, o: $Mn) -> $Mn { $Mn { $($field: self.$field - o.$field),+ } }
         }
-
-        impl Mul<$Mn> for $Mn {
-            type Output = $Mn;
-            #[inline] fn mul(self, rhs: $Mn) -> $Mn { $Mn { $($field: self * rhs.$field),+ } }
-        }
-
         impl Mul<f32> for $Mn {
             type Output = $Mn;
             #[inline] fn mul(self, rhs: f32) -> $Mn { $Mn { $($field: self.$field * rhs),+ } }
@@ -312,8 +306,7 @@ macro_rules! do_mat_boilerplate {
             #[allow(clippy::suspicious_arithmetic_impl)]
             fn div(self, rhs: f32) -> $Mn {
                 debug_assert!(rhs != 0.0);
-                let i = 1.0 / rhs;
-                $Mn { $($field: self.$field * i),+ }
+                self * (1.0 / rhs)
             }
         }
 
@@ -361,6 +354,41 @@ macro_rules! do_mat_boilerplate {
 do_mat_boilerplate!(M2x2 { x: 0, y: 1 }, V2, 2, 4);
 do_mat_boilerplate!(M3x3 { x: 0, y: 1, z: 2 }, V3, 3, 9);
 do_mat_boilerplate!(M4x4 { x: 0, y: 1, z: 2, w: 3 }, V4, 4, 16);
+
+impl Mul<M2x2> for M2x2 {
+    type Output = M2x2;
+    #[inline]
+    fn mul(self, rhs: M2x2) -> M2x2 {
+        M2x2 {
+            x: self * rhs.x,
+            y: self * rhs.y,
+        }
+    }
+}
+
+impl Mul<M4x4> for M4x4 {
+    type Output = M4x4;
+    #[inline]
+    fn mul(self, rhs: M4x4) -> M4x4 {
+        M4x4 {
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
+            w: self * rhs.w,
+        }
+    }
+}
+impl Mul<M3x3> for M3x3 {
+    type Output = M3x3;
+    #[inline]
+    fn mul(self, rhs: M3x3) -> M3x3 {
+        Self {
+            x: self * rhs.x,
+            y: self * rhs.y,
+            z: self * rhs.z,
+        }
+    }
+}
 
 impl M2x2 {
     #[inline]
