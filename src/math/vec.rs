@@ -787,34 +787,46 @@ pub fn scalar_triple(a: V3, b: V3, c: V3) -> f32 {
 
 #[inline]
 pub fn max_dir(arr: &[V3], dir: V3) -> Option<V3> {
-    match max_dir_index(arr, dir) {
-        Some(index) => Some(arr[index]),
-        None => None,
+    if arr.len() == 0 {
+        return None;
+    }
+    simd_match! {
+        "sse2" => {
+            Some(crate::math::simd::maxdot(dir, arr))
+        },
+        _ => {
+            Some(arr[max_dir_index(arr, dir)])
+        }
     }
 }
 
 #[inline]
 pub fn max_dir_index(arr: &[V3], dir: V3) -> Option<usize> {
-    if arr.is_empty() {
+    if arr.len() == 0 {
         return None;
     }
-    let mut best_idx = 0;
-    for (idx, item) in arr.iter().enumerate() {
-        if dir.dot(*item) > dir.dot(arr[best_idx]) {
-            best_idx = idx;
+    simd_match! {
+        "sse2" => {
+            Some(crate::math::simd::maxdot_i(dir, self))
+        },
+        _ => {
+            max_dir_iter(dirr, arr.iter().copied())
         }
     }
-    Some(best_idx)
 }
 
 #[inline]
-pub fn max_dir_i<I: Iterator<Item = V3>>(dir: V3, iter: &mut I) -> Option<V3> {
+pub fn max_dir_iter<I: IntoIterator<Item = V3>>(dir: V3, iter: I) -> Option<V3> {
+    let iter = iter.into_iter();
     let initial = iter.next()?;
 
     let mut best = initial;
+    let mut best_dot = initial.dot(dir);
     for item in iter {
-        if dir.dot(item) > dir.dot(best) {
+        let d = dir.dot(best);
+        if d > best_dot {
             best = item;
+            best_dot = d;
         }
     }
     Some(best)

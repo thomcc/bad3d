@@ -475,13 +475,13 @@ impl Mul<V3> for Quat {
     type Output = V3;
     // #[inline]
     fn mul(self, o: V3) -> V3 {
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-        {
-            naive_quat_rot3(self, o)
-        }
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        {
-            super::simd::quat_rot3(self, o)
+        simd_match! {
+            "sse2" => {
+                super::simd::quat_rot3(self, o)
+            }
+            _ => {
+                naive_quat_rot3(self, o)
+            }
         }
     }
 }
@@ -518,13 +518,9 @@ impl Mul<Quat> for Quat {
     type Output = Quat;
     #[inline]
     fn mul(self, other: Quat) -> Quat {
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-        {
-            naive_quat_mul_quat(self, o)
-        }
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        {
-            super::simd::quat_mul_quat(self, other)
+        simd_match! {
+            "sse2" => { super::simd::quat_mul_quat(self, other) },
+            _ => { naive_quat_mul_quat(self, o) }
         }
     }
 }

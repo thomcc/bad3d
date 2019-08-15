@@ -245,7 +245,7 @@ pub fn dot3(v: V3, a: V3, b: V3, c: V3) -> V3 {
     unsafe { V3::from_x86(do_dot3(v.into_x86(), a.into_x86(), b.into_x86(), c.into_x86())) }
 }
 
-pub fn maxdot(v: V3, vs: &[V3]) -> V3 {
+pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
     unsafe {
         assert!(vs.len() != 0);
         let mut i = 0;
@@ -358,8 +358,13 @@ pub fn maxdot(v: V3, vs: &[V3]) -> V3 {
         let mask = x86_64::_mm_movemask_ps(x86_64::_mm_cmpeq_ps(best, best4)) & 0xf;
         debug_assert_ne!(mask, 0);
         const MASK_TO_FIRST_INDEX: [u8; 16] = [0, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0];
-        vs[best_start + (MASK_TO_FIRST_INDEX[mask as usize] as usize)]
+        best_start + (MASK_TO_FIRST_INDEX[mask as usize] as usize)
     }
+}
+#[inline]
+pub fn maxdot(v: V3, vs: &[V3]) -> V3 {
+    let i = maxdot_i(v, vs);
+    vs[i]
 }
 #[cfg(test)]
 mod test {

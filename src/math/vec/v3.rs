@@ -641,23 +641,24 @@ impl V3 {
     pub fn norm_or(self, x: f32, y: f32, z: f32) -> Self {
         self.norm_or_v(Self { x, y, z, w: 0.0 })
     }
-
+    #[inline]
     pub fn dot3(self, a: V3, b: V3, c: V3) -> V3 {
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-        {
-            V3::naive_dot3(self, a, b, c)
-        }
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        {
-            crate::math::simd::dot3(self, a, b, c)
+        simd_match! {
+            "sse2" => {
+                crate::math::simd::dot3(self, a, b, c)
+            },
+            _ => {
+                self.naive_dot3(a, b, c)
+            }
         }
     }
+
     #[inline]
     #[allow(dead_code)]
-    pub(crate) fn naive_dot3(v: V3, a: V3, b: V3, c: V3) -> V3 {
-        let va = v.x * a.x + v.y * a.y + v.z * a.z;
-        let vb = v.x * b.x + v.y * b.y + v.z * b.z;
-        let vc = v.x * c.x + v.y * c.y + v.z * c.z;
+    pub(crate) fn naive_dot3(self, a: V3, b: V3, c: V3) -> V3 {
+        let va = self.x * a.x + self.y * a.y + self.z * a.z;
+        let vb = self.x * b.x + self.y * b.y + self.z * b.z;
+        let vc = self.x * c.x + self.y * c.y + self.z * c.z;
         vec3(va, vb, vc)
     }
     // #[inline]
@@ -696,13 +697,13 @@ impl V3 {
 
     #[inline]
     pub fn cross(self, b: V3) -> V3 {
-        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-        {
-            self.naive_cross(b)
-        }
-        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        {
-            crate::math::simd::v3_cross(self, b)
+        simd_match! {
+            "sse2" => {
+                crate::math::simd::v3_cross(self, b)
+            },
+            _ => {
+                self.naive_cross(b)
+            }
         }
     }
 
