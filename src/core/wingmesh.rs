@@ -15,11 +15,18 @@ fn int(u: usize) -> Idx {
 
 #[derive(Copy, Clone, Debug)]
 pub struct HalfEdge {
+    /// Our index in the edge list.
     pub id: Idx,
+    /// The index of our start vertex in the vertex list.
     pub v: Idx,
+    /// Our opposite edge (the one going in opposite direction).
     pub adj: Idx,
+    /// The next edge, on the same face going around clockwise.
     pub next: Idx,
+    /// The prev edge on the same face, going around counterclockwise.
     pub prev: Idx,
+    /// The index of our face (the face we circle going clockwise by following
+    /// `next` pointers).
     pub face: Idx,
 }
 
@@ -400,6 +407,11 @@ impl WingMesh {
     }
 
     pub fn assert_valid(&self) {
+        assert!(self.edges.len() < INV as usize);
+        assert!(self.faces.len() < INV as usize);
+        assert!(self.verts.len() < INV as usize);
+        assert!(self.vback.len() < INV as usize);
+        assert!(self.fback.len() < INV as usize);
         for (e, edge) in self.edges.iter().enumerate() {
             if !self.is_packed && edge.v == INV {
                 assert_eq!(edge.face, INV);
@@ -409,8 +421,8 @@ impl WingMesh {
             }
             let id = int(e);
             assert_eq!(edge.id, id);
-            chek::ge!(edge.v, 0);
-            chek::ge!(edge.face, 0);
+            chek::ne!(edge.v, INV);
+            chek::ne!(edge.face, INV);
             assert_eq!(self.edges[edge.next_idx()].prev, id);
             assert_eq!(self.edges[edge.prev_idx()].next, id);
             assert_ne!(edge.adj, id);
@@ -446,7 +458,7 @@ impl WingMesh {
 
     #[inline]
     pub fn face_plane(&self, face: usize) -> Plane {
-        let vs = self.face_verts(face);
+        let vs: smallvec::SmallVec<[V3; 16]> = self.iter_face_verts(face).collect();
         // TODO: we dont need to allocate a vec to compute this...
         Plane::from_points(&vs)
     }

@@ -10,7 +10,8 @@ mod v4;
 pub use iter::VecIter;
 pub use v3::{vec3, V3};
 pub use v4::{vec4, V4};
-
+pub(crate) mod gvec;
+pub use gvec::*;
 #[cfg(not(target_feature = "sse2"))]
 #[doc(hidden)]
 pub use v3::__v3_const;
