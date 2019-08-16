@@ -412,9 +412,10 @@ impl Quat {
 
     #[inline]
     pub fn from_yaw_pitch_roll(yaw: f32, pitch: f32, roll: f32) -> Quat {
-        Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), yaw)
+        (Quat::from_axis_angle(vec3(0.0, 0.0, 1.0), yaw)
             * Quat::from_axis_angle(vec3(1.0, 0.0, 0.0), pitch)
-            * Quat::from_axis_angle(vec3(0.0, 1.0, 0.0), roll)
+            * Quat::from_axis_angle(vec3(0.0, 1.0, 0.0), roll))
+        .must_norm()
     }
 
     #[inline]

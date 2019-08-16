@@ -425,7 +425,7 @@ fn main() -> Result<()> {
             near_far: (0.01, 100.0),
             light_pos: vec3(0.0, 1.2, 1.0),
             fov: 45.0,
-            fog_amount: 16.0,
+            fog_amount: 0.8,
             ..Default::default()
         },
         gui.clone(),

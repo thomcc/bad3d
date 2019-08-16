@@ -99,7 +99,10 @@ fn compile_shader<F: glium::backend::Facade>(
 
 impl DemoWindow {
     pub fn new(opts: DemoOptions<'_>, gui: Rc<RefCell<imgui::Context>>) -> Result<DemoWindow, Error> {
-        let context = ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
+        let context = ContextBuilder::new()
+            .with_depth_buffer(24)
+            .with_srgb(true)
+            .with_vsync(true);
 
         let window = WindowBuilder::new()
             .with_title(opts.title)
@@ -204,12 +207,13 @@ impl DemoWindow {
             &self.lit_shader,
             &uniform! {
                 model: mat.to_arr(),
-                u_color: mesh.color.to_arr(),
+                u_color: (mesh.color * mesh.color).to_arr(),
                 view: self.view.to_arr(),
                 u_light: self.light_pos,
                 perspective: self.input.get_projection_matrix(
                     self.near_far.0, self.near_far.1).to_arr(),
                 u_fog: self.fog_amount,
+                u_nearfar_dist: (self.near_far.1 - self.near_far.0).abs(),
             },
             &glium::DrawParameters {
                 blend: glium::Blend::alpha_blending(),

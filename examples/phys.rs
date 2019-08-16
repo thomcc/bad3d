@@ -140,6 +140,8 @@ fn main() -> Result<()> {
             clear_color: vec4(0.5, 0.6, 1.0, 1.0),
             near_far: (0.01, 100.0),
             light_pos: vec3(0.0, 1.2, 1.0),
+            fog_amount: 0.85,
+            // fov: 45.0,
             ..Default::default()
         },
         gui.clone(),
@@ -423,6 +425,13 @@ fn main() -> Result<()> {
                 ui.text(im_str!("  reset: [R]"));
                 ui.text(im_str!("  pause/unpause: [Space]"));
                 ui.separator();
+                if ui.collapsing_header(im_str!("gfx opts")).default_open(false).build() {
+                    ui.slider_float(im_str!("fog"), &mut win.fog_amount, 0.0, 20.0).build();
+
+                    ui.slider_float(im_str!("fov"), &mut win.input.view_angle, 30.0, 120.0)
+                        .build();
+                }
+
                 if ui
                     .collapsing_header(im_str!("tunable parameters"))
                     .default_open(true)

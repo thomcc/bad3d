@@ -7,6 +7,7 @@ uniform vec3 u_light;
 uniform vec4 u_color;
 
 uniform float u_fog;
+uniform float u_nearfar_dist;
 
 const vec3 ambient_color = vec3(0.1, 0.1, 0.1);
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
@@ -28,9 +29,11 @@ void main() {
     c += normal / 10.0;
 
     if (u_fog > 0.0) {
-        float dist = gl_FragCoord.z / gl_FragCoord.w;// abs(v_viewpos.z);
-        float fog = saturate((u_fog - dist) / u_fog);
-        c = lerp(vec3(0.1, 0.1, 0.1), c, fog);
+        float dist = length(v_viewpos);//(gl_FragCoord.z / gl_FragCoord.w);// abs(v_viewpos.z);
+        float fogAmount=1.-exp(-dist*(u_fog / u_nearfar_dist));
+        vec3 fogColor=vec3(.5,.6,.7);
+        // float fog = saturate((u_fog - dist) / u_fog);
+        c = lerp(c, fogColor, fogAmount);
     }
 
     color = vec4(max(min(c, vec3(1.0)), vec3(0.0)), u_color.a);

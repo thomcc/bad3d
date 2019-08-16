@@ -858,24 +858,13 @@ impl M4x4 {
 
     #[inline]
     #[allow(clippy::many_single_char_names)]
+    #[rustfmt::skip]
     pub fn new_frustum(l: f32, r: f32, b: f32, t: f32, n: f32, f: f32) -> M4x4 {
         M4x4::new(
-            2.0 * n / (r - l),
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            2.0 * n / (t - b),
-            0.0,
-            0.0,
-            (r + l) / (r - l),
-            (t + b) / (t - b),
-            -(f + n) / (f - n),
-            -1.0,
-            0.0,
-            0.0,
-            -2.0 * f * n / (f - n),
-            0.0,
+            2.0 * n / (r - l), 0.0, 0.0, 0.0,
+            0.0, 2.0 * n / (t - b), 0.0, 0.0,
+            (r + l) / (r - l), (t + b) / (t - b), -(f + n) / (f - n), -1.0,
+            0.0, 0.0, -2.0 * f * n / (f - n), 0.0,
         )
     }
 
