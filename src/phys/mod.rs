@@ -1,12 +1,9 @@
-use crate::core::{gjk, shape};
-use crate::gjk::CollisionDetector;
-use crate::math::prelude::*;
-// use std::cell::RefCell;
-// use std::collections::HashSet;
+use crate::{
+    gjk::{self, CollisionDetector},
+    shape::{self, Shape},
+};
 use std::f32;
-// use std::rc::Rc;
-// use std::sync::atomic::{AtomicUsize, Ordering};
-pub use crate::core::shape::Shape;
+use t3m::prelude::*;
 
 use handy::{Handle, HandleMap};
 use smallvec::{smallvec, SmallVec};

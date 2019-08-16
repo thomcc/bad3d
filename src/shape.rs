@@ -1,7 +1,6 @@
-use crate::core::hull;
-use crate::core::wingmesh;
-use crate::math::prelude::*;
-
+use crate::{hull, wingmesh};
+use t3m::prelude::*;
+// TODO: use t3m::Idx3 here
 #[derive(Debug, Clone, Default)]
 pub struct Shape {
     pub vertices: Vec<V3>,

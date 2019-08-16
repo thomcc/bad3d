@@ -3,8 +3,16 @@
 
 #[macro_use]
 pub mod util;
-mod core;
 pub use t3m as math;
 pub mod prelude;
 
-pub use crate::core::*;
+pub mod hull;
+
+pub mod gjk;
+pub mod phys;
+pub mod shape;
+pub mod support;
+pub mod wingmesh;
+
+pub mod bsp;
+pub use prelude::*;

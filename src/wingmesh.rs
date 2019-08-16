@@ -1,7 +1,6 @@
-use crate::core::bsp;
-use crate::core::support;
-use crate::math::prelude::*;
+use crate::{bsp, support};
 use std::{f32, u16};
+use t3m::prelude::*;
 // TODO: this is a gnarly mess
 
 type Idx = u16;

@@ -1,8 +1,7 @@
-use crate::math::prelude::*;
-use crate::util;
 use smallbitvec::SmallBitVec;
 use smallvec::SmallVec;
 use std::{f32, i32, isize, ops::*, usize};
+use t3m::prelude::*;
 
 #[derive(Clone, Debug, Default)]
 pub struct HullApi {
@@ -10,7 +9,7 @@ pub struct HullApi {
     tris: SmallVec<[HullTri; 64]>,
     used: SmallVec<[usize; 64]>,
     map: SmallVec<[isize; 64]>,
-    is_extreme: smallbitvec::SmallBitVec,
+    is_extreme: SmallBitVec,
 }
 
 impl HullApi {
@@ -329,7 +328,7 @@ fn find_extrudable(tris: &[HullTri], epsilon: f32) -> Option<usize> {
             best = idx
         }
     }
-    util::some_if(tris[best].rise > epsilon, best)
+    crate::util::some_if(tris[best].rise > epsilon, best)
 }
 
 fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {

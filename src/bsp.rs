@@ -1,7 +1,7 @@
-use crate::core::{gjk, support::Support, wingmesh::WingMesh};
-use crate::math::prelude::*;
 use crate::util::OrdFloat;
+use crate::{gjk, support::Support, wingmesh::WingMesh};
 use std::{f32, mem};
+use t3m::prelude::*;
 const Q_SNAP: f32 = 0.5;
 const QUANTIZE_CHECK: f32 = Q_SNAP * (1.0 / 256.0 * 0.5);
 const FUZZY_WIDTH: f32 = 100.0 * DEFAULT_PLANE_WIDTH;

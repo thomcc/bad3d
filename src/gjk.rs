@@ -1,6 +1,6 @@
-use crate::core::support::Support;
-use crate::math::prelude::*;
+use crate::support::Support;
 use std::f32;
+use t3m::prelude::*;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum ContactType {

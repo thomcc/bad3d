@@ -1,4 +1,4 @@
-use crate::math::prelude::*;
+use t3m::prelude::*;
 
 pub trait Support {
     fn support(&self, _: V3) -> V3;

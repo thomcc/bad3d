@@ -4,7 +4,7 @@ use std::{cmp, fmt};
 mod macros;
 
 #[inline]
-pub fn some_if<T>(cond: bool, val: T) -> Option<T> {
+pub(crate) fn some_if<T>(cond: bool, val: T) -> Option<T> {
     if cond {
         Some(val)
     } else {
@@ -12,17 +12,8 @@ pub fn some_if<T>(cond: bool, val: T) -> Option<T> {
     }
 }
 
-#[inline]
-pub fn some_when<T>(cond: bool, func: impl FnOnce() -> T) -> Option<T> {
-    if cond {
-        Some(func())
-    } else {
-        None
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub struct OrdFloat(pub f32);
+pub(crate) struct OrdFloat(pub(crate) f32);
 // TODO Hash?
 impl cmp::Eq for OrdFloat {}
 impl cmp::Ord for OrdFloat {
@@ -80,14 +71,4 @@ impl<'a> Drop for PerfEntry<'a> {
         let mut l = self.log.sections.lock().unwrap();
         l.push((self.name, end, self.i));
     }
-}
-
-#[derive(Copy, Clone)]
-#[repr(C, align(16))]
-pub struct Align16<T: Copy>(pub T);
-
-#[derive(Copy, Clone)]
-pub union ConstTransmuter<From: Copy, To: Copy> {
-    pub from: From,
-    pub to: To,
 }
