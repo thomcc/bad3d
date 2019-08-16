@@ -4,7 +4,7 @@
 #[macro_use]
 pub mod util;
 mod core;
-pub mod math;
+pub use t3m as math;
 pub mod prelude;
 
 pub use crate::core::*;

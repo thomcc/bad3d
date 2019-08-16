@@ -2,29 +2,13 @@ use super::prelude::*;
 use crate::util::{Align16, ConstTransmuter};
 use std::arch::x86_64::{self as sse, __m128};
 
-static_assert_usize_eq!(
-    QUAT_SIMD_ALIGN,
-    std::mem::align_of::<Quat>(),
-    std::mem::align_of::<__m128>()
-);
-static_assert_usize_eq!(
-    V3_SIMD_ALIGN,
-    std::mem::align_of::<V3>(),
-    std::mem::align_of::<__m128>()
-);
-static_assert_usize_eq!(
-    V4_SIMD_ALIGN,
-    std::mem::align_of::<V4>(),
-    std::mem::align_of::<__m128>()
-);
+static _QUAT_SIMD_ALIGN: [(); std::mem::align_of::<Quat>()] = [(); std::mem::align_of::<__m128>()];
+static _V3_SIMD_ALIGN: [(); std::mem::align_of::<V3>()] = [(); std::mem::align_of::<__m128>()];
+static _V4_SIMD_ALIGN: [(); std::mem::align_of::<V4>()] = [(); std::mem::align_of::<__m128>()];
 
-static_assert_usize_eq!(
-    QUAT_SIMD_SIZE,
-    std::mem::size_of::<Quat>(),
-    std::mem::size_of::<__m128>()
-);
-static_assert_usize_eq!(V3_SIMD_SIZE, std::mem::size_of::<V3>(), std::mem::size_of::<__m128>());
-static_assert_usize_eq!(V4_SIMD_SIZE, std::mem::size_of::<V4>(), std::mem::size_of::<__m128>());
+static _QUAT_SIMD_SIZE: [(); std::mem::size_of::<Quat>()] = [(); std::mem::size_of::<__m128>()];
+static _V3_SIMD_SIZE: [(); std::mem::size_of::<V3>()] = [(); std::mem::size_of::<__m128>()];
+static _V4_SIMD_SIZE: [(); std::mem::size_of::<V4>()] = [(); std::mem::size_of::<__m128>()];
 
 impl Quat {
     #[inline(always)]

@@ -563,7 +563,7 @@ fn finish_hull(m: &mut HullApi, out: &mut Vec<[u16; 3]>, verts: &mut [V3]) -> us
     out.reserve(tris.len());
     let mut max_idx = 0;
     out.extend(tris.iter().map(|t| {
-        let tmaxi = max!(t.vi[0] as usize, t.vi[1] as usize, t.vi[2] as usize);
+        let tmaxi = t3m::max!(t.vi[0] as usize, t.vi[1] as usize, t.vi[2] as usize);
         assert!(tmaxi < u16::max_value() as usize, "overflowed u16 for tri index");
         if tmaxi > max_idx {
             max_idx = tmaxi;

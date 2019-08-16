@@ -229,7 +229,7 @@ impl DemoWindow {
     pub fn draw_wire_mesh(&self, mat: M4x4, mesh: &DemoMesh, color: V4, use_depth: bool) -> Result<(), Error> {
         let mut wire = Vec::with_capacity(mesh.tris.len() * 6);
         for tri in &mesh.tris {
-            let (v0, v1, v2) = tri.tri_verts(&mesh.verts);
+            let (v0, v1, v2) = Idx3::from(*tri).tri_verts(&mesh.verts);
             wire.extend([v0, v1, v1, v2, v2, v0].iter().cloned())
         }
         self.draw_solid(mat, color, &wire, glium::index::PrimitiveType::LinesList, use_depth)?;

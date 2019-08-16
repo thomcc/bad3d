@@ -91,7 +91,7 @@ fn body_hit_check(body: &RigidBody, p0: V3, p1: V3) -> Option<HitInfo> {
     for shape in &body.shapes {
         let hit = geom::convex_hit_check_posed(
             shape.tris.iter().map(|&tri| {
-                let (v0, v1, v2) = tri.tri_verts(&shape.vertices);
+                let (v0, v1, v2) = Idx3::from(tri).tri_verts(&shape.vertices);
                 Plane::from_tri(v0, v1, v2)
             }),
             pose,

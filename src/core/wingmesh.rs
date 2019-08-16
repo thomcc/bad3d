@@ -209,7 +209,7 @@ impl WingMesh {
             return m;
         }
 
-        let vc = 1 + tris.iter().fold(0, |a, b| max!(a, b[0], b[1], b[2])) as usize;
+        let vc = 1 + tris.iter().fold(0, |a, b| t3m::max!(a, b[0], b[1], b[2])) as usize;
         chek::le!(vc, verts.len());
 
         m.verts = verts;

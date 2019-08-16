@@ -8,24 +8,6 @@ cfg_if::cfg_if! {
         #[repr(transparent)]
         pub struct V4(pub(crate) __m128);
 
-        #[macro_export]
-        macro_rules! vec4_const {
-            ($x:expr; 4) => {
-                vec4_const![$x, $x, $x, $x]
-            };
-            ($x:expr, $y:expr, $z:expr, $w:expr) => {{
-                const V4ARR: $crate::util::Align16<[f32; 4]> = $crate::util::Align16([$x, $y, $z, $w]);
-                const VV: V4 =
-                    unsafe {
-                        $crate::util::ConstTransmuter::<
-                            $crate::util::Align16<[f32; 4]>,
-                            V4
-                        > { from: V4ARR }.to
-                    };
-                VV
-            }};
-        }
-
         impl Default for V4 {
             #[inline(always)]
             fn default()-> Self {
@@ -33,14 +15,8 @@ cfg_if::cfg_if! {
             }
         }
 
-        const ABS_MASK: __m128 = simd_mask_u4![0x7fff_ffffu32; 4];
-        const SIGN_MASK: __m128 = simd_mask_u4![0x8000_0000u32; 4];
-        // duplicated in simd.rs :/
-        // macro_rules! shuf {
-        //     ($A:expr, $B:expr, $C:expr, $D:expr) => {
-        //         (($D << 6) | ($C << 4) | ($B << 2) | $A) & 0xff
-        //     };
-        // }
+        const ABS_MASK: __m128 = const_simd_mask![0x7fff_ffffu32; 4];
+        const SIGN_MASK: __m128 = const_simd_mask![0x8000_0000u32; 4];
     } else {
 
         #[derive(Copy, Clone, Default)]
@@ -53,17 +29,17 @@ cfg_if::cfg_if! {
         }
 
         #[doc(hidden)]
-        pub const fn __v4_const(x: f32, y: f32, z: f32, w: f32) -> V3 {
-            V3 { x, y, z, w }
+        pub const fn __v4_const(x: f32, y: f32, z: f32, w: f32) -> V4 {
+            V4 { x, y, z, w }
         }
         #[macro_export]
         macro_rules! vec4_const {
             ($x:expr, $y:expr, $z:expr, $w:expr) => {{
-                const VV: V4 = $crate::math::vec::__v4_const($x, $y, $z, $w);
+                const VV: V4 = $crate::vec::__v4_const($x, $y, $z, $w);
                 VV
             }};
             ($x:expr; 4) => {
-                const VV: V4 = $crate::math::vec::__v4_const($x, $x, $x, $x);
+                const VV: V4 = $crate::vec::__v4_const($x, $x, $x, $x);
                 VV
             };
         }
@@ -81,12 +57,18 @@ impl std::fmt::Debug for V4 {
     }
 }
 
+impl fmt::Display for V4 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "vec4({}, {}, {}, {})", self.x(), self.y(), self.z(), self.w())
+    }
+}
+
 #[inline]
 pub fn vec4(x: f32, y: f32, z: f32, w: f32) -> V4 {
     V4::new(x, y, z, w)
 }
 
-impl Fold for V4 {
+impl V4 {
     #[inline]
     fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32 {
         f(f(f(self.x(), self.y()), self.z()), self.w())
@@ -100,6 +82,22 @@ impl Fold for V4 {
             self.w(),
         )
     }
+
+    // #[inline]
+    // fn map2<F>(self, o: Self, f: F) -> Self
+    // where
+    //     F: Fn(f32, f32) -> f32,
+    // {
+    //     self.map3(o, self, |a, b, _| f(a, b))
+    // }
+
+    // #[inline]
+    // fn map<F>(self, f: F) -> Self
+    // where
+    //     F: Fn(f32) -> f32,
+    // {
+    //     self.map3(self, self, |a, _, _| f(a))
+    // }
 }
 
 impl PartialEq for V4 {
@@ -602,7 +600,7 @@ impl V4 {
     pub fn negate_xyz(self) -> V4 {
         simd_match! {
             "sse2" => unsafe {
-                const XYZSIGN: __m128 = simd_mask_u4![0x8000_0000u32; 3];
+                const XYZSIGN: __m128 = const_simd_mask![0x8000_0000u32; 3];
                 V4(sse::_mm_xor_ps(self.0, XYZSIGN))
             },
             _ => vec4(-self.x, -self.y, -self.z, self.w)
@@ -715,7 +713,7 @@ impl V4 {
 impl ApproxEq for V4 {
     #[inline]
     fn approx_zero_e(&self, e: f32) -> bool {
-        self.fold_init(true, |cnd, val| cnd && val.approx_zero_e(e))
+        self.x().approx_zero_e(e) && self.y().approx_zero_e(e) && self.z().approx_zero_e(e) && self.w().approx_zero_e(e)
     }
 
     #[inline]
@@ -724,9 +722,9 @@ impl ApproxEq for V4 {
     }
 }
 
-impl Map for V4 {
+impl V4 {
     #[inline]
-    fn map3<F: Fn(f32, f32, f32) -> f32>(self, a: Self, b: Self, f: F) -> Self {
+    fn map3(self, a: Self, b: Self, f: impl Fn(f32, f32, f32) -> f32) -> Self {
         vec4(
             f(self.x(), a.x(), b.x()),
             f(self.y(), a.y(), b.y()),
@@ -734,18 +732,13 @@ impl Map for V4 {
             f(self.w(), a.w(), b.w()),
         )
     }
-}
 
-impl VecType for V4 {
-    const SIZE: usize = 4;
-
-    #[inline]
-    fn splat(v: f32) -> Self {
-        V4::splat(v)
-    }
-    #[inline]
-    fn dot(self, o: Self) -> f32 {
-        V4::dot(self, o)
+    // #[inline]
+    // fn map2(self, o: Self, f: impl Fn(f32, f32) -> f32) -> Self {
+    //     self.map3(o, self, |a, b, _| f(a, b))
+    // }
+    fn map(self, f: impl Fn(f32) -> f32) -> Self {
+        self.map3(self, self, |a, _, _| f(a))
     }
 }
 
@@ -850,5 +843,17 @@ impl V4 {
                 if z < w { 2 } else { 3 }
             } // y out
         }
+    }
+}
+
+#[cfg(target_feature = "sse2")]
+impl V4 {
+    #[inline(always)]
+    pub const fn to_simd(self) -> __m128 {
+        self.0
+    }
+    #[inline(always)]
+    pub const fn from_simd(v: __m128) -> Self {
+        Self(v)
     }
 }

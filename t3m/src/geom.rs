@@ -1,13 +1,8 @@
-use crate::math::mat::*;
-use crate::math::plane::*;
-use crate::math::pose::*;
-use crate::math::scalar::*;
-use crate::math::traits::*;
-use crate::math::vec::*;
+use crate::prelude::*;
 
 #[inline]
 pub fn tri_face_dir(v0: V3, v1: V3, v2: V3) -> V3 {
-    cross(v1 - v0, v2 - v1)
+    crate::cross(v1 - v0, v2 - v1)
 }
 
 #[inline]
@@ -48,6 +43,11 @@ pub fn barycentric(a: V3, b: V3, c: V3, p: V3) -> V3 {
     vec3(1.0 - v - w, v, w)
 }
 
+#[inline]
+pub fn cross(a: V3, b: V3) -> V3 {
+    a.cross(b)
+}
+
 pub fn tri_project(v0: V3, v1: V3, v2: V3, p: V3) -> V3 {
     let cp = cross(v2 - v0, v2 - v1);
     let dtcpm = -dot(cp, v0);
@@ -84,34 +84,35 @@ pub fn gradient(v0: V3, v1: V3, v2: V3, t0: f32, t1: f32, t2: f32) -> V3 {
 }
 
 #[inline]
-fn tri_matrix<T: TriIndices>(tri: T, verts: &[V3]) -> M3x3 {
-    let (va, vb, vc) = tri.tri_verts(verts);
+fn tri_matrix<T: Into<Idx3>>(tri: T, verts: &[V3]) -> M3x3 {
+    let (va, vb, vc) = tri.into().tri_verts(verts);
     M3x3::from_cols(va, vb, vc)
 }
 
 // does this belong here?
-pub fn volume<Idx: TriIndices>(verts: &[V3], tris: &[Idx]) -> f32 {
+pub fn volume<Idx: Copy + Into<Idx3>>(verts: &[V3], tris: &[Idx]) -> f32 {
     (1.0 / 6.0)
         * tris
             .iter()
-            .fold(0.0, |acc, &tri| acc + tri_matrix(tri, verts).determinant())
+            .fold(0.0, |acc, &tri| acc + tri_matrix(tri.into(), verts).determinant())
 }
 
-pub fn center_of_mass<Idx: TriIndices>(verts: &[V3], tris: &[Idx]) -> V3 {
+pub fn center_of_mass<Idx: Copy + Into<Idx3>>(verts: &[V3], tris: &[Idx]) -> V3 {
     let (com, vol) = tris.iter().fold((V3::zero(), 0.0), |(acom, avol), &tri| {
-        let m = tri_matrix(tri, verts);
+        let m = tri_matrix(tri.into(), verts);
         let vol = m.determinant();
         (acom + vol * (m.x + m.y + m.z), avol + vol)
     });
     com / (vol * 4.0)
 }
 
-pub fn inertia<Idx: TriIndices>(verts: &[V3], tris: &[Idx], com: V3) -> M3x3 {
+pub fn inertia<Idx: Copy + Into<Idx3>>(verts: &[V3], tris: &[Idx], com: V3) -> M3x3 {
     let mut volume = 0.0f32;
     let mut diag = V3::zero();
     let mut offd = V3::zero();
 
-    for tri in tris.iter() {
+    for &tri in tris.iter() {
+        let tri: Idx3 = tri.into();
         let (a, b, c) = tri.tri_indices();
         let m = M3x3::from_cols(verts[a] - com, verts[b] - com, verts[c] - com);
         let d = m.determinant();
@@ -403,7 +404,7 @@ pub fn max_dir(dir: V3, arr: &[V3]) -> Option<V3> {
     }
     simd_match! {
         "sse2" => {
-            Some(crate::math::simd::maxdot(dir, arr))
+            Some(crate::simd::maxdot(dir, arr))
         },
         _ => {
             Some(arr[max_dir_index(arr, dir)])
@@ -418,7 +419,7 @@ pub fn max_dir_index(dir: V3, arr: &[V3]) -> Option<usize> {
     }
     simd_match! {
         "sse2" => {
-            Some(crate::math::simd::maxdot_i(dir, arr))
+            Some(crate::simd::maxdot_i(dir, arr))
         },
         _ => {
             max_dir_and_index_iter(dirr, arr.iter().copied()).map(|x| x.1)
@@ -450,10 +451,10 @@ pub fn max_dir_iter<I: IntoIterator<Item = V3>>(dir: V3, iter: I) -> Option<V3> 
 }
 
 #[inline]
-pub fn compute_bounds_iter<I>(iter: I) -> Option<(I::Item, I::Item)>
+pub fn compute_bounds_iter<I>(iter: I) -> Option<(V3, V3)>
 where
-    I: IntoIterator,
-    I::Item: VecType,
+    I: IntoIterator<Item = V3>,
+    // I::Item: VecType,
 {
     let mut iter = iter.into_iter();
     let initial = iter.next()?;
@@ -468,16 +469,6 @@ where
 }
 
 #[inline]
-pub fn compute_bounds<Vt: VecType>(arr: &[Vt]) -> Option<(Vt, Vt)> {
+pub fn compute_bounds(arr: &[V3]) -> Option<(V3, V3)> {
     compute_bounds_iter(arr.iter().copied())
-}
-
-#[inline]
-pub fn same_dir<T: VecType>(a: T, b: T) -> bool {
-    a.dot(b) > 0.0
-}
-
-#[inline]
-pub fn same_dir_e<T: VecType>(a: T, b: T, epsilon: f32) -> bool {
-    a.dot(b) > epsilon
 }

@@ -8,42 +8,6 @@ cfg_if::cfg_if! {
         #[repr(transparent)]
         pub struct V3(pub(crate) __m128);
 
-        #[macro_export]
-        macro_rules! vec3_const {
-            ($x:expr; 3) => {
-                vec3_const![$x, $x, $x]
-            };
-            ($x:expr, $y:expr, $z:expr) => {{
-                const V3ARR: $crate::util::Align16<[f32; 4]> = $crate::util::Align16([$x, $y, $z, 0.0f32]);
-                const VV: V3 =
-                    unsafe {
-                        $crate::util::ConstTransmuter::<
-                            $crate::util::Align16<[f32; 4]>,
-                            V3
-                        > { from: V3ARR }.to
-                    };
-                VV
-            }};
-        }
-        macro_rules! simd_mask_u4 {
-            ($x:expr; 4) => {
-                simd_mask_u4![$x, $x, $x, $x]
-            };
-            ($x:expr; 3) => {
-                simd_mask_u4![$x, $x, $x, 0u32]
-            };
-            ($x:expr, $y:expr, $z:expr, $w:expr) => {{
-                const MASKARR: $crate::util::Align16<[u32; 4]> = $crate::util::Align16([$x, $y, $z, $w]);
-                const MASK: sse::__m128 =
-                    unsafe {
-                        $crate::util::ConstTransmuter::<
-                            $crate::util::Align16<[u32; 4]>,
-                            sse::__m128,
-                        > { from: MASKARR }.to
-                    };
-                MASK
-            }};
-        }
 
         impl Default for V3 {
             #[inline(always)]
@@ -52,15 +16,10 @@ cfg_if::cfg_if! {
             }
         }
 
-        const XYZ_MASK: __m128 = simd_mask_u4![!0u32; 3];
-        const ABS_MASK: __m128 = simd_mask_u4![0x7fff_ffffu32; 3];
-        const SIGN_MASK: __m128 = simd_mask_u4![0x8000_0000u32; 4];
-        // duplicated in simd.rs :/
-        macro_rules! shuf {
-            ($A:expr, $B:expr, $C:expr, $D:expr) => {
-                (($D << 6) | ($C << 4) | ($B << 2) | $A) & 0xff
-            };
-        }
+        const XYZ_MASK: __m128 = const_simd_mask![!0u32; 3];
+        const ABS_MASK: __m128 = const_simd_mask![0x7fff_ffffu32; 3];
+        const SIGN_MASK: __m128 = const_simd_mask![0x8000_0000u32; 4];
+
     } else {
 
         #[derive(Copy, Clone, Default)]
@@ -75,17 +34,6 @@ cfg_if::cfg_if! {
         #[doc(hidden)]
         pub const fn __v3_const(x: f32, y: f32, z: f32) -> V3 {
             V3 { x, y, z, w: 0.0 }
-        }
-        #[macro_export]
-        macro_rules! vec3_const {
-            ($x:expr, $y:expr, $z:expr) => {{
-                const VV: V3 = $crate::math::vec::__v3_const($x, $y, $z, 0.0);
-                VV
-            }};
-            ($x:expr; 3) => {
-                const VV: V3 = $crate::math::vec::__v3_const($x, $x, $x, 0.0);
-                VV
-            };
         }
     }
 }
@@ -185,7 +133,7 @@ impl Add for V3 {
         simd_match! {
             "sse2" => unsafe {
                 let v = sse::_mm_add_ps(self.0, o.0);
-                // let r = sse::_mm_and_ps(v, crate::math::simd::CLEARW_MASK);
+                // let r = sse::_mm_and_ps(v, crate::simd::CLEARW_MASK);
                 V3(v)
             },
             _ => Self {
@@ -758,7 +706,7 @@ impl V3 {
     pub fn dot3(self, a: V3, b: V3, c: V3) -> V3 {
         simd_match! {
             "sse2" => {
-                crate::math::simd::dot3(self, a, b, c)
+                crate::simd::dot3(self, a, b, c)
             },
             _ => {
                 self.naive_dot3(a, b, c)
@@ -824,7 +772,7 @@ impl V3 {
     pub fn cross(self, b: V3) -> V3 {
         simd_match! {
             "sse2" => {
-                crate::math::simd::v3_cross(self, b)
+                crate::simd::v3_cross(self, b)
             },
             _ => {
                 self.naive_cross(b)
@@ -906,29 +854,38 @@ impl ApproxEq for V3 {
     }
 }
 
-impl Map for V3 {
+impl V3 {
     #[inline]
-    fn map3<F: Fn(f32, f32, f32) -> f32>(self, a: Self, b: Self, f: F) -> Self {
+    fn map3(self, a: Self, b: Self, f: impl Fn(f32, f32, f32) -> f32) -> Self {
         vec3(
             f(self.x(), a.x(), b.x()),
             f(self.y(), a.y(), b.y()),
             f(self.z(), a.z(), b.z()),
         )
     }
-}
 
-impl VecType for V3 {
-    const SIZE: usize = 3;
-
+    // #[inline]
+    // fn map2(self, o: Self, f: impl Fn(f32, f32) -> f32) -> Self {
+    //     self.map3(o, self, |a, b, _| f(a, b))
+    // }
     #[inline]
-    fn splat(v: f32) -> Self {
-        V3::splat(v)
-    }
-    #[inline]
-    fn dot(self, o: Self) -> f32 {
-        V3::dot(self, o)
+    pub fn map(self, f: impl Fn(f32) -> f32) -> Self {
+        self.map3(self, self, |a, _, _| f(a))
     }
 }
+
+// impl VecType for V3 {
+//     const SIZE: usize = 3;
+
+//     #[inline]
+//     fn splat(v: f32) -> Self {
+//         V3::splat(v)
+//     }
+//     #[inline]
+//     fn dot(self, o: Self) -> f32 {
+//         V3::dot(self, o)
+//     }
+// }
 
 impl std::fmt::Debug for V3 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1028,6 +985,9 @@ impl V3 {
     #[inline(always)] pub fn sse_xxxx(self) -> __m128 { unsafe { sse::_mm_shuffle_ps(self.0, self.0, shuf![0, 0, 0, 0]) } }
     #[inline(always)] pub fn sse_yyyy(self) -> __m128 { unsafe { sse::_mm_shuffle_ps(self.0, self.0, shuf![1, 1, 1, 1]) } }
     #[inline(always)] pub fn sse_zzzz(self) -> __m128 { unsafe { sse::_mm_shuffle_ps(self.0, self.0, shuf![2, 2, 2, 2]) } }
+
+    #[inline(always)] pub const fn to_simd(self) -> __m128 { self.0 }
+    #[inline(always)] pub const fn from_simd(v: __m128) -> Self { Self(v) }
 }
 #[cfg(not(target_feature = "sse2"))]
 #[rustfmt::skip]

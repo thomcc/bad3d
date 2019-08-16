@@ -1,7 +1,7 @@
 #![allow(clippy::too_many_arguments, clippy::op_ref)]
-use crate::math::quat::*;
-use crate::math::traits::*;
-use crate::math::vec::*;
+use crate::quat::*;
+use crate::traits::*;
+use crate::vec::*;
 use std::{f32, fmt, ops::*};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -646,7 +646,7 @@ impl M3x3 {
             let sgn = thet.signum(); // if thet_val > 0.0 { 1.0 } else { -1.0 };
             let thet = thet * sgn;
             // Use the more accurate formula if we're close.
-            let t2p1 = if thet < crate::math::scalar::DEFAULT_EPSILON {
+            let t2p1 = if thet < crate::scalar::DEFAULT_EPSILON {
                 (thet * thet + 1.0).sqrt()
             } else {
                 thet
@@ -1027,40 +1027,40 @@ impl From<[[f32; 4]; 4]> for M4x4 {
         M4x4::from_cols(m[0].into(), m[1].into(), m[2].into(), m[3].into())
     }
 }
-pub trait MatType:
-    Copy
-    + Clone
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + Mul<Self, Output = Self>
-    + Mul<f32, Output = Self>
-    + Div<f32, Output = Self>
-{
-    type Vec: VecType;
+// pub trait MatType:
+//     Copy
+//     + Clone
+//     + Add<Output = Self>
+//     + Sub<Output = Self>
+//     + Mul<Self, Output = Self>
+//     + Mul<f32, Output = Self>
+//     + Div<f32, Output = Self>
+// {
+//     type Vec: VecType;
 
-    const ROWS: usize;
-    const COLS: usize;
+//     const ROWS: usize;
+//     const COLS: usize;
 
-    const ELEMS: usize;
-}
+//     const ELEMS: usize;
+// }
 
-impl MatType for M2x2 {
-    type Vec = V2;
-    const ROWS: usize = 2;
-    const COLS: usize = 2;
-    const ELEMS: usize = 4;
-}
+// impl MatType for M2x2 {
+//     type Vec = V2;
+//     const ROWS: usize = 2;
+//     const COLS: usize = 2;
+//     const ELEMS: usize = 4;
+// }
 
-impl MatType for M3x3 {
-    type Vec = V3;
-    const ROWS: usize = 3;
-    const COLS: usize = 3;
-    const ELEMS: usize = 9;
-}
+// impl MatType for M3x3 {
+//     type Vec = V3;
+//     const ROWS: usize = 3;
+//     const COLS: usize = 3;
+//     const ELEMS: usize = 9;
+// }
 
-impl MatType for M4x4 {
-    type Vec = V4;
-    const ROWS: usize = 4;
-    const COLS: usize = 4;
-    const ELEMS: usize = 16;
-}
+// impl MatType for M4x4 {
+//     type Vec = V4;
+//     const ROWS: usize = 4;
+//     const COLS: usize = 4;
+//     const ELEMS: usize = 16;
+// }

@@ -1,8 +1,5 @@
-use crate::math::geom::*;
-use crate::math::quat::*;
-use crate::math::scalar::*;
-use crate::math::traits::*;
-use crate::math::vec::*;
+use crate::geom::*;
+use crate::prelude::*;
 
 use std::{fmt, ops};
 

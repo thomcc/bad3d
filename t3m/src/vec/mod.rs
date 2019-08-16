@@ -1,23 +1,24 @@
-use crate::math::mat::*;
-use crate::math::scalar::*;
-use crate::math::traits::*;
+// XXX this file needs cleanup!
+use crate::mat::*;
+use crate::scalar::*;
+use crate::traits::*;
 use std::ops::*;
 use std::{self, fmt, slice};
 mod iter;
-#[macro_use]
+
 mod v3;
 mod v4;
 pub use iter::VecIter;
-pub use v3::{vec3, V3};
-pub use v4::{vec4, V4};
-pub(crate) mod gvec;
-pub use gvec::*;
 #[cfg(not(target_feature = "sse2"))]
 #[doc(hidden)]
 pub use v3::__v3_const;
+pub use v3::{vec3, V3};
 #[cfg(not(target_feature = "sse2"))]
 #[doc(hidden)]
 pub use v4::__v4_const;
+pub use v4::{vec4, V4};
+pub(crate) mod idx3;
+pub mod ivec;
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 #[repr(C)]
@@ -36,60 +37,53 @@ impl fmt::Display for V2 {
         write!(f, "vec2({}, {})", self.x, self.y)
     }
 }
+// pub trait VecType:
+//     Copy
+//     + Clone
+//     + Fold
+//     + Map
+//     + ApproxEq
+//     + Add<Output = Self>
+//     + Sub<Output = Self>
+//     + AddAssign
+//     + SubAssign
+//     + Mul<f32, Output = Self>
+//     + Div<f32, Output = Self>
+//     + MulAssign<f32>
+//     + DivAssign<f32>
+//     + Neg<Output = Self>
+//     + Mul<Output = Self>
+//     + Div<Output = Self>
+//     + MulAssign
+//     + DivAssign
+//     + AsRef<[f32]>
+//     + AsMut<[f32]>
+//     + Index<usize, Output = f32>
+//     + Index<Range<usize>, Output = [f32]>
+//     + Index<RangeFrom<usize>, Output = [f32]>
+//     + Index<RangeTo<usize>, Output = [f32]>
+//     + Index<RangeFull, Output = [f32]>
+//     + IndexMut<usize, Output = f32>
+//     + IndexMut<Range<usize>, Output = [f32]>
+//     + IndexMut<RangeFrom<usize>, Output = [f32]>
+//     + IndexMut<RangeTo<usize>, Output = [f32]>
+//     + IndexMut<RangeFull, Output = [f32]>
+// {
+//     const SIZE: usize;
 
-impl fmt::Display for V4 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "vec4({}, {}, {}, {})", self.x(), self.y(), self.z(), self.w())
-    }
-}
+//     fn splat(v: f32) -> Self;
+//     #[inline]
+//     fn min(self, o: Self) -> Self {
+//         self.map2(o, |a, b| a.min(b))
+//     }
+//     #[inline]
+//     fn max(self, o: Self) -> Self {
+//         self.map2(o, |a, b| a.max(b))
+//     }
+//     fn dot(self, o: Self) -> f32;
+// }
 
-pub trait VecType:
-    Copy
-    + Clone
-    + Fold
-    + Map
-    + ApproxEq
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + AddAssign
-    + SubAssign
-    + Mul<f32, Output = Self>
-    + Div<f32, Output = Self>
-    + MulAssign<f32>
-    + DivAssign<f32>
-    + Neg<Output = Self>
-    + Mul<Output = Self>
-    + Div<Output = Self>
-    + MulAssign
-    + DivAssign
-    + AsRef<[f32]>
-    + AsMut<[f32]>
-    + Index<usize, Output = f32>
-    + Index<Range<usize>, Output = [f32]>
-    + Index<RangeFrom<usize>, Output = [f32]>
-    + Index<RangeTo<usize>, Output = [f32]>
-    + Index<RangeFull, Output = [f32]>
-    + IndexMut<usize, Output = f32>
-    + IndexMut<Range<usize>, Output = [f32]>
-    + IndexMut<RangeFrom<usize>, Output = [f32]>
-    + IndexMut<RangeTo<usize>, Output = [f32]>
-    + IndexMut<RangeFull, Output = [f32]>
-{
-    const SIZE: usize;
-
-    fn splat(v: f32) -> Self;
-    #[inline]
-    fn min(self, o: Self) -> Self {
-        self.map2(o, |a, b| a.min(b))
-    }
-    #[inline]
-    fn max(self, o: Self) -> Self {
-        self.map2(o, |a, b| a.max(b))
-    }
-    fn dot(self, o: Self) -> f32;
-}
-
-impl Fold for V2 {
+impl V2 {
     #[inline]
     fn fold(self, f: impl Fn(f32, f32) -> f32) -> f32 {
         f(self.x, self.y)
@@ -98,6 +92,22 @@ impl Fold for V2 {
     #[inline]
     fn fold2_init<T>(self, o: Self, init: T, f: impl Fn(T, f32, f32) -> T) -> T {
         f(f(init, o.x, self.x), o.y, self.y)
+    }
+
+    #[inline]
+    pub fn map2<F>(self, o: Self, f: F) -> Self
+    where
+        F: Fn(f32, f32) -> f32,
+    {
+        self.map3(o, self, |a, b, _| f(a, b))
+    }
+
+    #[inline]
+    pub fn map<F>(self, f: F) -> Self
+    where
+        F: Fn(f32) -> f32,
+    {
+        self.map3(self, self, |a, _, _| f(a))
     }
 }
 
@@ -109,38 +119,9 @@ macro_rules! vec_from {
     )+};
 }
 
-vec_from! { V2 [
-    (t: (i32, i32)) -> vec2(t.0 as f32, t.1 as f32);
-    (t: (u32, u32)) -> vec2(t.0 as f32, t.1 as f32);
-    (t: (usize, usize)) -> vec2(t.0 as f32, t.1 as f32);
-    (t: (isize, isize)) -> vec2(t.0 as f32, t.1 as f32);
-    (t: (f64, f64)) -> vec2(t.0 as f32, t.1 as f32);
-
-    (t: [i32; 2]) -> vec2(t[0] as f32, t[1] as f32);
-    (t: [u32; 2]) -> vec2(t[0] as f32, t[1] as f32);
-    (t: [isize; 2]) -> vec2(t[0] as f32, t[1] as f32);
-    (t: [usize; 2]) -> vec2(t[0] as f32, t[1] as f32);
-    (t: [f64; 2]) -> vec2(t[0] as f32, t[1] as f32);
-]}
-
 vec_from! { V3 [
     (t: (V2, f32)) -> vec3(t.0.x, t.0.y, t.1);
     (t: (f32, V2)) -> vec3(t.0, t.1.x, t.1.y);
-
-    (t: (V2, i32)) -> vec3(t.0.x, t.0.y, t.1 as f32);
-    (t: (i32, V2)) -> vec3(t.0 as f32, t.1.x, t.1.y);
-
-    (t: (i32, i32, i32)) -> vec3(t.0 as f32, t.1 as f32, t.2 as f32);
-    (t: (u32, u32, u32)) -> vec3(t.0 as f32, t.1 as f32, t.2 as f32);
-    (t: (isize, isize, isize)) -> vec3(t.0 as f32, t.1 as f32, t.2 as f32);
-    (t: (usize, usize, usize)) -> vec3(t.0 as f32, t.1 as f32, t.2 as f32);
-    (t: (f64, f64, f64)) -> vec3(t.0 as f32, t.1 as f32, t.2 as f32);
-
-    (t: [i32; 3]) -> vec3(t[0] as f32, t[1] as f32, t[2] as f32);
-    (t: [u32; 3]) -> vec3(t[0] as f32, t[1] as f32, t[2] as f32);
-    (t: [isize; 3]) -> vec3(t[0] as f32, t[1] as f32, t[2] as f32);
-    (t: [usize; 3]) -> vec3(t[0] as f32, t[1] as f32, t[2] as f32);
-    (t: [f64; 3]) -> vec3(t[0] as f32, t[1] as f32, t[2] as f32);
 ]}
 
 vec_from! { V4 [
@@ -148,26 +129,8 @@ vec_from! { V4 [
     (t: (f32, V2, f32)) -> vec4(t.0, t.1.x, t.1.y, t.2);
     (t: (f32, f32, V2)) -> vec4(t.0, t.1, t.2.x, t.2.y);
     (t: (V2, V2)) -> vec4(t.0.x, t.0.y, t.1.x, t.1.y);
-
     (t: (V3, f32)) -> vec4(t.0.x(), t.0.y(), t.0.z(), t.1);
     (t: (f32, V3)) -> vec4(t.0, t.1.x(), t.1.y(), t.1.z());
-
-    (t: (V2, i32, i32)) -> vec4(t.0.x, t.0.y, t.1 as f32, t.2 as f32);
-    (t: (i32, V2, i32)) -> vec4(t.0 as f32, t.1.x, t.1.y, t.2 as f32);
-    (t: (i32, i32, V2)) -> vec4(t.0 as f32, t.1 as f32, t.2.x, t.2.y);
-
-    (t: (V3, i32)) -> vec4(t.0.x(), t.0.y(), t.0.z(), t.1 as f32);
-    (t: (i32, V3)) -> vec4(t.0 as f32, t.1.x(), t.1.y(), t.1.z());
-
-    (t: (i32, i32, i32, i32)) -> vec4(t.0 as f32, t.1 as f32, t.2 as f32, t.3 as f32);
-    (t: (u32, u32, u32, u32)) -> vec4(t.0 as f32, t.1 as f32, t.2 as f32, t.3 as f32);
-    (t: (f64, f64, f64, f64)) -> vec4(t.0 as f32, t.1 as f32, t.2 as f32, t.3 as f32);
-
-    (t: [i32;   4]) -> vec4(t[0] as f32, t[1] as f32, t[2] as f32, t[3] as f32);
-    (t: [u32;   4]) -> vec4(t[0] as f32, t[1] as f32, t[2] as f32, t[3] as f32);
-    (t: [isize; 4]) -> vec4(t[0] as f32, t[1] as f32, t[2] as f32, t[3] as f32);
-    (t: [usize; 4]) -> vec4(t[0] as f32, t[1] as f32, t[2] as f32, t[3] as f32);
-    (t: [f64;   4]) -> vec4(t[0] as f32, t[1] as f32, t[2] as f32, t[3] as f32);
 ]}
 
 macro_rules! impl_index_op {
@@ -463,7 +426,7 @@ macro_rules! do_vec_boilerplate {
 
             #[inline]
             pub fn lerp(self, b: Self, t: f32) -> Self {
-                self.map2(b, |x, y| x.lerp(y, t))
+                self.map2(b, |x, y| lerp(x, y, t))
             }
 
             #[inline]
@@ -603,7 +566,7 @@ macro_rules! do_vec_boilerplate {
 
             #[inline]
             fn approx_zero_e(&self, e: f32) -> bool {
-                self.fold_init(true, |cnd, val| cnd && val.approx_zero_e(e))
+                self.fold2_init(*self, true, |cnd, val, _| cnd && val.approx_zero_e(e))
             }
 
             #[inline]
@@ -612,25 +575,25 @@ macro_rules! do_vec_boilerplate {
             }
         }
 
-        impl Map for $Vn {
+        impl $Vn {
             #[inline]
             fn map3<F: Fn(f32, f32, f32) -> f32>(self, a: Self, b: Self, f: F) -> Self {
                 Self { $($field: f(self.$field, a.$field, b.$field)),+ }
             }
         }
 
-        impl VecType for $Vn {
-            const SIZE: usize = $length;
+        // impl VecType for $Vn {
+        //     const SIZE: usize = $length;
 
-            #[inline]
-            fn splat(v: f32) -> Self {
-                Self { $($field: v),+ }
-            }
-            #[inline]
-            fn dot(self, o: Self) -> f32 {
-                $Vn::dot(self, o)
-            }
-        }
+        //     #[inline]
+        //     fn splat(v: f32) -> Self {
+        //         Self { $($field: v),+ }
+        //     }
+        //     #[inline]
+        //     fn dot(self, o: Self) -> f32 {
+        //         $Vn::dot(self, o)
+        //     }
+        // }
     }
 }
 
@@ -753,9 +716,4 @@ impl IntoIterator for V4 {
     fn into_iter(self) -> VecIter<f32> {
         VecIter::new(self.arr(), 4)
     }
-}
-
-#[inline]
-pub fn cross(a: V3, b: V3) -> V3 {
-    a.cross(b)
 }

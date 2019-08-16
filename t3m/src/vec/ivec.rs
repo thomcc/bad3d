@@ -1,17 +1,15 @@
 #![allow(nonstandard_style)]
 
-use crate::math::traits::Lerp;
-
 #[derive(Clone, Copy, Debug, Hash, PartialEq, PartialOrd, Eq, Ord, Default)]
 #[repr(C)]
-pub struct GVec2<T: Copy> {
+pub struct IVec2<T: Copy> {
     pub x: T,
     pub y: T,
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, PartialOrd, Eq, Ord, Default)]
 #[repr(C)]
-pub struct GVec3<T: Copy> {
+pub struct IVec3<T: Copy> {
     pub x: T,
     pub y: T,
     pub z: T,
@@ -19,101 +17,103 @@ pub struct GVec3<T: Copy> {
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, PartialOrd, Eq, Ord, Default)]
 #[repr(C)]
-pub struct GVec4<T: Copy> {
+pub struct IVec4<T: Copy> {
     pub x: T,
     pub y: T,
     pub z: T,
     pub w: T,
 }
 
-pub type I32x2 = GVec2<i32>;
-pub type I32x3 = GVec3<i32>;
-pub type I32x4 = GVec4<i32>;
+// pub type Int2 = IVec2<i32>;
+// pub type Int3 = IVec3<i32>;
+// pub type Int4 = IVec4<i32>;
 
-pub type U32x2 = GVec2<u32>;
-pub type U32x3 = GVec3<u32>;
-pub type U32x4 = GVec4<u32>;
+// pub type UInt2 = IVec2<u32>;
+// pub type UInt3 = IVec3<u32>;
+// pub type UInt4 = IVec4<u32>;
+pub mod aliases {
+    use super::*;
+    pub type I32x2 = IVec2<i32>;
+    pub type I32x3 = IVec3<i32>;
+    pub type I32x4 = IVec4<i32>;
 
-pub type U16x2 = GVec2<u16>;
-pub type U16x3 = GVec3<u16>;
-pub type U16x4 = GVec4<u16>;
+    pub type U32x2 = IVec2<u32>;
+    pub type U32x3 = IVec3<u32>;
+    pub type U32x4 = IVec4<u32>;
 
-pub type I16x2 = GVec2<i16>;
-pub type I16x3 = GVec3<i16>;
-pub type I16x4 = GVec4<i16>;
+    pub type U16x2 = IVec2<u16>;
+    pub type U16x3 = IVec3<u16>;
+    pub type U16x4 = IVec4<u16>;
 
-pub type U8x2 = GVec2<u8>;
-pub type U8x3 = GVec3<u8>;
-pub type U8x4 = GVec4<u8>;
+    pub type I16x2 = IVec2<i16>;
+    pub type I16x3 = IVec3<i16>;
+    pub type I16x4 = IVec4<i16>;
 
-pub type Size2 = GVec2<usize>;
-pub type Size3 = GVec3<usize>;
-pub type Size4 = GVec4<usize>;
+    pub type U8x2 = IVec2<u8>;
+    pub type U8x3 = IVec3<u8>;
+    pub type U8x4 = IVec4<u8>;
 
-pub type Byte2 = GVec2<u8>;
-pub type Byte3 = GVec3<u8>;
-pub type Byte4 = GVec4<u8>;
+    pub type Size2 = IVec2<usize>;
+    pub type Size3 = IVec3<usize>;
+    pub type Size4 = IVec4<usize>;
 
-// pub type Int2 = GVec2<i32>;
-// pub type Int3 = GVec3<i32>;
-// pub type Int4 = GVec4<i32>;
+    pub type Byte2 = IVec2<u8>;
+    pub type Byte3 = IVec3<u8>;
+    pub type Byte4 = IVec4<u8>;
 
-// pub type UInt2 = GVec2<u32>;
-// pub type UInt3 = GVec3<u32>;
-// pub type UInt4 = GVec4<u32>;
+    #[inline]
+    pub fn int2(x: i32, y: i32) -> I32x2 {
+        IVec2::new(x, y)
+    }
+    #[inline]
+    pub fn int3(x: i32, y: i32, z: i32) -> I32x3 {
+        IVec3::new(x, y, z)
+    }
+    #[inline]
+    pub fn int4(x: i32, y: i32, z: i32, w: i32) -> I32x4 {
+        IVec4::new(x, y, z, w)
+    }
 
-#[inline]
-pub fn int2(x: i32, y: i32) -> I32x2 {
-    GVec2::new(x, y)
+    #[inline]
+    pub fn uint2(x: u32, y: u32) -> U32x2 {
+        IVec2::new(x, y)
+    }
+    #[inline]
+    pub fn uint3(x: u32, y: u32, z: u32) -> U32x3 {
+        IVec3::new(x, y, z)
+    }
+    #[inline]
+    pub fn uint4(x: u32, y: u32, z: u32, w: u32) -> U32x4 {
+        IVec4::new(x, y, z, w)
+    }
+
+    #[inline]
+    pub fn ushort2(x: u16, y: u16) -> U16x2 {
+        IVec2::new(x, y)
+    }
+
+    #[inline]
+    pub fn ushort3(x: u16, y: u16, z: u16) -> U16x3 {
+        IVec3::new(x, y, z)
+    }
+
+    #[inline]
+    pub fn ushort4(x: u16, y: u16, z: u16, w: u16) -> U16x4 {
+        IVec4::new(x, y, z, w)
+    }
+
+    #[inline]
+    pub fn byte4(x: u8, y: u8, z: u8, w: u8) -> Byte4 {
+        IVec4::new(x, y, z, w)
+    }
+
+    #[inline]
+    pub fn byte3(x: u8, y: u8, z: u8) -> Byte3 {
+        IVec3::new(x, y, z)
+    }
 }
-#[inline]
-pub fn int3(x: i32, y: i32, z: i32) -> I32x3 {
-    GVec3::new(x, y, z)
-}
-#[inline]
-pub fn int4(x: i32, y: i32, z: i32, w: i32) -> I32x4 {
-    GVec4::new(x, y, z, w)
-}
 
-#[inline]
-pub fn uint2(x: u32, y: u32) -> U32x2 {
-    GVec2::new(x, y)
-}
-#[inline]
-pub fn uint3(x: u32, y: u32, z: u32) -> U32x3 {
-    GVec3::new(x, y, z)
-}
-#[inline]
-pub fn uint4(x: u32, y: u32, z: u32, w: u32) -> U32x4 {
-    GVec4::new(x, y, z, w)
-}
-
-#[inline]
-pub fn ushort2(x: u16, y: u16) -> U16x2 {
-    GVec2::new(x, y)
-}
-
-#[inline]
-pub fn ushort3(x: u16, y: u16, z: u16) -> U16x3 {
-    GVec3::new(x, y, z)
-}
-
-#[inline]
-pub fn ushort4(x: u16, y: u16, z: u16, w: u16) -> U16x4 {
-    GVec4::new(x, y, z, w)
-}
-
-#[inline]
-pub fn byte4(x: u8, y: u8, z: u8, w: u8) -> Byte4 {
-    GVec4::new(x, y, z, w)
-}
-
-#[inline]
-pub fn byte3(x: u8, y: u8, z: u8) -> Byte3 {
-    GVec3::new(x, y, z)
-}
-
-impl<T: Copy> GVec2<T> {
+impl<T: Copy> IVec2<T> {
     #[inline]
     pub fn fold<F: FnMut(T, T) -> T>(self, mut f: F) -> T {
         f(self.x, self.y)
@@ -136,7 +136,7 @@ impl<T: Copy> GVec2<T> {
     }
 }
 
-impl<T: Copy> GVec3<T> {
+impl<T: Copy> IVec3<T> {
     #[inline]
     pub fn fold<F: FnMut(T, T) -> T>(self, mut f: F) -> T {
         let acc = f(self.x, self.y);
@@ -164,7 +164,7 @@ impl<T: Copy> GVec3<T> {
     }
 }
 
-impl<T: Copy> GVec4<T> {
+impl<T: Copy> IVec4<T> {
     #[inline]
     pub fn fold<F: FnMut(T, T) -> T>(self, mut f: F) -> T {
         let acc = f(self.x, self.y);
@@ -197,18 +197,18 @@ impl<T: Copy> GVec4<T> {
     #[inline]
     pub fn dot(self, o: Self) -> T
     where
-        T: Copy + std::ops::Add<T, Output = T> + std::ops::Mul<T, Output = T>,
+        T: std::ops::Mul<T, Output = T> + std::ops::Add<T, Output = T>,
     {
         self.x * o.x + self.y * o.y
     }
 }
 
-impl<T> GVec3<T>
-where
-    T: Copy + std::ops::Add<T, Output = T> + std::ops::Mul<T, Output = T>,
-{
+impl<T: Copy> IVec3<T> {
     #[inline]
-    pub fn dot(self, o: Self) -> T {
+    pub fn dot(self, o: Self) -> T
+    where
+        T: std::ops::Mul<T, Output = T> + std::ops::Add<T, Output = T>,
+    {
         self.x * o.x + self.y * o.y + self.z * o.z
     }
 }
@@ -227,66 +227,66 @@ macro_rules! vec_from {
 }
 
 vec_from! {
-    GVec2<T>[
-        (t: (T, T)) -> GVec2::new(t.0, t.1);
-        (t: [T; 2]) -> GVec2::new(t[0], t[1]);
-        (t: &'a [T; 2]) -> GVec2::new(t[0], t[1]);
+    IVec2<T>[
+        (t: (T, T)) -> IVec2::new(t.0, t.1);
+        (t: [T; 2]) -> IVec2::new(t[0], t[1]);
+        (t: &'a [T; 2]) -> IVec2::new(t[0], t[1]);
 
-        (v: GVec4<T>) -> GVec2::new(v.x, v.y);
-        (v: GVec3<T>) -> GVec2::new(v.x, v.y);
+        (v: IVec4<T>) -> IVec2::new(v.x, v.y);
+        (v: IVec3<T>) -> IVec2::new(v.x, v.y);
     ]
-    GVec3<T>[
-        (t: (T, T, T)) -> GVec3::new(t.0, t.1, t.2);
-        (t: [T; 3]) -> GVec3::new(t[0], t[1], t[2]);
-        (t: &'a [T; 3]) -> GVec3::new(t[0], t[1], t[2]);
+    IVec3<T>[
+        (t: (T, T, T)) -> IVec3::new(t.0, t.1, t.2);
+        (t: [T; 3]) -> IVec3::new(t[0], t[1], t[2]);
+        (t: &'a [T; 3]) -> IVec3::new(t[0], t[1], t[2]);
 
-        // (v: GVec2<T>) -> GVec3::new(v.x, v.y, T::ZERO);
+        // (v: IVec2<T>) -> IVec3::new(v.x, v.y, T::ZERO);
 
-        (t: (GVec2<T>, T)) -> GVec3::new(t.0.x, t.0.y, t.1);
-        (t: (T, GVec2<T>)) -> GVec3::new(t.0, t.1.x, t.1.y);
+        (t: (IVec2<T>, T)) -> IVec3::new(t.0.x, t.0.y, t.1);
+        (t: (T, IVec2<T>)) -> IVec3::new(t.0, t.1.x, t.1.y);
 
-        (v: GVec4<T>) -> GVec3::new(v.x, v.y, v.z);
+        (v: IVec4<T>) -> IVec3::new(v.x, v.y, v.z);
     ]
-    GVec4<T>[
-        (t: (T, T, T, T)) -> GVec4::new(t.0, t.1, t.2, t.3);
-        (t: [T; 4]) -> GVec4::new(t[0], t[1], t[2], t[3]);
-        (t: &'a [T; 4]) -> GVec4::new(t[0], t[1], t[2], t[3]);
+    IVec4<T>[
+        (t: (T, T, T, T)) -> IVec4::new(t.0, t.1, t.2, t.3);
+        (t: [T; 4]) -> IVec4::new(t[0], t[1], t[2], t[3]);
+        (t: &'a [T; 4]) -> IVec4::new(t[0], t[1], t[2], t[3]);
 
-        // (v: GVec2<T>) -> GVec4::new(v.x, v.y, T::ZERO, T::ZERO);
-        // (v: GVec3<T>) -> GVec4::new(v.x, v.y, v.z, T::ZERO);
+        // (v: IVec2<T>) -> IVec4::new(v.x, v.y, T::ZERO, T::ZERO);
+        // (v: IVec3<T>) -> IVec4::new(v.x, v.y, v.z, T::ZERO);
 
-        (t: (GVec2<T>, T, T)) -> GVec4::new(t.0.x, t.0.y, t.1, t.2);
-        (t: (T, GVec2<T>, T)) -> GVec4::new(t.0, t.1.x, t.1.y, t.2);
-        (t: (T, T, GVec2<T>)) -> GVec4::new(t.0, t.1, t.2.x, t.2.y);
-        (t: (GVec2<T>, GVec2<T>)) -> GVec4::new(t.0.x, t.0.y, t.1.x, t.1.y);
+        (t: (IVec2<T>, T, T)) -> IVec4::new(t.0.x, t.0.y, t.1, t.2);
+        (t: (T, IVec2<T>, T)) -> IVec4::new(t.0, t.1.x, t.1.y, t.2);
+        (t: (T, T, IVec2<T>)) -> IVec4::new(t.0, t.1, t.2.x, t.2.y);
+        (t: (IVec2<T>, IVec2<T>)) -> IVec4::new(t.0.x, t.0.y, t.1.x, t.1.y);
 
-        (t: (GVec3<T>, T)) -> GVec4::new(t.0.x, t.0.y, t.0.z, t.1);
-        (t: (T, GVec3<T>)) -> GVec4::new(t.0, t.1.x, t.1.y, t.1.z);
+        (t: (IVec3<T>, T)) -> IVec4::new(t.0.x, t.0.y, t.0.z, t.1);
+        (t: (T, IVec3<T>)) -> IVec4::new(t.0, t.1.x, t.1.y, t.1.z);
     ]
 }
 
-impl<T: Copy> Into<(T, T)> for GVec2<T> {
+impl<T: Copy> Into<(T, T)> for IVec2<T> {
     #[inline]
     fn into(self) -> (T, T) {
         (self.x, self.y)
     }
 }
 
-impl<T: Copy> Into<(T, T, T)> for GVec3<T> {
+impl<T: Copy> Into<(T, T, T)> for IVec3<T> {
     #[inline]
     fn into(self) -> (T, T, T) {
         (self.x, self.y, self.z)
     }
 }
 
-impl<T: Copy> Into<(T, T, T, T)> for GVec4<T> {
+impl<T: Copy> Into<(T, T, T, T)> for IVec4<T> {
     #[inline]
     fn into(self) -> (T, T, T, T) {
         (self.x, self.y, self.z, self.w)
     }
 }
 
-macro_rules! gvec_idx_ops {
+macro_rules! ivec_idx_ops {
     ($Vn:ident <$T:ident>, $Indexer:ty, $out_type:ty) => {
         impl<$T: Copy> std::ops::Index<$Indexer> for $Vn<$T> {
             type Output = $out_type;
@@ -305,7 +305,7 @@ macro_rules! gvec_idx_ops {
     };
 }
 
-macro_rules! gvec_boilerplate {
+macro_rules! ivec_boilerplate {
     ($Vn: ident { $($field: ident : $index: expr),+ }, $length: expr) => {
         impl<T: Copy> $Vn<T> {
 
@@ -369,13 +369,13 @@ macro_rules! gvec_boilerplate {
             }
         }
 
-        gvec_idx_ops!($Vn<T>, usize, T);
-        gvec_idx_ops!($Vn<T>, std::ops::Range<usize>, [T]);
-        gvec_idx_ops!($Vn<T>, std::ops::RangeFrom<usize>, [T]);
-        gvec_idx_ops!($Vn<T>, std::ops::RangeTo<usize>, [T]);
-        gvec_idx_ops!($Vn<T>, std::ops::RangeInclusive<usize>, [T]);
-        gvec_idx_ops!($Vn<T>, std::ops::RangeToInclusive<usize>, [T]);
-        gvec_idx_ops!($Vn<T>, std::ops::RangeFull, [T]);
+        ivec_idx_ops!($Vn<T>, usize, T);
+        ivec_idx_ops!($Vn<T>, std::ops::Range<usize>, [T]);
+        ivec_idx_ops!($Vn<T>, std::ops::RangeFrom<usize>, [T]);
+        ivec_idx_ops!($Vn<T>, std::ops::RangeTo<usize>, [T]);
+        ivec_idx_ops!($Vn<T>, std::ops::RangeInclusive<usize>, [T]);
+        ivec_idx_ops!($Vn<T>, std::ops::RangeToInclusive<usize>, [T]);
+        ivec_idx_ops!($Vn<T>, std::ops::RangeFull, [T]);
 
         impl<T: Copy + std::ops::Neg<Output = T>> std::ops::Neg for $Vn<T> {
             type Output = Self;
@@ -549,7 +549,7 @@ macro_rules! gvec_boilerplate {
 
             // #[inline]
             // pub fn clamp(self, min: Self, max: Self) -> Self {
-            //     Self { $($field: crate::math::clamp(self.$field, min.$field, max.$field)),+ }
+            //     Self { $($field: crate::clamp(self.$field, min.$field, max.$field)),+ }
             // }
 
             #[inline]
@@ -569,25 +569,18 @@ macro_rules! gvec_boilerplate {
                 self.safe_div(denom).unwrap_or_default()
             }
 
-            /// Shorthand for `self.safe_div(denom).unwrap_or(Self::ZERO)`.
-            #[inline]
-            pub fn lerp(self, b: Self, t: f32) -> Self
-            where T: Lerp
-            {
-                Self { $($field: self.$field.lerp(b.$field, t)),+ }
-            }
-        }
-
-        impl<T: Copy + Lerp> Lerp for $Vn<T> {
-            #[inline]
-            fn lerp(self, b: Self, t: f32) -> Self {
-                Self { $($field: crate::math::lerp(self.$field, b.$field, t)),+ }
-            }
+            // /// Shorthand for `self.safe_div(denom).unwrap_or(Self::ZERO)`.
+            // #[inline]
+            // pub fn lerp(self, b: Self, t: f32) -> Self
+            // where T: Lerp
+            // {
+            //     Self { $($field: self.$field.lerp(b.$field, t)),+ }
+            // }
         }
 
     }
 }
 
-gvec_boilerplate!(GVec2 { x: 0, y: 1 }, 2);
-gvec_boilerplate!(GVec3 { x: 0, y: 1, z: 2 }, 3);
-gvec_boilerplate!(GVec4 { x: 0, y: 1, z: 2, w: 3 }, 4);
+ivec_boilerplate!(IVec2 { x: 0, y: 1 }, 2);
+ivec_boilerplate!(IVec3 { x: 0, y: 1, z: 2 }, 3);
+ivec_boilerplate!(IVec4 { x: 0, y: 1, z: 2, w: 3 }, 4);

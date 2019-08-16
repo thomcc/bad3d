@@ -1,4 +1,4 @@
-use crate::math::traits::*;
+use crate::traits::*;
 
 /// `std::f32::consts::EPSILON.sqrt()`, under the logic that
 /// we should assume that any arbitary calculation has probably
@@ -25,11 +25,9 @@ impl ApproxEq for f32 {
     }
 }
 
-impl Lerp for f32 {
-    #[inline]
-    fn lerp(self, b: f32, t: f32) -> f32 {
-        self * (1.0 - t) + b * t
-    }
+#[inline]
+pub fn lerp(a: f32, b: f32, t: f32) -> f32 {
+    a * (1.0 - t) + b * t
 }
 
 #[inline]

@@ -1,7 +1,7 @@
-use crate::math::mat::*;
-use crate::math::plane::*;
-use crate::math::traits::*;
-use crate::math::vec::*;
+use crate::mat::*;
+use crate::plane::*;
+use crate::traits::*;
+use crate::vec::*;
 
 use std::ops::*;
 
@@ -467,12 +467,12 @@ impl Quat {
     pub const IDENTITY: Quat = Quat(V4::POS_W);
 }
 
-impl Lerp for Quat {
-    #[inline]
-    fn lerp(self, o: Self, t: f32) -> Self {
-        Quat(self.0.slerp(o.0, t))
-    }
-}
+// impl Lerp for Quat {
+//     #[inline]
+//     fn lerp(self, o: Self, t: f32) -> Self {
+//         Quat(self.0.slerp(o.0, t))
+//     }
+// }
 
 impl Mul<V3> for Quat {
     type Output = V3;

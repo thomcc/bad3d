@@ -1,6 +1,6 @@
-use crate::math::mat::*;
-use crate::math::quat::*;
-use crate::math::vec::*;
+use crate::mat::*;
+use crate::quat::*;
+use crate::vec::*;
 
 use std::ops::*;
 
