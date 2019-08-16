@@ -1,6 +1,6 @@
 use crate::core::{gjk, shape};
+use crate::gjk::CollisionDetector;
 use crate::math::prelude::*;
-
 // use std::cell::RefCell;
 // use std::collections::HashSet;
 use std::f32;
@@ -948,6 +948,7 @@ impl PhysicsContact {
 }
 
 fn find_world_contacts(
+    cd: &mut CollisionDetector,
     bodies: &[&RigidBody],
     world_cells: &[Shape],
     dt: f32,
@@ -961,7 +962,7 @@ fn find_world_contacts(
         let distance_range = params.max_drift.max(body.linear_momentum.length() * dt * body.inv_mass);
         for shape in body.shapes.iter() {
             for cell in world_cells.iter() {
-                let patch = gjk::ContactPatch::new(
+                let patch = cd.find_contact(
                     &shape.vertices[..],
                     body.pose,
                     &cell.vertices[..],
@@ -983,7 +984,12 @@ fn find_world_contacts(
     result
 }
 
-fn find_body_contacts(bodies: &[&RigidBody], _dt: f32, params: &PhysParams) -> Vec<PhysicsContact> {
+fn find_body_contacts(
+    cd: &mut CollisionDetector,
+    bodies: &[&RigidBody],
+    _dt: f32,
+    params: &PhysParams,
+) -> Vec<PhysicsContact> {
     let mut result = Vec::new();
     for (i, b0) in bodies.iter().enumerate() {
         if !b0.collides_with_body {
@@ -1005,7 +1011,7 @@ fn find_body_contacts(bodies: &[&RigidBody], _dt: f32, params: &PhysParams) -> V
             //     .max(b1.linear_momentum.length() * dt * b1.inv_mass);
             for s0 in b0.shapes.iter() {
                 for s1 in b1.shapes.iter() {
-                    let patch = gjk::ContactPatch::new(
+                    let patch = cd.find_contact(
                         &s0.vertices[..],
                         b0.pose,
                         &s1.vertices[..],
@@ -1036,6 +1042,7 @@ pub fn update_physics(
     constraints: &mut ConstraintSet,
     world_geom: &[Shape],
     perf: &crate::util::PerfLog,
+    cd: &mut CollisionDetector,
 ) {
     let dt = constraints.dt;
     let _g = perf.begin("physics");
@@ -1052,11 +1059,11 @@ pub fn update_physics(
         let bodies = bodies.iter().collect::<Vec<_>>();
         {
             let _g = perf.begin("    find contacts: world");
-            world_contacts = find_world_contacts(&bodies, world_geom, dt, &constraints.params);
+            world_contacts = find_world_contacts(cd, &bodies, world_geom, dt, &constraints.params);
         }
         {
             let _g = perf.begin("    find contacts: bodies");
-            body_contacts = find_body_contacts(&bodies, dt, &constraints.params);
+            body_contacts = find_body_contacts(cd, &bodies, dt, &constraints.params);
         }
     }
     {

@@ -256,16 +256,16 @@ fn main() -> Result<()> {
     //         None,
     //     )?);
     // }
-    scene
-        .add()
-        .box_collider(vec3(2.0, 0.1, 0.1))
-        .at(vec3(0.0, 0.0, 0.5))
-        .build();
-    scene
-        .add()
-        .box_collider(vec3(2.0, 0.4, 0.1))
-        .at(vec3(0.0, 0.0, 0.5))
-        .build();
+    // scene
+    //     .add()
+    //     .box_collider(vec3(2.0, 0.1, 0.1))
+    //     .at(vec3(0.0, 0.0, 0.5))
+    //     .build();
+    // scene
+    //     .add()
+    //     .box_collider(vec3(2.0, 0.4, 0.1))
+    //     .at(vec3(0.0, 0.0, 0.5))
+    //     .build();
     {
         let mut wm = WingMesh::new_cone(30, 0.5, 2.0);
         wm.rotate(Quat::shortest_arc(vec3(0.0, 0.0, 1.0), vec3(0.0, -0.5, -0.5)));

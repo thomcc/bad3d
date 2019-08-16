@@ -26,26 +26,6 @@ cfg_if::cfg_if! {
             }};
         }
 
-        macro_rules! simd_mask_u4 {
-            ($x:expr; 4) => {
-                simd_mask_u4![$x, $x, $x, $x]
-            };
-            ($x:expr; 3) => {
-                simd_mask_u4![$x, $x, $x, 0u32]
-            };
-            ($x:expr, $y:expr, $z:expr, $w:expr) => {{
-                const MASKARR: $crate::util::Align16<[u32; 4]> = $crate::util::Align16([$x, $y, $z, $w]);
-                const MASK: sse::__m128 =
-                    unsafe {
-                        $crate::util::ConstTransmuter::<
-                            $crate::util::Align16<[u32; 4]>,
-                            sse::__m128,
-                        > { from: MASKARR }.to
-                    };
-                MASK
-            }};
-        }
-
         impl Default for V4 {
             #[inline(always)]
             fn default()-> Self {
@@ -617,6 +597,16 @@ impl V4 {
     #[inline]
     pub fn normalize(self) -> Option<Self> {
         self.norm_len().0
+    }
+    #[inline]
+    pub fn negate_xyz(self) -> V4 {
+        simd_match! {
+            "sse2" => unsafe {
+                const XYZSIGN: __m128 = simd_mask_u4![0x8000_0000u32; 3];
+                V4(sse::_mm_xor_ps(self.0, XYZSIGN))
+            },
+            _ => vec4(-self.x, -self.y, -self.z, self.w)
+        }
     }
 
     #[inline]

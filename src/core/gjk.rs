@@ -1,4 +1,4 @@
-use crate::core::{hull, support::Support};
+use crate::core::support::Support;
 use crate::math::prelude::*;
 use std::f32;
 
@@ -300,6 +300,18 @@ pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
     bp: Pose,
     find_closest: bool,
 ) -> ContactInfo {
+    let mut cd = CollisionDetector::default();
+    do_separated(&mut cd, a, ap, b, bp, find_closest)
+}
+
+fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
+    cd: &mut CollisionDetector,
+    a: &A,
+    ap: Pose,
+    b: &B,
+    bp: Pose,
+    find_closest: bool,
+) -> ContactInfo {
     let eps = 0.00001_f32;
 
     let mut v = Point::on_sum(a, ap, b, bp, vec3(0.0, 0.0, 1.0)).p;
@@ -336,7 +348,7 @@ pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
                 next.size = 4;
             }
             assert!(next.size == 4);
-            let min_penetration_plane = hull::furthest_plane_epa(
+            let min_penetration_plane = cd.hull_api.furthest_plane_epa(
                 (next.points[0].p, next.points[1].p, next.points[2].p, next.points[3].p),
                 |v| {
                     let pa = ap * a.support(ap.orientation.conj() * v); //a.support(v);
@@ -393,6 +405,27 @@ pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
     last.compute_points()
 }
 
+#[derive(Clone, Default)]
+pub struct CollisionDetector {
+    hull_api: crate::hull::HullApi,
+}
+
+impl CollisionDetector {
+    pub fn new() -> Self {
+        Default::default()
+    }
+    pub fn find_contact<A: Support + ?Sized, B: Support + ?Sized>(
+        &mut self,
+        a: &A,
+        ap: Pose,
+        b: &B,
+        bp: Pose,
+        max_sep: f32,
+    ) -> ContactPatch {
+        ContactPatch::new_with(self, a, ap, b, bp, max_sep)
+    }
+}
+
 #[derive(Copy, Clone, Debug, Default)]
 pub struct ContactPatch {
     pub hit_info: [ContactInfo; 5],
@@ -401,6 +434,18 @@ pub struct ContactPatch {
 
 impl ContactPatch {
     pub fn new<A: Support + ?Sized, B: Support + ?Sized>(
+        s0: &A,
+        ap: Pose,
+        s1: &B,
+        bp: Pose,
+        max_sep: f32,
+    ) -> ContactPatch {
+        let mut cd = CollisionDetector::default();
+        Self::new_with(&mut cd, s0, ap, s1, bp, max_sep)
+    }
+
+    pub fn new_with<A: Support + ?Sized, B: Support + ?Sized>(
+        cd: &mut CollisionDetector,
         s0: &A,
         ap: Pose,
         s1: &B,
@@ -431,7 +476,7 @@ impl ContactPatch {
                 * Pose::new(vec3(0.0, 0.0, 0.0), wiggle)
                 * Pose::new(pivot, quat(0.0, 0.0, 0.0, 1.0));
             //&TransformedSupport { pose: ap, object: s0 }
-            let mut next = separated(s0, ar * ap, s1, bp, true);
+            let mut next = do_separated(cd, s0, ar * ap, s1, bp, true);
             // let mut next = separated(s0, ar * ap, s1, bp, true);
 
             next.plane.normal = n;

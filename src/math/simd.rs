@@ -285,9 +285,10 @@ pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
             i += 4;
         }
         if i != vs.len() {
+            chek::debug_lt!(i, vs.len());
             let (x, y, z) = match vs.len() - i {
                 1 => {
-                    debug_assert!((sp as usize + 1) == (ep as usize));
+                    chek::debug_le!((sp as usize + 1), (ep as usize));
                     let xy = *sp;
                     let z = sse::_mm_shuffle_ps(xy, xy, shuf![2, 2, 2, 2]);
                     let xy = sse::_mm_mul_ps(xy, d_xyxy);
@@ -297,7 +298,7 @@ pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
                     (x, y, z)
                 }
                 2 => {
-                    debug_assert!((sp as usize + 2) == (ep as usize));
+                    chek::debug_le!((sp as usize + 2), (ep as usize));
                     let v0 = *sp;
                     let v1 = *sp.add(1);
                     let xy = sse::_mm_movelh_ps(v0, v1);
@@ -310,7 +311,7 @@ pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
                     (x, y, z)
                 }
                 3 => {
-                    debug_assert!((sp as usize + 3) == (ep as usize));
+                    chek::debug_le!((sp as usize + 3), (ep as usize));
                     let v0 = *sp;
                     let v1 = *sp.add(1);
                     let v2 = *sp.add(2);

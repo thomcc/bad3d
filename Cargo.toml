@@ -31,7 +31,7 @@ quickcheck = "0.8.5"
 debug = true
 # opt-level = "s"
 lto = "thin"
-# debug-assertions = true
+debug-assertions = true
 # [profile.dev]
 # opt-level = 2
 

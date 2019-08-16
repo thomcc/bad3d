@@ -1370,7 +1370,7 @@ impl WingMesh {
         // The fact that the validity check fails without update_face_planes
         // indicates there's a bug somewhere... I've double-checked that the
         // edge list match references, so it must be in our code elswhere D:
-        result.update_face_planes();
+        // result.update_face_planes();
         result.debug_assert_valid();
         result
     }

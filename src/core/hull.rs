@@ -1,8 +1,95 @@
 use crate::math::prelude::*;
 use crate::util;
 use smallbitvec::SmallBitVec;
-use smallvec::{smallvec, SmallVec};
+use smallvec::SmallVec;
 use std::{f32, i32, isize, ops::*, usize};
+
+#[derive(Clone, Debug, Default)]
+pub struct HullApi {
+    verts: SmallVec<[V3; 64]>,
+    tris: SmallVec<[HullTri; 64]>,
+    used: SmallVec<[usize; 64]>,
+    map: SmallVec<[isize; 64]>,
+    is_extreme: smallbitvec::SmallBitVec,
+}
+
+impl HullApi {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn clear(&mut self) {
+        self.verts.clear();
+        self.used.clear();
+        self.map.clear();
+        self.is_extreme.clear();
+        self.tris.clear();
+    }
+
+    pub fn furthest_plane_epa<F: Fn(V3) -> V3>(&mut self, simp: (V3, V3, V3, V3), max_dir: F) -> Plane {
+        do_furthest_plane_epa(self, simp, max_dir)
+    }
+
+    pub fn compute_hull_bounded(&mut self, verts: &mut [V3], vert_limit: usize) -> Option<(Vec<[u16; 3]>, usize)> {
+        let mut v = Vec::new();
+        let len = do_compute_hull_bounded_into(self, verts, &mut v, vert_limit)?;
+        Some((v, len))
+    }
+
+    pub fn compute_hull(&mut self, verts: &mut [V3]) -> Option<(Vec<[u16; 3]>, usize)> {
+        self.compute_hull_bounded(verts, 0)
+    }
+
+    pub fn compute_hull_bounded_into(
+        &mut self,
+        verts: &mut [V3],
+        out: &mut Vec<[u16; 3]>,
+        limit: usize,
+    ) -> Option<usize> {
+        out.clear();
+        do_compute_hull_bounded_into(self, verts, out, limit)
+    }
+
+    pub fn compute_hull_into(&mut self, verts: &mut [V3], out: &mut Vec<[u16; 3]>) -> Option<usize> {
+        self.compute_hull_bounded_into(verts, out, 0)
+    }
+
+    pub fn compute_convex(
+        &mut self,
+        mut verts: Vec<V3>,
+        vert_limit: impl Into<Option<usize>>,
+    ) -> Option<crate::shape::Shape> {
+        let s = self.compute_hull_trunc(&mut verts, vert_limit.into())?;
+        Some(crate::shape::Shape::new(verts, s))
+    }
+
+    pub fn compute_hull_trunc(
+        &mut self,
+        verts: &mut Vec<V3>,
+        vert_limit: impl Into<Option<usize>>,
+    ) -> Option<Vec<[u16; 3]>> {
+        if let Some((tris, size)) = self.compute_hull_bounded(verts, vert_limit.into().unwrap_or(0)) {
+            verts.truncate(size);
+            Some(tris)
+        } else {
+            None
+        }
+    }
+
+    pub fn compute_hull_trunc_into(
+        &mut self,
+        verts: &mut Vec<V3>,
+        dst: &mut Vec<[u16; 3]>,
+        vert_limit: impl Into<Option<usize>>,
+    ) -> bool {
+        if let Some(size) = self.compute_hull_bounded_into(verts, dst, vert_limit.into().unwrap_or(0)) {
+            verts.truncate(size);
+            true
+        } else {
+            false
+        }
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 struct I3 {
@@ -384,17 +471,23 @@ fn build_simplex(p0: usize, p1: usize, p2: usize, p3: usize) -> [HullTri; 4] {
 
     tris
 }
+pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -> Plane {
+    let mut mem = HullApi::new();
+    do_furthest_plane_epa(&mut mem, simp, max_dir)
+}
 
 // simp is the terminating simplex for gjk, max_dir is the combined support fn
 // runs epa to find the separating plane aka the closest plane to the origin in
 // the mink sum
-pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -> Plane {
+fn do_furthest_plane_epa<F: Fn(V3) -> V3>(m: &mut HullApi, simp: (V3, V3, V3, V3), max_dir: F) -> Plane {
     let mut plane = Plane::new(V3::zero(), -f32::MAX);
     let epsilon = 0.01f32; // ...
-
-    let mut verts: SmallVec<[V3; 64]> = smallvec![simp.0, simp.1, simp.2, simp.3];
+    m.clear();
+    let HullApi { verts, tris, .. } = m;
+    verts.extend_from_slice(&[simp.0, simp.1, simp.2, simp.3]);
+    tris.extend_from_slice(&build_simplex(0, 1, 2, 3));
     // let mut verts = vec![simp.0, simp.1, simp.2, simp.3];
-    let mut tris: SmallVec<[HullTri; 64]> = SmallVec::from(&build_simplex(0, 1, 2, 3)[..]);
+    // let mut tris: SmallVec<[HullTri; 64]> = SmallVec::from();
 
     let center = 0.25 * (simp.0 + simp.1 + simp.2 + simp.3);
 
@@ -428,15 +521,20 @@ pub fn furthest_plane_epa<F: Fn(V3) -> V3>(simp: (V3, V3, V3, V3), max_dir: F) -
 
         verts.push(v);
         let vert_id = verts.len() - 1;
-        grow_hull(&mut tris, &verts[..], vert_id, epsilon);
-        fix_degenerate_tris(&mut tris, &verts[..], center, vert_id, epsilon);
-        remove_dead(&mut tris);
+        grow_hull(tris, verts, vert_id, epsilon);
+        fix_degenerate_tris(tris, verts, center, vert_id, epsilon);
+        remove_dead(tris);
     }
 }
 
-fn finish_hull(tris: &mut [HullTri], verts: &mut [V3]) -> (Vec<[u16; 3]>, usize) {
-    let mut used = vec![0usize; verts.len()];
-    let mut map = vec![0isize; verts.len()];
+fn finish_hull(m: &mut HullApi, out: &mut Vec<[u16; 3]>, verts: &mut [V3]) -> usize {
+    let HullApi { used, map, tris, .. } = m;
+    used.clear();
+    map.clear();
+    used.resize(verts.len(), 0usize);
+    map.resize(verts.len(), 0isize);
+    // let mut used = vec![0usize; verts.len()];
+    // let mut map = vec![0isize; verts.len()];
 
     for t in tris.iter() {
         for ti in &t.vi.at {
@@ -461,26 +559,47 @@ fn finish_hull(tris: &mut [HullTri], verts: &mut [V3]) -> (Vec<[u16; 3]>, usize)
             tri.vi[j] = map[old_pos as usize] as i32;
         }
     }
-
-    let mut ts: Vec<[u16; 3]> = Vec::with_capacity(tris.len());
+    out.clear();
+    out.reserve(tris.len());
     let mut max_idx = 0;
-
-    for t in tris.iter() {
+    out.extend(tris.iter().map(|t| {
         let tmaxi = max!(t.vi[0] as usize, t.vi[1] as usize, t.vi[2] as usize);
+        assert!(tmaxi < u16::max_value() as usize, "overflowed u16 for tri index");
         if tmaxi > max_idx {
             max_idx = tmaxi;
         }
-        ts.push([t.vi[0] as u16, t.vi[1] as u16, t.vi[2] as u16]);
-    }
+        [t.vi[0] as u16, t.vi[1] as u16, t.vi[2] as u16]
+    }));
 
-    (ts, max_idx + 1)
+    max_idx + 1
 }
 
 pub fn compute_hull(verts: &mut [V3]) -> Option<(Vec<[u16; 3]>, usize)> {
     compute_hull_bounded(verts, 0)
 }
 
+pub fn compute_hull_into(
+    verts: &mut [V3],
+    out: &mut Vec<[u16; 3]>,
+    max_verts: impl Into<Option<usize>>,
+) -> Option<usize> {
+    let mut mem = HullApi::new();
+    do_compute_hull_bounded_into(&mut mem, verts, out, max_verts.into().unwrap_or(0))
+}
+
 pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<(Vec<[u16; 3]>, usize)> {
+    let mut mem = HullApi::new();
+    let mut v = Vec::new();
+    let len = do_compute_hull_bounded_into(&mut mem, verts, &mut v, vert_limit)?;
+    Some((v, len))
+}
+
+fn do_compute_hull_bounded_into(
+    m: &mut HullApi,
+    verts: &mut [V3],
+    out: &mut Vec<[u16; 3]>,
+    vert_limit: usize,
+) -> Option<usize> {
     assert!(verts.len() < (i32::MAX as usize));
     if verts.len() < 4 {
         return None;
@@ -492,62 +611,74 @@ pub fn compute_hull_bounded(verts: &mut [V3], vert_limit: usize) -> Option<(Vec<
         vert_limit as isize
     };
     let vert_count = verts.len();
+    m.clear();
 
-    let mut is_extreme = smallbitvec::sbvec![false; vert_count];
-    let (min_bound, max_bound) = geom::compute_bounds(verts)?;
+    {
+        let &mut HullApi {
+            ref mut tris,
+            ref mut is_extreme,
+            ..
+        } = m;
+        is_extreme.resize(vert_count, false);
 
-    let epsilon = max_bound.dist(min_bound) * 0.001_f32;
+        // let mut is_extreme = smallbitvec::sbvec![false; vert_count];
+        let (min_bound, max_bound) = geom::compute_bounds(verts)?;
 
-    let (p0, p1, p2, p3) = find_simplex(verts)?;
+        let epsilon = max_bound.dist(min_bound) * 0.001_f32;
 
-    let mut tris: SmallVec<[HullTri; 64]> = SmallVec::from(&build_simplex(p0, p1, p2, p3)[..]);
+        let (p0, p1, p2, p3) = find_simplex(verts)?;
+        debug_assert!(tris.is_empty());
+        tris.extend_from_slice(&build_simplex(p0, p1, p2, p3));
 
-    let center = (verts[p0] + verts[p1] + verts[p2] + verts[p3]) * 0.25;
+        // let mut tris: SmallVec<[HullTri; 64]> = SmallVec::from(&build_simplex(p0, p1, p2, p3)[..]);
 
-    is_extreme.set(p0, true);
-    is_extreme.set(p1, true);
-    is_extreme.set(p2, true);
-    is_extreme.set(p3, true);
+        let center = (verts[p0] + verts[p1] + verts[p2] + verts[p3]) * 0.25;
 
-    for t in &mut tris {
-        debug_assert!(t.id >= 0);
-        debug_assert!(t.max_v < 0);
-        t.update(&verts, None);
-    }
+        is_extreme.set(p0, true);
+        is_extreme.set(p1, true);
+        is_extreme.set(p2, true);
+        is_extreme.set(p3, true);
 
-    vert_limit -= 4;
-
-    while vert_limit > 0 {
-        let te = match find_extrudable(&tris, epsilon) {
-            Some(e) => e,
-            None => break,
-        };
-
-        let v = tris[te].max_v as usize;
-        debug_assert!(!is_extreme[v]);
-
-        is_extreme.set(v, true);
-
-        grow_hull(&mut tris, &verts, v, epsilon);
-
-        fix_degenerate_tris(&mut tris, &verts, center, v, epsilon);
-
-        for tri in tris.iter_mut().rev() {
-            if tri.dead() {
-                continue;
-            }
-            if tri.max_v >= 0 {
-                break;
-            }
-            tri.update(&verts, Some(&is_extreme));
+        for t in tris.iter_mut() {
+            debug_assert!(t.id >= 0);
+            debug_assert!(t.max_v < 0);
+            t.update(&verts, None);
         }
 
-        remove_dead(&mut tris);
+        vert_limit -= 4;
 
-        vert_limit -= 1;
+        while vert_limit > 0 {
+            let te = match find_extrudable(&tris, epsilon) {
+                Some(e) => e,
+                None => break,
+            };
+
+            let v = tris[te].max_v as usize;
+            debug_assert!(!is_extreme[v]);
+
+            is_extreme.set(v, true);
+
+            grow_hull(tris, &verts, v, epsilon);
+
+            fix_degenerate_tris(tris, &verts, center, v, epsilon);
+
+            for tri in tris.iter_mut().rev() {
+                if tri.dead() {
+                    continue;
+                }
+                if tri.max_v >= 0 {
+                    break;
+                }
+                tri.update(&verts, Some(&is_extreme));
+            }
+
+            remove_dead(tris);
+
+            vert_limit -= 1;
+        }
     }
 
-    Some(finish_hull(&mut tris, verts))
+    Some(finish_hull(m, out, verts))
 }
 
 pub fn compute_hull_trunc(verts: &mut Vec<V3>, vert_limit: Option<usize>) -> Option<Vec<[u16; 3]>> {

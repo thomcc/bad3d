@@ -7,6 +7,7 @@ pub struct PhysScene {
     pub constraints: ConstraintSet,
     pub params: PhysParams,
     pub log: crate::util::PerfLog,
+    pub coll_api: crate::gjk::CollisionDetector,
 }
 
 impl Default for PhysScene {
@@ -23,6 +24,7 @@ impl PhysScene {
             params,
             world: vec![],
             log: Default::default(),
+            coll_api: Default::default(),
         }
     }
 
@@ -33,7 +35,13 @@ impl PhysScene {
     }
 
     pub fn simulate(&mut self) {
-        update_physics(&mut self.bodies, &mut self.constraints, &self.world, &self.log);
+        update_physics(
+            &mut self.bodies,
+            &mut self.constraints,
+            &self.world,
+            &self.log,
+            &mut self.coll_api,
+        );
     }
 
     #[must_use]
