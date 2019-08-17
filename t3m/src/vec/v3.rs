@@ -38,7 +38,7 @@ cfg_if::cfg_if! {
     }
 }
 
-#[inline]
+#[inline(always)]
 pub fn vec3(x: f32, y: f32, z: f32) -> V3 {
     simd_match! {
         "sse2" => unsafe {
@@ -49,28 +49,28 @@ pub fn vec3(x: f32, y: f32, z: f32) -> V3 {
 }
 
 impl AsRef<[f32; 3]> for V3 {
-    #[inline]
+    #[inline(always)]
     fn as_ref(&self) -> &[f32; 3] {
         self.as_array()
     }
 }
 
 impl AsMut<[f32; 3]> for V3 {
-    #[inline]
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut [f32; 3] {
         self.as_mut_array()
     }
 }
 
 impl AsRef<[f32]> for V3 {
-    #[inline]
+    #[inline(always)]
     fn as_ref(&self) -> &[f32] {
         self.as_slice()
     }
 }
 
 impl AsMut<[f32]> for V3 {
-    #[inline]
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut [f32] {
         self.as_mut_slice()
     }
@@ -109,7 +109,7 @@ impl From<(f32, f32, f32)> for V3 {
 // }
 impl Neg for V3 {
     type Output = Self;
-    #[inline]
+    #[inline(always)]
     fn neg(self) -> Self {
         simd_match! {
             "sse2" => unsafe {
@@ -128,7 +128,7 @@ impl Neg for V3 {
 
 impl Add for V3 {
     type Output = Self;
-    #[inline]
+    #[inline(always)]
     fn add(self, o: Self) -> Self {
         simd_match! {
             "sse2" => unsafe {
@@ -148,7 +148,7 @@ impl Add for V3 {
 
 impl Sub for V3 {
     type Output = Self;
-    #[inline]
+    #[inline(always)]
     fn sub(self, o: Self) -> Self {
         simd_match! {
             "sse2" => unsafe {
@@ -168,7 +168,7 @@ impl Sub for V3 {
 
 impl Mul for V3 {
     type Output = Self;
-    #[inline]
+    #[inline(always)]
     fn mul(self, o: Self) -> Self {
         simd_match! {
             "sse2" => unsafe {
@@ -188,7 +188,7 @@ impl Mul for V3 {
 
 impl Div for V3 {
     type Output = Self;
-    #[inline]
+    #[inline(always)]
     fn div(self, o: Self) -> Self {
         debug_assert!(!o.any_zero());
         simd_match! {
@@ -214,7 +214,7 @@ impl Div for V3 {
 
 impl Mul<f32> for V3 {
     type Output = Self;
-    #[inline]
+    #[inline(always)]
     fn mul(self, o: f32) -> Self {
         self * V3::splat(o)
     }
@@ -222,7 +222,7 @@ impl Mul<f32> for V3 {
 
 impl Mul<V3> for f32 {
     type Output = V3;
-    #[inline]
+    #[inline(always)]
     fn mul(self, v: V3) -> V3 {
         v * self
     }
@@ -230,7 +230,7 @@ impl Mul<V3> for f32 {
 
 impl Div<f32> for V3 {
     type Output = Self;
-    #[inline]
+    #[inline(always)]
     #[allow(clippy::suspicious_arithmetic_impl)]
     fn div(self, o: f32) -> Self {
         debug_assert!(o != 0.0);
@@ -242,7 +242,7 @@ impl Div<f32> for V3 {
 
 impl Div<V3> for f32 {
     type Output = V3;
-    #[inline]
+    #[inline(always)]
     fn div(self, v: V3) -> V3 {
         // TODO: use _mm_rcp_ps?
         V3::splat(self) / v
@@ -250,42 +250,42 @@ impl Div<V3> for f32 {
 }
 
 impl MulAssign for V3 {
-    #[inline]
+    #[inline(always)]
     fn mul_assign(&mut self, rhs: Self) {
         *self = *self * rhs;
     }
 }
 
 impl DivAssign for V3 {
-    #[inline]
+    #[inline(always)]
     fn div_assign(&mut self, rhs: Self) {
         *self = *self / rhs;
     }
 }
 
 impl MulAssign<f32> for V3 {
-    #[inline]
+    #[inline(always)]
     fn mul_assign(&mut self, rhs: f32) {
         *self = *self * rhs;
     }
 }
 
 impl DivAssign<f32> for V3 {
-    #[inline]
+    #[inline(always)]
     fn div_assign(&mut self, rhs: f32) {
         *self = *self / rhs;
     }
 }
 
 impl AddAssign for V3 {
-    #[inline]
+    #[inline(always)]
     fn add_assign(&mut self, rhs: Self) {
         *self = *self + rhs;
     }
 }
 
 impl SubAssign for V3 {
-    #[inline]
+    #[inline(always)]
     fn sub_assign(&mut self, rhs: Self) {
         *self = *self - rhs;
     }
@@ -361,12 +361,12 @@ impl V3 {
     pub const NEG_Y: V3 = vec3_const![0.0, -1.0, 0.0];
     pub const NEG_Z: V3 = vec3_const![0.0, 0.0, -1.0];
 
-    #[inline]
+    #[inline(always)]
     pub const fn zero() -> Self {
         Self::ZERO
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn new(x: f32, y: f32, z: f32) -> Self {
         simd_match! {
             "sse2" => unsafe {
@@ -376,56 +376,57 @@ impl V3 {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn splat(v: f32) -> Self {
         // TODO: simd by load_ss and shuffle?
         vec3(v, v, v)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn as_slice(&self) -> &[f32] {
         self.as_array()
     }
-    #[inline]
+    #[inline(always)]
     pub fn as_mut_slice(&mut self) -> &mut [f32] {
         self.as_mut_array()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn as_ptr(&self) -> *const f32 {
-        self.as_array().as_ptr()
+        self as *const V3 as *const f32
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn as_mut_ptr(&mut self) -> *mut f32 {
-        self.as_mut_array().as_mut_ptr()
+        self as *mut V3 as *mut f32
+        // self.as_mut_array().as_mut_ptr()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn as_array(&self) -> &[f32; 3] {
         unsafe { &*(self as *const V3 as *const [f32; 3]) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn as_mut_array(&mut self) -> &mut [f32; 3] {
         unsafe { &mut *(self as *mut V3 as *mut [f32; 3]) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn as_array4(&self) -> &[f32; 4] {
         unsafe { &*(self as *const V3 as *const [f32; 4]) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn as_mut_array4(&mut self) -> &mut [f32; 4] {
         unsafe { &mut *(self as *mut V3 as *mut [f32; 4]) }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn tup(self) -> (f32, f32, f32) {
         self.into()
     }
-    #[inline]
+    #[inline(always)]
     pub fn arr(self) -> [f32; 3] {
         self.into()
     }
@@ -520,12 +521,12 @@ impl V3 {
         self.length_sq() < std::f32::MIN_POSITIVE * std::f32::MIN_POSITIVE
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn length_sq(self) -> f32 {
         self.dot(self)
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn length(self) -> f32 {
         self.length_sq().sqrt()
     }
@@ -540,16 +541,16 @@ impl V3 {
         self.towards(o).norm_or_zero()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn dist_sq(self, o: Self) -> f32 {
         (o - self).length_sq()
     }
-    #[inline]
+    #[inline(always)]
     pub fn dist(self, o: Self) -> f32 {
         (o - self).length()
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn same_dir(self, o: Self) -> bool {
         self.dot(o) > 0.0
     }
@@ -642,7 +643,7 @@ impl V3 {
 
     #[inline]
     pub fn is_zero(self) -> bool {
-        self.dot(self) == 0.0_f32
+        self == V3::ZERO
     }
 
     #[inline]
@@ -702,14 +703,26 @@ impl V3 {
     pub fn norm_or(self, x: f32, y: f32, z: f32) -> Self {
         self.norm_or_v(vec3(x, y, z))
     }
-    #[inline]
+    #[inline(always)]
     pub fn dot3(self, a: V3, b: V3, c: V3) -> V3 {
         simd_match! {
             "sse2" => {
                 crate::simd::dot3(self, a, b, c)
             },
             _ => {
-                self.naive_dot3(a, b, c)
+                self.naive_dot3(self, a, b, c)
+            }
+        }
+    }
+
+    #[inline(always)]
+    pub fn dot4(self, a: V3, b: V3, c: V3, d: V3) -> V4 {
+        simd_match! {
+            "sse2" => {
+                crate::simd::dot4(self, a, b, c, d)
+            },
+            _ => {
+                self.naive_dot4(self, a, b, c, d)
             }
         }
     }
@@ -722,23 +735,24 @@ impl V3 {
         let vc = self.x() * c.x() + self.y() * c.y() + self.z() * c.z();
         vec3(va, vb, vc)
     }
-    // #[inline]
-    // pub fn identity() -> Self {
-    //     V3 { $($field: 0.0),+ }
-    // }
-
-    // #[inline]
-    // pub fn expand(v: V2, z: f32) -> V3 {
-    //     vec3(v.x, v.y, z)
-    // }
 
     #[inline]
+    #[allow(dead_code)]
+    pub(crate) fn naive_dot4(self, a: V3, b: V3, c: V3, d: V3) -> V4 {
+        let va = self.x() * a.x() + self.y() * a.y() + self.z() * a.z();
+        let vb = self.x() * b.x() + self.y() * b.y() + self.z() * b.z();
+        let vc = self.x() * c.x() + self.y() * c.y() + self.z() * c.z();
+        let vd = self.x() * d.x() + self.y() * d.y() + self.z() * d.z();
+        vec4(va, vb, vc, vd)
+    }
+
+    #[inline(always)]
     pub fn dot(self, o: V3) -> f32 {
         simd_match! {
             "sse2" => unsafe {
                 let so = sse::_mm_mul_ps(self.0, o.0);
                 let z = sse::_mm_movehl_ps(so, so);
-                let y = sse::_mm_shuffle_ps(so, so, 0x55); // y y y y
+                let y = sse::_mm_shuffle_ps(so, so, shuf![1, 1, 1, 1]);
                 let hadd = sse::_mm_add_ss(so, y);
                 let hadd = sse::_mm_add_ss(hadd, z);
                 sse::_mm_cvtss_f32(hadd)
@@ -768,7 +782,7 @@ impl V3 {
         )
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn cross(self, b: V3) -> V3 {
         simd_match! {
             "sse2" => {
@@ -898,7 +912,7 @@ impl std::fmt::Debug for V3 {
 }
 
 impl PartialEq for V3 {
-    #[inline]
+    #[inline(always)]
     fn eq(&self, o: &V3) -> bool {
         simd_match! {
             "sse2" => unsafe {

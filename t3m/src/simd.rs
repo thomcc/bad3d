@@ -55,7 +55,7 @@ const SIMD_W_SIGNMASK: __m128 = unsafe {
 //     .to
 // };
 
-#[inline]
+#[inline(always)]
 unsafe fn quatmul3(q: __m128, v: __m128) -> __m128 {
     //  qw * vx + qy * vz - qz * vy;
     //  qw * vy + qz * vx - qx * vz;
@@ -81,7 +81,7 @@ unsafe fn quatmul3(q: __m128, v: __m128) -> __m128 {
 
     sse::_mm_sub_ps(ab_w, c)
 }
-#[inline]
+#[inline(always)]
 unsafe fn quatmulq(q0: __m128, q1: __m128) -> __m128 {
     // similar to above, same a, b, and c
     // x0 * w1 + w0 * x1 + y0 * z1 - z0 * y1,
@@ -113,7 +113,7 @@ unsafe fn quatmulq(q0: __m128, q1: __m128) -> __m128 {
     sse::_mm_add_ps(cd, ab)
 }
 
-#[inline]
+#[inline(always)]
 unsafe fn quatrot3(q: __m128, v: __m128) -> __m128 {
     // let ix =  qw * vx + qy * vz - qz * vy;
     // let iy =  qw * vy + qz * vx - qx * vz;
@@ -154,12 +154,13 @@ const CLEARW_MASK: __m128 = unsafe {
     }
     .to
 };
+
 #[inline(always)]
 unsafe fn clear_w(v: __m128) -> __m128 {
     sse::_mm_and_ps(v, CLEARW_MASK)
 }
 
-#[inline]
+#[inline(always)]
 pub fn quat_rot3(rot: Quat, v: V3) -> V3 {
     unsafe {
         let rot = rot.into_x86();
@@ -168,12 +169,12 @@ pub fn quat_rot3(rot: Quat, v: V3) -> V3 {
     }
 }
 
-#[inline]
+#[inline(always)]
 pub fn quat_mul_quat(a: Quat, b: Quat) -> Quat {
     unsafe { Quat::from_x86(quatmulq(a.into_x86(), b.into_x86())) }
 }
 
-#[inline]
+#[inline(always)]
 pub fn v3_cross(a: V3, b: V3) -> V3 {
     unsafe {
         let a = a.into_x86();
@@ -189,11 +190,6 @@ pub fn v3_cross(a: V3, b: V3) -> V3 {
 }
 
 #[inline(always)]
-unsafe fn zwxy(v0: __m128, v1: __m128) -> __m128 {
-    sse::_mm_castpd_ps(sse::_mm_move_sd(sse::_mm_castps_pd(v0), sse::_mm_castps_pd(v1)))
-}
-
-#[inline]
 unsafe fn do_dot3(v: __m128, a: __m128, b: __m128, c: __m128) -> __m128 {
     let va = sse::_mm_mul_ps(v, a);
     let vb = sse::_mm_mul_ps(v, b);
@@ -207,11 +203,39 @@ unsafe fn do_dot3(v: __m128, a: __m128, b: __m128, c: __m128) -> __m128 {
     let hsum = sse::_mm_add_ps(hsum, sse::_mm_movehl_ps(vc0, abl));
 
     let vc = clear_w(vc);
-    sse::_mm_add_ps(hsum, zwxy(vc, abh))
+    // ct == [abh.xy, vc.zw]
+    let ct = sse::_mm_castpd_ps(sse::_mm_move_sd(sse::_mm_castps_pd(vc), sse::_mm_castps_pd(abh)));
+    sse::_mm_add_ps(hsum, ct)
 }
 
+#[inline(always)]
 pub fn dot3(v: V3, a: V3, b: V3, c: V3) -> V3 {
     unsafe { V3(do_dot3(v.0, a.0, b.0, c.0)) }
+}
+
+#[inline(always)]
+pub fn dot4(v: V3, a: V3, b: V3, c: V3, d: V3) -> V4 {
+    unsafe {
+        let d_xyxy = sse::_mm_movelh_ps(v.0, v.0);
+        let d_zzzz = sse::_mm_shuffle_ps(v.0, v.0, shuf![2, 2, 2, 2]);
+
+        let l0 = sse::_mm_movelh_ps(a.0, b.0);
+        let h0 = sse::_mm_movehl_ps(b.0, a.0);
+
+        let l1 = sse::_mm_movelh_ps(c.0, d.0);
+        let h1 = sse::_mm_movehl_ps(d.0, c.0);
+
+        let l0 = sse::_mm_mul_ps(l0, d_xyxy);
+        let l1 = sse::_mm_mul_ps(l1, d_xyxy);
+
+        let z = sse::_mm_shuffle_ps(h0, h1, shuf![0, 2, 0, 2]);
+        let x = sse::_mm_shuffle_ps(l0, l1, shuf![0, 2, 0, 2]);
+        let y = sse::_mm_shuffle_ps(l0, l1, shuf![1, 3, 1, 3]);
+
+        let z = sse::_mm_mul_ps(z, d_zzzz);
+        let x = sse::_mm_add_ps(x, y);
+        V4(sse::_mm_add_ps(x, z))
+    }
 }
 
 pub fn maxdot_i(v: V3, vs: &[V3]) -> usize {
@@ -347,22 +371,30 @@ pub fn maxdot(v: V3, vs: &[V3]) -> V3 {
     let i = maxdot_i(v, vs);
     vs[i]
 }
+
 #[cfg(test)]
 mod test {
     use super::*;
-    fn naive_maxdot(dir: V3, s: &[V3]) -> V3 {
+    fn naive_maxdot_and_i(dir: V3, s: &[V3]) -> (usize, V3) {
         // geom::max_dir_iter(dir, s.iter().copied());
         let mut best = s[0];
+        let mut best_i = 0;
         let mut best_dot = best.x() * dir.x() + best.y() * dir.y() + best.z() * dir.z();
-        for &v in s[1..].iter() {
+        for (i, &v) in s[1..].iter().enumerate() {
             let new_dot = v.x() * dir.x() + v.y() * dir.y() + v.z() * dir.z();
             if new_dot > best_dot {
                 best = v;
+                best_i = i + 1;
                 best_dot = new_dot;
             }
         }
-        best
+        assert_eq!(s[best_i], best);
+        (best_i, best)
     }
+    fn naive_maxdot(dir: V3, s: &[V3]) -> V3 {
+        s[naive_maxdot_and_i(dir, s).0]
+    }
+
     quickcheck::quickcheck! {
         fn prop_maxdot_eq_naive(dir: V3, s: Vec<V3>) -> bool {
             s.is_empty() || (naive_maxdot(dir, &s) == maxdot(dir, &s))
@@ -379,8 +411,70 @@ mod test {
         fn prop_dot3_eq_naive(a: V3, b: V3, c: V3, d: V3) -> bool {
             dot3(a, b, c, d).approx_eq(&V3::naive_dot3(a, b, c, d))
         }
+        fn prop_dot4_eq_naive(a: V3, b: V3, c: V3, d: V3, e: V3) -> bool {
+            dot4(a, b, c, d, e).approx_eq(&V3::naive_dot4(a, b, c, d, e))
+        }
     }
 
+    #[test]
+    #[allow(clippy::unreadable_literal)]
+    fn test_maxdot_thoroughly() {
+        use rand::{distributions::Uniform, prelude::*};
+        let mut rng = thread_rng();
+        let holes = [
+            vec3(0.0, 0.0, 1.0),
+            vec3(0.0, 1.0, 0.0),
+            vec3(1.0, 0.0, 0.0),
+            vec3(0.0, 1.0, 1.0),
+            vec3(1.0, 0.0, 1.0),
+            vec3(1.0, 1.0, 0.0),
+        ];
+        let uniforms = [
+            Uniform::new(-10.0, 10.0),
+            Uniform::new(-10.0, 0.0),
+            Uniform::new(0.0, 10.0),
+        ];
+        for _ in 0..25 {
+            const SIZE: usize = 30;
+            for &us in uniforms.iter() {
+                for size in 1..SIZE {
+                    let vs = (0..SIZE)
+                        .map(|_| vec3(us.sample(&mut rng), us.sample(&mut rng), us.sample(&mut rng)))
+                        .collect::<Vec<_>>();
+
+                    let dir = vec3(us.sample(&mut rng), us.sample(&mut rng), us.sample(&mut rng));
+                    assert_eq!(naive_maxdot(dir, &vs), maxdot(dir, &vs));
+                    assert_eq!(naive_maxdot(-dir, &vs), maxdot(-dir, &vs));
+
+                    let mut vs2 = Vec::with_capacity(size);
+                    for i0 in 0..2 {
+                        for i1 in 0..2 {
+                            for i2 in 0..2 {
+                                vs2.clear();
+                                vs2.extend(vs.iter().copied().map(|v| vec3(v[i0], v[i1], v[i2])));
+                                let dir2 = vec3(dir[i0], dir[i1], dir[i2]);
+                                assert_eq!(naive_maxdot(dir2, &vs2), maxdot(dir2, &vs2));
+                                assert_eq!(naive_maxdot(dir, &vs2), maxdot(dir, &vs2));
+                                assert_eq!(naive_maxdot(-dir2, &vs2), maxdot(-dir2, &vs2));
+                                let best_i = naive_maxdot_and_i(dir2, &vs2).0;
+                                for vi in 0..size {
+                                    vs2.swap(vi, best_i);
+                                    assert_eq!(naive_maxdot(dir2, &vs2), maxdot(dir2, &vs2));
+                                    assert_eq!(naive_maxdot(-dir2, &vs2), maxdot(-dir2, &vs2));
+                                    for &h in holes.iter() {
+                                        let dh = dir2 * h;
+                                        assert_eq!(naive_maxdot(dh, &vs2), maxdot(dh, &vs2));
+                                        assert_eq!(naive_maxdot(-dh, &vs2), maxdot(-dh, &vs2));
+                                    }
+                                    vs2.swap(vi, best_i);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     #[test]
     #[allow(clippy::unreadable_literal)]
     fn quickcheck_regressions() {

@@ -137,14 +137,14 @@ macro_rules! impl_index_op {
     ($Vn:ident, $Indexer:ty, $out_type:ty) => {
         impl Index<$Indexer> for $Vn {
             type Output = $out_type;
-            #[inline]
+            #[inline(always)]
             fn index(&self, index: $Indexer) -> &$out_type {
                 &self.as_array()[index]
             }
         }
 
         impl IndexMut<$Indexer> for $Vn {
-            #[inline]
+            #[inline(always)]
             fn index_mut(&mut self, index: $Indexer) -> &mut $out_type {
                 &mut self.as_mut_array()[index]
             }

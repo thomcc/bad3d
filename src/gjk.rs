@@ -132,13 +132,26 @@ fn towards_origin(a: V3, b: V3) -> bool {
 }
 
 impl Simplex {
+    #[must_use]
+    // #[inline(never)]
     fn set(&self, v: V3, pts: &[Point]) -> Simplex {
-        let mut res = *self;
-        res.v = v;
-        for (i, p) in pts.iter().enumerate() {
-            res.points[i] = *p;
-        }
-        res.size = pts.len() as u32;
+        let mut res = Simplex {
+            v,
+            size: pts.len() as u32,
+            points: [pts[0], Point::default(), Point::default(), Point::default()],
+        };
+        res.points[1..pts.len()].copy_from_slice(&pts[1..]);
+        // res.size = pts.len() as u32;
+        // if cfg!(debug_assertions) {
+        //     for i in 0..(4.min(pts.len())) {
+        //         let p0 = &res.points[i];
+        //         for j in (i + 1)..(4.min(pts.len())) {
+        //             let p1 = &res.points[j];
+        //             debug_assert_ne!(p0.p, p1.p);
+        //         }
+        //     }
+        // }
+
         res
     }
 
@@ -150,15 +163,25 @@ impl Simplex {
         }
     }
 
+    // #[inline(never)]
     fn finish(&self, w: &Point) -> Simplex {
         debug_assert!(self.size == 3);
-        let mut result = *self;
-        result.points[3] = *w;
-        result.size = 4;
-        result.v = V3::zero();
-        result
+        // debug_assert_ne!(w.p, self.points[0].p);
+        // debug_assert_ne!(w.p, self.points[1].p);
+        // debug_assert_ne!(w.p, self.points[2].p);
+        Simplex {
+            points: [self.points[0], self.points[1], self.points[2], *w],
+            size: 4,
+            v: V3::ZERO,
+        }
+        // let mut result = *self;
+        // result.points[3] = *w;
+        // result.size = 4;
+        // result.v = V3::zero();
+        // result
     }
 
+    // #[inline(never)]
     fn next1(&self, w: &Point) -> Simplex {
         let s = self.points[0];
         let t = geom::line_project_time(w.p, s.p, V3::zero());
@@ -169,6 +192,7 @@ impl Simplex {
         }
     }
 
+    // #[inline(never)]
     fn next2(&self, w: &Point) -> Simplex {
         let s0 = self.points[0];
         let s1 = self.points[1];
@@ -176,8 +200,8 @@ impl Simplex {
         let t0 = geom::line_project_time(w.p, s0.p, V3::zero());
         let t1 = geom::line_project_time(w.p, s1.p, V3::zero());
 
-        let v0 = w.p.lerp(s0.p, t0);
-        let v1 = w.p.lerp(s1.p, t1);
+        let v0 = w.p + (s0.p - w.p) * t0;
+        let v1 = w.p + (s1.p - w.p) * t1;
 
         let in_edge0 = towards_origin(v0, s1.p);
         let in_edge1 = towards_origin(v1, s0.p);
@@ -185,24 +209,23 @@ impl Simplex {
         if in_edge0 && in_edge1 {
             self.set(geom::tri_project(s0.p, s1.p, w.p, V3::zero()), &[s0, s1, *w])
         } else if !in_edge0 && t0 > 0.0 {
-            self.set(v0, &[s0.with_t(t0), w.with_t(1.0 - t0)])
+            let a = s0.with_t(t0);
+            let b = w.with_t(1.0 - t0);
+            self.set(v0, &[a, b])
         } else if !in_edge1 && t1 > 0.0 {
-            self.set(v1, &[s1.with_t(t1), w.with_t(1.0 - t1)])
+            let a = s1.with_t(t1);
+            let b = w.with_t(1.0 - t1);
+            self.set(v1, &[a, b])
         } else {
             self.set(w.p, &[w.with_t(1.0)])
         }
     }
-
+    // #[inline(never)]
     fn next3(&self, w: &Point) -> Simplex {
         let s0 = self.points[0];
         let s1 = self.points[1];
         let s2 = self.points[2];
-        let t0 = geom::line_project_time(w.p, s0.p, V3::zero());
-        let t1 = geom::line_project_time(w.p, s1.p, V3::zero());
-        let t2 = geom::line_project_time(w.p, s2.p, V3::zero());
-        let v0 = w.p + (s0.p - w.p) * t0;
-        let v1 = w.p + (s1.p - w.p) * t1;
-        let v2 = w.p + (s2.p - w.p) * t2;
+
         let c0 = geom::tri_project(w.p, s1.p, s2.p, V3::zero());
         let c1 = geom::tri_project(w.p, s2.p, s0.p, V3::zero());
         let c2 = geom::tri_project(w.p, s0.p, s1.p, V3::zero());
@@ -211,42 +234,61 @@ impl Simplex {
         let inp1 = towards_origin(c1, s1.p);
         let inp2 = towards_origin(c2, s2.p);
 
+        if inp0 && inp1 && inp2 {
+            return self.finish(w);
+        }
+
+        let t0 = geom::line_project_time(w.p, s0.p, V3::zero());
+        let t1 = geom::line_project_time(w.p, s1.p, V3::zero());
+
+        let v0 = w.p + (s0.p - w.p) * t0;
+        let v1 = w.p + (s1.p - w.p) * t1;
+
         let inp2e0 = towards_origin(v0, s1.p);
         let inp2e1 = towards_origin(v1, s0.p);
+
+        if !inp2 && inp2e0 && inp2e1 {
+            return self.set(
+                geom::tri_project(s0.p, s1.p, w.p, V3::zero()),
+                &[self.points[0], self.points[1], *w],
+            );
+        }
+
+        let t2 = geom::line_project_time(w.p, s2.p, V3::zero());
+        let v2 = w.p + (s2.p - w.p) * t2;
 
         let inp0e1 = towards_origin(v1, s2.p);
         let inp0e2 = towards_origin(v2, s1.p);
 
-        let inp1e2 = towards_origin(v2, s0.p);
-        let inp1e0 = towards_origin(v0, s2.p);
-        if inp0 && inp1 && inp2 {
-            self.finish(w) /* terminated */
-        } else if !inp2 && inp2e0 && inp2e1 {
-            self.set(
-                geom::tri_project(s0.p, s1.p, w.p, V3::zero()),
-                &[self.points[0], self.points[1], *w],
-            )
-        } else if !inp0 && inp0e1 && inp0e2 {
-            self.set(
+        if !inp0 && inp0e1 && inp0e2 {
+            return self.set(
                 geom::tri_project(s1.p, s2.p, w.p, V3::zero()),
                 &[self.points[1], self.points[2], *w],
-            )
-        } else if !inp1 && inp1e2 && inp1e0 {
-            self.set(
+            );
+        }
+
+        let inp1e2 = towards_origin(v2, s0.p);
+        let inp1e0 = towards_origin(v0, s2.p);
+        if !inp1 && inp1e2 && inp1e0 {
+            return self.set(
                 geom::tri_project(s2.p, s0.p, w.p, V3::zero()),
                 &[self.points[2], self.points[0], *w],
-            )
-        } else if !inp1e0 && !inp2e0 && t0 > 0.0 {
-            self.set(v0, &[self.points[0].with_t(t0), w.with_t(1.0 - t0)])
-        } else if !inp2e1 && !inp0e1 && t1 > 0.0 {
-            self.set(v1, &[self.points[1].with_t(t1), w.with_t(1.0 - t1)])
-        } else if !inp0e2 && !inp1e2 && t2 > 0.0 {
-            self.set(v2, &[self.points[2].with_t(t2), w.with_t(1.0 - t2)])
-        } else {
-            self.set(w.p, &[w.with_t(1.0)])
+            );
         }
+
+        if !inp1e0 && !inp2e0 && t0 > 0.0 {
+            return self.set(v0, &[self.points[0].with_t(t0), w.with_t(1.0 - t0)]);
+        }
+        if !inp2e1 && !inp0e1 && t1 > 0.0 {
+            return self.set(v1, &[self.points[1].with_t(t1), w.with_t(1.0 - t1)]);
+        }
+        if !inp0e2 && !inp1e2 && t2 > 0.0 {
+            return self.set(v2, &[self.points[2].with_t(t2), w.with_t(1.0 - t2)]);
+        }
+        self.set(w.p, &[w.with_t(1.0)])
     }
 
+    // #[inline(never)]
     fn next(&self, w: &Point) -> Simplex {
         match self.size {
             0 => self.set(w.p, &[w.with_t(1.0)]),
@@ -304,6 +346,12 @@ pub fn separated<A: Support + ?Sized, B: Support + ?Sized>(
     do_separated(&mut cd, a, ap, b, bp, find_closest)
 }
 
+#[cold]
+#[inline(never)]
+fn warn(s: &str) {
+    log::warn!("{}", s);
+}
+
 fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
     cd: &mut CollisionDetector,
     a: &A,
@@ -312,7 +360,7 @@ fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
     bp: Pose,
     find_closest: bool,
 ) -> ContactInfo {
-    let eps = 0.00001_f32;
+    let eps = almost::F32_TOLERANCE;
 
     let mut v = Point::on_sum(a, ap, b, bp, vec3(0.0, 0.0, 1.0)).p;
     let mut last = Simplex::initial(v);
@@ -326,26 +374,46 @@ fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
         last = next;
         v = last.v;
         w = Point::on_sum(a, ap, b, bp, -v);
-        if dot(w.p, v) >= dot(v, v) - (eps + eps * dot(v, v)) {
+        let wpv = dot(w.p, v);
+        let vlen2 = v.length_sq();
+        if wpv >= vlen2 - (eps + eps * vlen2) {
             break;
         }
-        if !find_closest && dot(w.p, v) >= 0.0 {
+        if !find_closest && wpv >= 0.0 {
             break;
         }
 
         next = last.next(&w);
         if next.v.is_zero() {
             if next.size == 2 {
+                log::trace!("terminated with line, expanding to triangle");
                 last = next;
                 let n = (next.points[0].p - next.points[1].p).orth();
                 next.points[2] = Point::on_sum(a, ap, b, bp, n);
                 next.size = 3;
+                if next.points[2].p == next.points[0].p || next.points[2].p == next.points[1].p {
+                    warn("failed to expand line to triangle, trying with reversed normal.");
+                    next.points[2] = Point::on_sum(a, ap, b, bp, -n);
+                    debug_assert_ne!(next.points[2].p, next.points[1].p);
+                    debug_assert_ne!(next.points[2].p, next.points[0].p);
+                }
             }
             if next.size == 3 {
+                log::trace!("terminated with triangle, expanding to tetrahedron");
                 last = next;
                 let n = geom::tri_normal(next.points[0].p, next.points[1].p, next.points[2].p);
                 next.points[3] = Point::on_sum(a, ap, b, bp, n);
                 next.size = 4;
+                if next.points[3].p == next.points[2].p
+                    || next.points[3].p == next.points[0].p
+                    || next.points[3].p == next.points[1].p
+                {
+                    warn("failed to expand triangle to tetrahedron, trying with reversed normal.");
+                    next.points[3] = Point::on_sum(a, ap, b, bp, -n);
+                    debug_assert_ne!(next.points[3].p, next.points[2].p);
+                    debug_assert_ne!(next.points[3].p, next.points[1].p);
+                    debug_assert_ne!(next.points[3].p, next.points[0].p);
+                }
             }
             assert!(next.size == 4);
             let min_penetration_plane = cd.hull_api.furthest_plane_epa(
@@ -365,6 +433,15 @@ fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
                 V4::expand(next.points[3].p, 1.0),
             );
 
+            let b = match mp.inverse() {
+                Some(m) => m.w,
+                None => {
+                    warn("GJK terminated with an uninvertable matrix:");
+                    log::warn!("    {:?}", mp);
+                    last = next;
+                    break;
+                }
+            };
             let ma = M4x4::from_cols(
                 V4::expand(next.points[0].a, 1.0),
                 V4::expand(next.points[1].a, 1.0),
@@ -378,9 +455,6 @@ fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
                 V4::expand(next.points[2].b, 1.0),
                 V4::expand(next.points[3].b, 1.0),
             );
-
-            let b = mp.inverse().unwrap().w; // just unwrap directly? (no chance this can't be inverted, right?)
-
             let p0 = (ma * b).xyz();
             let p1 = (mb * b).xyz();
 
@@ -395,13 +469,22 @@ fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
             assert!(hit_info.separation <= 0.0);
             return hit_info;
         }
-        if dot(next.v, next.v) >= dot(last.v, last.v) {
-            //println!("Warning: GJK Robustness error (i = {}, n = {}, l = {}): {:?} >= {:?}", iter, dot(next.v, next.v), dot(last.v, last.v), next.v, last.v);
+        if next.v.length_sq() >= last.v.length_sq() {
+            // log::trace!(
+            //     "GJK robustness dodginess: (i = {}, n = {}, l = {}): {:?} >= {:?}",
+            //     iter,
+            //     dot(next.v, next.v),
+            //     dot(last.v, last.v),
+            //     next.v,
+            //     last.v
+            // );
             break;
         }
     }
     // println!("EXIT (fail)");
-    debug_assert!(iter < 100); // ...
+    if iter >= 100 {
+        log::warn!("GJK failed to terminate after 100 steps, giving up...");
+    }
     last.compute_points()
 }
 

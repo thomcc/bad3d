@@ -16,9 +16,16 @@ pub fn tri_area(v0: V3, v1: V3, v2: V3) -> f32 {
 }
 
 #[inline]
+pub fn tri_area_sq(v0: V3, v1: V3, v2: V3) -> f32 {
+    tri_face_dir(v0, v1, v2).length_sq()
+}
+
+#[inline]
 pub fn line_project_time(p0: V3, p1: V3, a: V3) -> f32 {
     let d = p1 - p0;
-    safe_div0(dot(d, a - p0), dot(d, d))
+    let d2 = d.length_sq();
+    let id2 = if d2 == 0.0 { 0.0 } else { 1.0 / d2 };
+    dot(d, a - p0) * id2
 }
 
 #[inline]
@@ -36,8 +43,8 @@ pub fn barycentric(a: V3, b: V3, c: V3, p: V3) -> V3 {
 
     let d20 = dot(v2, v0);
     let d21 = dot(v2, v1);
-
-    let d = safe_div0(1.0, d00 * d11 - d01 * d01);
+    let id = d00 * d11 - d01 * d01;
+    let d = if id == 0.0 { 0.0 } else { 1.0 / id };
     let v = (d11 * d20 - d01 * d21) * d;
     let w = (d00 * d21 - d01 * d20) * d;
     vec3(1.0 - v - w, v, w)
@@ -48,17 +55,22 @@ pub fn cross(a: V3, b: V3) -> V3 {
     a.cross(b)
 }
 
+#[cold]
+fn tri_project_notatri(v0: V3, v1: V3, v2: V3, p: V3) -> V3 {
+    let end = if (v1 - v0).length_sq() > (v2 - v0).length_sq() {
+        v1
+    } else {
+        v2
+    };
+    line_project(v0, end, p)
+}
+
 pub fn tri_project(v0: V3, v1: V3, v2: V3, p: V3) -> V3 {
     let cp = cross(v2 - v0, v2 - v1);
     let dtcpm = -dot(cp, v0);
-    let cpm2 = dot(cp, cp);
-    if cpm2 == 0.0 {
-        let end = if (v1 - v0).length_sq() > (v2 - v0).length_sq() {
-            v1
-        } else {
-            v2
-        };
-        line_project(v0, end, p)
+    let cpm2 = cp.length_sq();
+    if cp == V3::zero() {
+        tri_project_notatri(v0, v1, v2, p)
     } else {
         p - cp * (dot(cp, p) + dtcpm) / cpm2
     }
@@ -70,14 +82,18 @@ pub fn gradient(v0: V3, v1: V3, v2: V3, t0: f32, t1: f32, t2: f32) -> V3 {
     let d0 = t1 - t0;
     let d1 = t2 - t0;
     let pd = e1 * d0 - e0 * d1;
-    if dot(pd, pd) == 0.0 {
-        return vec3(0.0, 0.0, 1.0);
-    }
-    let pd = pd.must_norm();
-    let e = if d0.abs() > d1.abs() {
-        (e0 + pd * -dot(pd, e0)) / d0
+    let pd = if let Some(n) = pd.normalize() {
+        n
     } else {
-        (e1 + pd * -dot(pd, e1)) / d1
+        return vec3(0.0, 0.0, 1.0);
+    };
+    // let pd = pd.must_norm();
+    let e = if d0.abs() > d1.abs() {
+        debug_assert!(d0 != 0.0);
+        e0 + pd * -dot(pd, e0) / d0
+    } else {
+        debug_assert!(d1 != 0.0);
+        e1 + pd * -dot(pd, e1) / d1
     };
 
     e * safe_div0(1.0, dot(e, e))

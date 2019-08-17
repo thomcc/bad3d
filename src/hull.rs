@@ -346,7 +346,7 @@ fn find_simplex(verts: &[V3]) -> Option<(usize, usize, usize, usize)> {
     let b1 = cross(vec3(1.0, 0.0, 0.0), b0);
     let b2 = cross(vec3(0.0, 1.0, 0.0), b0);
 
-    let b1 = (if b1.length_sq() > b2.length_sq() { b1 } else { b2 }).must_norm();
+    let b1 = (if b1.length_sq() > b2.length_sq() { b1 } else { b2 }).fast_norm();
 
     let p2 = geom::max_dir_index(b1, verts).unwrap();
 

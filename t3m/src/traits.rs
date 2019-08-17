@@ -174,7 +174,7 @@ pub trait Fold: Copy + Clone {
 //     }
 // }
 
-#[inline]
+#[inline(always)]
 pub fn dot(a: super::vec::V3, b: super::vec::V3) -> f32 {
     a.dot(b)
 }

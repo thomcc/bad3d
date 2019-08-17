@@ -771,7 +771,19 @@ impl V4 {
 
     #[inline]
     pub fn dot(self, o: V4) -> f32 {
-        self.x() * o.x() + self.y() * o.y() + self.z() * o.z() + self.w() * o.w()
+        simd_match! {
+            "sse2" => unsafe {
+                let so = sse::_mm_mul_ps(self.0, o.0);
+                let z = sse::_mm_movehl_ps(so, so);
+                let sz = sse::_mm_add_ps(so, z);
+                let y = sse::_mm_shuffle_ps(sz, sz, shuf![1, 1, 1, 1]);
+                let hadd = sse::_mm_add_ps(sz, y);
+                sse::_mm_cvtss_f32(hadd)
+            },
+            _ => {
+                self.x * o.x + self.y * o.y + self.z * o.z + self.w * o.w
+            }
+        }
     }
 
     #[inline]
