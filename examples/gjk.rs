@@ -101,7 +101,6 @@ impl GjkTestState {
 }
 
 fn main() -> Result<()> {
-    env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::Context::create()));
     let mut win = DemoWindow::new(
         DemoOptions {

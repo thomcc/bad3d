@@ -13,6 +13,7 @@ use bad3d::{bsp::Face, prelude::*};
 use imgui::{self, Ui};
 use std::fmt::Write;
 
+use super::shader_lib::{ShaderConf, ShaderLib};
 use glium::{
     self,
     backend::Facade,
@@ -21,25 +22,31 @@ use glium::{
 };
 
 // lit flat shader
-static PREAMBLE_SRC: &'static str = include_str!("shaders/common.glsl");
+// static PREAMBLE_SRC: &'static str = include_str!("shaders/common.glsl");
 
-static VERT_SRC: &'static str = include_str!("shaders/lit-vs.glsl");
-static FRAG_SRC: &'static str = include_str!("shaders/lit-fs.glsl");
+// static VERT_SRC: &'static str = include_str!("shaders/lit-vs.glsl");
+// static FRAG_SRC: &'static str = include_str!("shaders/lit-fs.glsl");
 
 // solid color
-static SOLID_VERT_SRC: &'static str = include_str!("shaders/solid-vs.glsl");
-static SOLID_FRAG_SRC: &'static str = include_str!("shaders/solid-fs.glsl");
+// static SOLID_VERT_SRC: &'static str = include_str!("shaders/solid-vs.glsl");
+// static SOLID_FRAG_SRC: &'static str = include_str!("shaders/solid-fs.glsl");
 
 //static TEX_VERT_SRC: &'static str = include_str!("shaders/tex-vs.glsl");
 //static TEX_FRAG_SRC: &'static str = include_str!("shaders/tex-fs.glsl");
 
+// pub struct LightsUniform {
+//     pub array: [PointLight; 4],
+//     pub light_count: i32,
+//     pub lights_ubo: glium::uniforms::UniformBuffer<[PointLight; 4]>,
+//     pub last_array: [PointLight; 4],
+// }
 pub struct DemoWindow {
     pub events: EventsLoop,
     pub display: Display,
     pub input: InputState,
     pub view: M4x4,
-    pub lit_shader: glium::Program,
-    pub solid_shader: glium::Program,
+    // pub lit_shader: glium::Program,
+    // pub solid_shader: glium::Program,
     //    pub tex_shader: glium::Program,
     pub clear_color: V4,
     pub light_pos: [f32; 3],
@@ -51,6 +58,8 @@ pub struct DemoWindow {
     pub last_frame_time: f32,
     pub grabbed_cursor: bool,
     pub fog_amount: f32,
+    pub shaders: ShaderLib,
+    pub frame_num: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -80,25 +89,17 @@ impl<'a> Default for DemoOptions<'a> {
     }
 }
 
-fn compile_shader<F: glium::backend::Facade>(
-    facade: &F,
-    which: &str,
-    vert: &str,
-    frag: &str,
-) -> Result<glium::Program, Error> {
-    let mut fsrc = PREAMBLE_SRC.to_string();
-    write!(fsrc, "\n#line 1\n{}", frag).unwrap();
-
-    let mut vsrc = PREAMBLE_SRC.to_string();
-    write!(vsrc, "\n#line 1\n{}", vert).unwrap();
-
-    println!("Compiling {}", which);
-
-    Ok(glium::Program::from_source(facade, &vsrc, &fsrc, None)?)
+pub fn init_testing() {
+    if cfg!(debug_assertions) {
+        std::env::set_var("RUST_BACKTRACE", "1");
+        env_logger::init_from_env(env_logger::Env::default().filter_or("RUST_LOG", "trace"));
+    } else {
+        env_logger::init_from_env(env_logger::Env::default().filter_or("RUST_LOG", "warn"));
+    }
 }
-
 impl DemoWindow {
     pub fn new(opts: DemoOptions<'_>, gui: Rc<RefCell<imgui::Context>>) -> Result<DemoWindow, Error> {
+        init_testing();
         let context = ContextBuilder::new()
             .with_depth_buffer(24)
             .with_srgb(true)
@@ -111,14 +112,24 @@ impl DemoWindow {
                 height: opts.window_size.1 as f64,
             });
 
+        let mut shaders = ShaderLib::new(ShaderConf {
+            repo_relative_path: "examples/shared/shaders",
+            override_env_var: None,
+            preamble_file: Some("common.glsl"),
+            fs_suffix: "-fs.glsl",
+            vs_suffix: "-vs.glsl",
+            fs_define: None,
+            vs_define: None,
+        })?;
+
         let events = EventsLoop::new();
 
         let display = Display::new(window, context, &events).unwrap();
 
         let mut input_state = InputState::new(display.get_framebuffer_dimensions(), opts.fov, gui);
 
-        let phong_program = compile_shader(&display, "lit", VERT_SRC, FRAG_SRC)?;
-        let solid_program = compile_shader(&display, "solid", SOLID_VERT_SRC, SOLID_FRAG_SRC)?;
+        // let phong_program = compile_shader(&display, "lit", VERT_SRC, FRAG_SRC)?;
+        // let solid_program = compile_shader(&display, "solid", SOLID_VERT_SRC, SOLID_FRAG_SRC)?;
         //        let tex_program = compile_shader(&display, "tex", TEX_VERT_SRC, TEX_FRAG_SRC)?;
         {
             let glw = display.gl_window();
@@ -127,13 +138,14 @@ impl DemoWindow {
                 .platform
                 .attach_window(gui.io_mut(), glw.window(), imgui_winit_support::HiDpiMode::Default);
         }
+        shaders.add(&display, &["lit", "solid"])?;
         Ok(DemoWindow {
             display,
             events,
             input: input_state,
             view: opts.view,
-            lit_shader: phong_program,
-            solid_shader: solid_program,
+            shaders,
+            frame_num: 0,
             //            tex_shader: tex_program,
             clear_color: opts.clear_color,
             light_pos: opts.light_pos.into(),
@@ -152,6 +164,10 @@ impl DemoWindow {
         let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
         self.last_frame = now;
         self.last_frame_time = delta_s;
+        self.frame_num = self.frame_num.wrapping_add(1);
+        if self.frame_num % 60 == 0 {
+            let _ = self.shaders.maybe_reload_shaders(&self.display);
+        }
         assert!(self.targ.is_none());
         if !self.input.update(&mut self.events, &mut self.display, delta_s) {
             false
@@ -204,7 +220,7 @@ impl DemoWindow {
         target.draw(
             (&mesh.vbo,),
             &mesh.ibo,
-            &self.lit_shader,
+            &self.shaders["lit"],
             &uniform! {
                 model: mat.to_arr(),
                 u_color: (mesh.color * mesh.color).to_arr(),
@@ -267,7 +283,11 @@ impl DemoWindow {
             },
             ..Default::default()
         };
-        let shader = if solid { &self.solid_shader } else { &self.lit_shader };
+        let shader = if solid {
+            &self.shaders["solid"]
+        } else {
+            &self.shaders["lit"]
+        };
         let uniforms = uniform! {
             model: mat.to_arr(),
             u_color: color.to_arr(),
@@ -314,7 +334,7 @@ impl DemoWindow {
         target.draw(
             (&vbo,),
             &ibo,
-            &self.solid_shader,
+            &self.shaders["solid"],
             &uniform! {
                 model: mat.to_arr(),
                 u_color: color.to_arr(),

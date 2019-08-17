@@ -29,7 +29,7 @@ impl PhysScene {
     }
 
     pub fn begin(&mut self, dt: f32) -> &mut ConstraintSet {
-        if dt < 0.01 || dt > 5.0 / 60.0 {
+        if dt < 0.001 || dt > 5.0 / 60.0 {
             log::warn!("Clamping weird deltaTime: {:?} => {:?}", dt, 1.0 / 60.0);
             // XXX accumulation :/
         }

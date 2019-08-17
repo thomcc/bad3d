@@ -414,7 +414,6 @@ fn bsp_cell_meshes(f: &glium::Display, bsp: &BspNode, color: V4) -> Result<Vec<D
 }
 
 fn main() -> Result<()> {
-    env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::Context::create()));
     gui.borrow_mut().set_ini_filename(None);
 

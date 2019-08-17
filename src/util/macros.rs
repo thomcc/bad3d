@@ -7,6 +7,13 @@ macro_rules! static_assert {
             [(); (!ASSERT_TEST as usize)]
         };
     };
+    ($test:expr) => {
+        #[allow(dead_code, nonstandard_style)]
+        const _: [(); 0] = {
+            const ASSERT_TEST: bool = $test;
+            [(); (!ASSERT_TEST as usize)]
+        };
+    };
 }
 
 #[macro_export]

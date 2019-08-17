@@ -291,7 +291,6 @@ fn duration_ms(d: Duration) -> f32 {
 }
 
 pub fn main() -> Result<()> {
-    env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::Context::create()));
     gui.borrow_mut().set_ini_filename(None);
 

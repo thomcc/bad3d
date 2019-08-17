@@ -26,7 +26,7 @@ void main() {
     float diffuse = compute_diffuse(lightdir, camera_dir, normal, roughness, albedo);
 
     vec3 c = ambient_color * u_color.rgb + diffuse * u_color.rgb + specular * specular_color;
-    c += normal / 10.0;
+    // c += normal / 10.0;
 
     if (u_fog > 0.0) {
         float dist = length(v_viewpos);//(gl_FragCoord.z / gl_FragCoord.w);// abs(v_viewpos.z);

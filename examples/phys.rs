@@ -130,7 +130,6 @@ fn duration_ms(d: std::time::Duration) -> f32 {
 }
 #[allow(clippy::cognitive_complexity)]
 fn main() -> Result<()> {
-    env_logger::init();
     let gui = Rc::new(RefCell::new(imgui::Context::create()));
     gui.borrow_mut().set_ini_filename(None);
 
