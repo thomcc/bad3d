@@ -58,13 +58,14 @@ fn main() -> Result<()> {
     let mut window = DemoWindow::new(
         DemoOptions {
             title: "Powered ragdoll physics test",
-            view: M4x4::look_at(vec3(0.0, -8.0, 0.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)),
+            camera: Pose::new_look_at(vec3(0.0, -8.0, 0.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)).inverse(),
             light_pos: vec3(5.0, 1.2, 1.0),
             clear_color: vec4(0.5, 0.6, 1.0, 1.0),
             ..Default::default()
         },
         Rc::new(RefCell::new(imgui::Context::create())),
     )?;
+    // window.cam_pos = window.view.inverse().unwrap().translation();
     let mut scene = bad3d::phys::PhysScene::default();
     let ground = Shape::new_aabb(vec3(-5.0, -5.0, -3.0), vec3(5.0, 5.0, -2.0));
 

@@ -25,4 +25,4 @@ mod test_traits;
 pub(crate) mod simd;
 
 pub use crate::vec::idx3::Idx3;
-pub use crate::vec::ivec::aliases;
+pub use crate::vec::ivec::aliases::{self, *};

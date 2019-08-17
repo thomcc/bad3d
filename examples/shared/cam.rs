@@ -41,7 +41,8 @@ pub struct FlyCam {
     pub eye: V3,
     pub look: V3,
     pub up: V3,
-    pub view: M4x4,
+    // pub view: M4x4,
+    pub pose: Pose,
     pub eye_speed: f32,
     // TODO: `struct Degree(pub f32)`?
     pub mouse_speed: f32,
@@ -121,27 +122,30 @@ impl FlyCam {
             )
             .must_norm();
         }
+        let pose = Pose::new_look_at(self.eye, self.look, self.up.fast_norm());
+        self.pose = pose;
 
-        let up_norm = self.up.fast_norm();
-        let mut f = self.look.fast_norm();
+        // let up_norm = self.up.fast_norm();
+        // let mut f = self.look.fast_norm();
 
-        let s = cross(f, up_norm).fast_norm();
 
-        let u = cross(s, f).fast_norm();
+        // let s = cross(f, up_norm).fast_norm();
 
-        // negatives for opengl handedness...
-        f = -f;
+        // let u = cross(s, f).fast_norm();
+
+        // // negatives for opengl handedness...
+        // f = -f;
         // let t = M3x3::from_cols(s, u, f) * -self.eye;
-        let t = vec3(
-            s.x() * -self.eye.x() + s.y() * -self.eye.y() + s.z() * -self.eye.z(),
-            u.x() * -self.eye.x() + u.y() * -self.eye.y() + u.z() * -self.eye.z(),
-            f.x() * -self.eye.x() + f.y() * -self.eye.y() + f.z() * -self.eye.z(),
-        );
-        self.view = M4x4::from_cols(
-            s.expand(0.0),
-            s.expand(0.0),
-            s.expand(0.0),
-            t.expand(1.0),
-        );
+        // let t = vec3(
+        //     s.x() * -self.eye.x() + s.y() * -self.eye.y() + s.z() * -self.eye.z(),
+        //     u.x() * -self.eye.x() + u.y() * -self.eye.y() + u.z() * -self.eye.z(),
+        //     f.x() * -self.eye.x() + f.y() * -self.eye.y() + f.z() * -self.eye.z(),
+        // );
+        // self.view = M4x4::from_cols(
+        //     s.expand(0.0),
+        //     s.expand(0.0),
+        //     s.expand(0.0),
+        //     t.expand(1.0),
+        // );
     }
 }

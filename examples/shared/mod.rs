@@ -3,6 +3,7 @@ pub mod demo_window;
 pub mod input;
 pub mod object;
 mod shader_lib;
+pub mod vertex;
 mod watched_file;
 pub use self::demo_window::{DemoOptions, DemoWindow};
 pub use self::input::InputState;

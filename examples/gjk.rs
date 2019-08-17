@@ -105,7 +105,8 @@ fn main() -> Result<()> {
     let mut win = DemoWindow::new(
         DemoOptions {
             title: "Hull test",
-            view: M4x4::look_at(vec3(0.0, 0.0, 2.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            // view: M4x4::look_at(vec3(0.0, 0.0, 2.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)),
+            camera: Pose::new_look_at(vec3(0.0, 0.0, 2.0), V3::zero(), vec3(0.0, 1.0, 0.0)).inverse(),
             clear_color: vec4(0.1, 0.1, 0.2, 1.0),
             near_far: (0.01, 50.0),
             light_pos: vec3(1.4, 0.4, 0.7),

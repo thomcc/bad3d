@@ -740,6 +740,14 @@ impl V4 {
     fn map(self, f: impl Fn(f32) -> f32) -> Self {
         self.map3(self, self, |a, _, _| f(a))
     }
+
+    #[inline]
+    pub fn to_byte4(self) -> crate::Byte4 {
+        const U8MAX: V4 = vec4_const![255.0; 4];
+        let b = (self * U8MAX).max(V4::ZERO).min(U8MAX).arr();
+        // Could do better here.
+        crate::byte4(b[0] as u8, b[1] as u8, b[2] as u8, b[3] as u8)
+    }
 }
 
 impl V4 {

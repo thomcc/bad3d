@@ -360,7 +360,7 @@ fn do_separated<A: Support + ?Sized, B: Support + ?Sized>(
     bp: Pose,
     find_closest: bool,
 ) -> ContactInfo {
-    let eps = almost::F32_TOLERANCE;
+    let eps = 0.00001f32; //almost::F32_TOLERANCE;
 
     let mut v = Point::on_sum(a, ap, b, bp, vec3(0.0, 0.0, 1.0)).p;
     let mut last = Simplex::initial(v);

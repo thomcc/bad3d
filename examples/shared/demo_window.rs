@@ -9,17 +9,16 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::rc::Rc;
 use std::time::Instant;
 
-use bad3d::{bsp::Face, prelude::*};
-use imgui::{self, Ui};
-use std::fmt::Write;
-
 use super::shader_lib::{ShaderConf, ShaderLib};
+use bad3d::{bsp::Face, prelude::*};
 use glium::{
     self,
     backend::Facade,
     glutin::{ContextBuilder, EventsLoop, WindowBuilder},
     Display, Surface,
 };
+use imgui::{self, Ui};
+use std::fmt::Write;
 
 // lit flat shader
 // static PREAMBLE_SRC: &'static str = include_str!("shaders/common.glsl");
@@ -44,7 +43,8 @@ pub struct DemoWindow {
     pub events: EventsLoop,
     pub display: Display,
     pub input: InputState,
-    pub view: M4x4,
+    view: M4x4,
+    pub camera: Pose,
     // pub lit_shader: glium::Program,
     // pub solid_shader: glium::Program,
     //    pub tex_shader: glium::Program,
@@ -70,7 +70,7 @@ pub struct DemoOptions<'a> {
     pub near_far: (f32, f32),
     pub light_pos: V3,
     pub fov: f32,
-    pub view: M4x4,
+    pub camera: Pose,
     pub fog_amount: f32,
 }
 
@@ -83,8 +83,9 @@ impl<'a> Default for DemoOptions<'a> {
             light_pos: vec3(1.4, 0.4, 0.7),
             near_far: (0.01, 500.0),
             fov: 75.0,
-            view: M4x4::identity(),
+            // view: M4x4::identity(),
             fog_amount: 0.0,
+            camera: Pose::identity(),
         }
     }
 }
@@ -102,7 +103,7 @@ impl DemoWindow {
         init_testing();
         let context = ContextBuilder::new()
             .with_depth_buffer(24)
-            .with_srgb(true)
+            .with_srgb(false)
             .with_vsync(true);
 
         let window = WindowBuilder::new()
@@ -143,8 +144,9 @@ impl DemoWindow {
             display,
             events,
             input: input_state,
-            view: opts.view,
+            view: opts.camera.inverse().to_mat4(),
             shaders,
+            camera: opts.camera,
             frame_num: 0,
             //            tex_shader: tex_program,
             clear_color: opts.clear_color,
@@ -229,6 +231,8 @@ impl DemoWindow {
                 perspective: self.input.get_projection_matrix(
                     self.near_far.0, self.near_far.1).to_arr(),
                 u_fog: self.fog_amount,
+                u_camera_pos: self.camera.position.to_arr(),
+                u_camera_q: self.camera.orientation.to_arr(),
                 u_nearfar_dist: (self.near_far.1 - self.near_far.0).abs(),
             },
             &glium::DrawParameters {
@@ -293,6 +297,8 @@ impl DemoWindow {
             u_color: color.to_arr(),
             view: self.view.to_arr(),
             u_light: self.light_pos,
+            u_camera_pos: self.camera.position.to_arr(),
+            u_camera_q: self.camera.orientation.to_arr(),
             perspective: self.input.get_projection_matrix(self.near_far.0, self.near_far.1).to_arr(),
             u_fog: self.fog_amount,
         };
@@ -309,6 +315,11 @@ impl DemoWindow {
             target.draw((&vbo,), &ibo, &shader, &uniforms, &params)?;
         }
         Ok(())
+    }
+
+    pub fn set_camera(&mut self, p: Pose) {
+        self.camera = p;
+        self.view = p.inverse().to_mat4();
     }
 
     pub fn draw_solid(
@@ -339,6 +350,8 @@ impl DemoWindow {
                 model: mat.to_arr(),
                 u_color: color.to_arr(),
                 view: self.view.to_arr(),
+                u_camera_pos: self.camera.position.to_arr(),
+                u_camera_q: self.camera.orientation.to_arr(),
                 perspective: self.input.get_projection_matrix(
                     self.near_far.0, self.near_far.1).to_arr(),
             },

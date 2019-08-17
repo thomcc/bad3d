@@ -717,3 +717,14 @@ impl IntoIterator for V4 {
         VecIter::new(self.arr(), 4)
     }
 }
+
+impl V2 {
+    #[inline]
+    pub fn to_norm16(self) -> ivec::aliases::U16x2 {
+        let max = u16::max_value() as f32;
+        ivec::aliases::ushort2(
+            crate::clamp(self.x * max, 0.0, max) as u16,
+            crate::clamp(self.y * max, 0.0, max) as u16,
+        )
+    }
+}

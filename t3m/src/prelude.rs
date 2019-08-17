@@ -7,7 +7,7 @@ pub use crate::traits::*;
 // pub use crate::tri::*;
 pub use crate::vec::{
     idx3::Idx3,
-    ivec::{IVec2, IVec3, IVec4},
+    ivec::{aliases::Byte4, IVec2, IVec3, IVec4},
     vec2, vec3, vec4, V2, V3, V4,
 };
 

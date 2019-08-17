@@ -338,9 +338,9 @@ pub fn main() -> Result<()> {
             last_rebuild_ms = duration_ms(dur);
             println!("Rebuilt bsp in {:.3}ms", last_rebuild_ms);
         }
-
-        win.view = scene.cam.inverse().to_mat4();
-
+        win.set_camera(scene.cam);
+        // win.view = scene.cam.inverse().to_mat4();
+        // win.cam_pos = scene.cam.position;
         let render_start = Instant::now();
 
         if ui_opts.collider_wires {

@@ -46,6 +46,12 @@ impl Idx3 {
         let [a, b, c] = self.indices();
         (&vs[a], &vs[b], &vs[c])
     }
+    #[inline]
+    pub fn iter(self) -> impl Iterator<Item = u16> {
+        std::iter::once(self.0)
+            .chain(std::iter::once(self.1))
+            .chain(std::iter::once(self.2))
+    }
 
     #[inline]
     pub fn tri_verts<V: Copy>(self, vs: &[V]) -> (V, V, V) {
@@ -168,6 +174,13 @@ impl From<(u16, u16, u16)> for Idx3 {
 impl From<[u16; 3]> for Idx3 {
     #[inline]
     fn from(t: [u16; 3]) -> Self {
+        Self(t[0], t[1], t[2])
+    }
+}
+
+impl<'a> From<&'a [u16; 3]> for Idx3 {
+    #[inline]
+    fn from(t: &'a [u16; 3]) -> Self {
         Self(t[0], t[1], t[2])
     }
 }

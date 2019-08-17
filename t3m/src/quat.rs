@@ -67,6 +67,20 @@ impl AsMut<Quat> for V4 {
     }
 }
 
+impl From<M3x3> for Quat {
+    #[inline]
+    fn from(m: M3x3) -> Self {
+        m.to_quat()
+    }
+}
+
+impl From<Quat> for M3x3 {
+    #[inline]
+    fn from(q: Quat) -> Self {
+        q.to_mat3()
+    }
+}
+
 impl From<Quat> for (f32, f32, f32, f32) {
     #[inline]
     fn from(q: Quat) -> Self {
@@ -80,11 +94,24 @@ impl From<(f32, f32, f32, f32)> for Quat {
         Quat(q.into())
     }
 }
+impl From<[f32; 4]> for Quat {
+    #[inline]
+    fn from(q: [f32; 4]) -> Self {
+        Quat(q.into())
+    }
+}
+
+impl From<Quat> for [f32; 4] {
+    #[inline]
+    fn from(q: Quat) -> Self {
+        q.0.into()
+    }
+}
 
 impl Default for Quat {
     #[inline]
     fn default() -> Quat {
-        quat(0.0, 0.0, 0.0, 1.0)
+        Quat::IDENTITY
     }
 }
 
@@ -210,13 +237,28 @@ impl Quat {
     }
 
     #[inline]
+    pub fn from_basis(tangent: V3, bitangent: V3, normal: V3) -> Self {
+        M3x3::from_cols(tangent, bitangent, normal).to_quat()
+    }
+
+    #[inline]
     pub fn from_axis_angle(axis: V3, angle: f32) -> Quat {
         Quat(V4::expand(axis * (angle * 0.5).sin(), (angle * 0.5).cos()))
     }
 
     #[inline]
     pub fn conj(self) -> Quat {
-        quat(-self.0.x(), -self.0.y(), -self.0.z(), self.0.w())
+        simd_match! {
+            "sse2" => unsafe {
+                use std::arch::{x86_64 as sse};
+                const SIGNBITS: sse::__m128 =
+                    const_simd_mask![0x8000_0000u32, 0x8000_0000u32, 0x8000_0000u32, 0];
+                Quat(V4(sse::_mm_xor_ps(SIGNBITS, (self.0).0)))
+            },
+            _ => {
+                quat(-self.0.x, -self.0.y, -self.0.z, self.0.w)
+            }
+        }
     }
 
     #[inline]

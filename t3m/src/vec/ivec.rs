@@ -286,6 +286,17 @@ impl<T: Copy> Into<(T, T, T, T)> for IVec4<T> {
     }
 }
 
+impl aliases::U16x2 {
+    #[inline]
+    pub fn new_normalized(x: f32, y: f32) -> Self {
+        let max = u16::max_value() as f32;
+        Self::new(
+            crate::clamp(x * max, 0.0, max) as u16,
+            crate::clamp(y * max, 0.0, max) as u16,
+        )
+    }
+}
+
 macro_rules! ivec_idx_ops {
     ($Vn:ident <$T:ident>, $Indexer:ty, $out_type:ty) => {
         impl<$T: Copy> std::ops::Index<$Indexer> for $Vn<$T> {

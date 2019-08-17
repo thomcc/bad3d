@@ -447,7 +447,8 @@ fn main() -> Result<()> {
         eye: camera.position,
         look: vec3(0.0, 1.0, 0.0),
         up: vec3(0.0, 0.0, 1.0),
-        view: M4x4::IDENTITY,
+        pose: Pose::IDENTITY,
+        // view: M4x4::IDENTITY,
         eye_speed: 10.0,
         mouse_speed: 0.1,
     };
@@ -523,10 +524,15 @@ fn main() -> Result<()> {
             player.update(win.input.scaled_mouse_delta(), thrust, &bsp_geom, 1.0 / 60.0);
             if !fly_cam {
                 camera = player.eye_pose();
-                win.view = camera.to_mat4().inverse().unwrap();
+                win.set_camera(camera);
+            // win.view = camera.to_mat4().inverse().unwrap();
+            // win.cam_pos = camera.position;
             } else {
                 fly_camera.update(CamUpdate::from_input(&win.input));
-                win.view = fly_camera.view;
+                win.set_camera(fly_camera.pose);
+                // win.set_camera(scene.cam);
+                // win.view = fly_camera.view;
+                // win.cam_pos = fly_camera.eye;
             }
         }
 

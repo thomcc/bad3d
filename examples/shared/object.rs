@@ -1,41 +1,19 @@
 use bad3d::prelude::*;
 use glium::{self, backend::Facade};
 
+pub use super::vertex::*;
+use failure::Error;
 use rand;
 use std::cell::RefCell;
 use std::rc::Rc;
-
-use failure::Error;
 use std::{result, slice};
 
 type Result<T> = result::Result<T, Error>;
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct Vertex {
-    pub position: [f32; 4],
-}
-
-implement_vertex!(Vertex, position);
-/*
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct TVertex {
-    pub position: [f32; 3],
-    pub texcoord: [u16; 2],
-    pub color: [u8; 4],
-}
-
-implement_vertex!(TVertex, position, texcoord normalize(true), color normalize(true));
-*/
-pub fn vertex_slice(v3s: &[V3]) -> &[Vertex] {
-    unsafe { slice::from_raw_parts(v3s.as_ptr() as *const Vertex, v3s.len()) }
-}
-
 static_assert_usize_eq!(
     vertex_size_check,
     std::mem::size_of::<V3>(),
-    std::mem::size_of::<Vertex>()
+    std::mem::size_of::<VertexP>()
 );
 
 pub struct DemoMesh {
@@ -43,7 +21,7 @@ pub struct DemoMesh {
     pub tris: Vec<[u16; 3]>,
     pub color: V4,
     pub ibo: glium::IndexBuffer<u16>,
-    pub vbo: glium::VertexBuffer<Vertex>,
+    pub vbo: glium::VertexBuffer<VertexP>,
 }
 
 #[inline]
@@ -83,12 +61,28 @@ impl DemoMesh {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct PtLight {
-    pub pos: V3,
-    pub radius: f32,
-    pub color: V4,
-}
+// implement_uniform_block!(
+//     LightBlock,
+//     u_point_lights,
+//     u_dir_lights,
+//     u_num_point_lights,
+//     u_num_dir_lights
+// );
+// #[derive(Debug, Clone, Copy)]
+// #[repr(C)]
+// pub struct LightsBlock {
+//     pub lights: PointLight,
+// }
+
+// implement_uniform_block!(PointLight, position, color, radius, linear, quadratic);
+
+// #[derive(Copy, Clone)]
+// struct DirectionalLightData {
+//     direction: [f32; 3],
+//     color: [f32; 3],
+//     intensity: f32
+// }
+// implement_buffer_content!(DirectionalLightData);
 /*
 pub struct MeshScene {
     pub meshes: Vec<TDemoMesh>,

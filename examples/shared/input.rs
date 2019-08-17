@@ -33,6 +33,7 @@ pub struct InputState {
     pub view_angle: f32,
     pub size: (u32, u32),
     pub mouse: Mouse,
+    pub has_focus: bool,
     pub mouse_prev: Mouse,
     pub keys: HashMap<VirtualKeyCode, KeyState>,
     pub key_changes: Vec<(VirtualKeyCode, bool)>,
@@ -168,6 +169,7 @@ impl InputState {
             closed: false,
             gui,
             platform,
+            has_focus: true,
             mouse_grabbed: false,
             dt: 1.0 / 60.0,
         }
@@ -298,7 +300,12 @@ impl InputState {
                     WindowEvent::Resized(glium::glutin::dpi::LogicalSize { width, height }) => {
                         self.size = (width as u32, height as u32);
                     }
-                    WindowEvent::Focused(true) => self.keys.clear(),
+                    WindowEvent::Focused(b) => {
+                        if b {
+                            self.keys.clear();
+                        }
+                        self.has_focus = b;
+                    }
                     WindowEvent::KeyboardInput { input, .. } if !io.want_capture_keyboard => {
                         let vk = if let Some(kc) = input.virtual_keycode {
                             kc
@@ -336,6 +343,7 @@ impl InputState {
                         }
                     }
                     WindowEvent::MouseInput { button, state, .. } if !io.want_capture_mouse => {
+                        self.has_focus = true;
                         let pressed = state == ElementState::Pressed;
                         match button {
                             MouseButton::Left => {

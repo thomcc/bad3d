@@ -811,6 +811,12 @@ impl M4x4 {
 
     #[inline]
     #[rustfmt::skip]
+    pub fn translation(&self) -> V3 {
+        self.w.xyz()
+    }
+
+    #[inline]
+    #[rustfmt::skip]
     pub fn from_translation(v: V3) -> M4x4 {
         M4x4::new(
             1.0, 0.0, 0.0, 0.0,

@@ -396,7 +396,9 @@ fn main() -> Result<()> {
         }
 
         cam.handle_input(&win.input);
-        win.view = cam.view_matrix();
+        win.set_camera(cam.pose());
+        // win.view = cam.view_matrix();
+        // win.cam_pos = cam.position;
 
         win.draw_lit_mesh(M4x4::identity(), &ground_mesh)?;
         win.draw_lit_mesh(M4x4::from_translation(cube_pos), &mini_cube)?;
