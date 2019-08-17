@@ -45,11 +45,12 @@ pub struct DemoWindow {
     pub input: InputState,
     view: M4x4,
     pub camera: Pose,
+    pub hemilight_intensity: f32,
     // pub lit_shader: glium::Program,
     // pub solid_shader: glium::Program,
     //    pub tex_shader: glium::Program,
     pub clear_color: V4,
-    pub light_pos: [f32; 3],
+    pub light_dir: [f32; 3],
     pub targ: Option<RefCell<glium::Frame>>,
     pub near_far: (f32, f32),
     // pub gui: Rc<RefCell<imgui::ImGui>>,
@@ -68,10 +69,11 @@ pub struct DemoOptions<'a> {
     pub title: &'a str,
     pub window_size: (u32, u32),
     pub near_far: (f32, f32),
-    pub light_pos: V3,
+    pub light_dir: V3,
     pub fov: f32,
     pub camera: Pose,
     pub fog_amount: f32,
+    pub hemilight_intensity: f32,
 }
 
 impl<'a> Default for DemoOptions<'a> {
@@ -80,12 +82,13 @@ impl<'a> Default for DemoOptions<'a> {
             title: "Bad3d Demo",
             window_size: (1024, 768),
             clear_color: vec4(0.5, 0.6, 1.0, 1.0),
-            light_pos: vec3(1.4, 0.4, 0.7),
+            light_dir: vec3(1.4, 0.4, 0.7),
             near_far: (0.01, 500.0),
             fov: 75.0,
             // view: M4x4::identity(),
             fog_amount: 0.0,
             camera: Pose::identity(),
+            hemilight_intensity: 0.2,
         }
     }
 }
@@ -150,13 +153,14 @@ impl DemoWindow {
             frame_num: 0,
             //            tex_shader: tex_program,
             clear_color: opts.clear_color,
-            light_pos: opts.light_pos.into(),
+            light_dir: opts.light_dir.into(),
             near_far: opts.near_far,
             targ: None,
             last_frame: Instant::now(),
             last_frame_time: 0.0,
             grabbed_cursor: false,
             fog_amount: opts.fog_amount,
+            hemilight_intensity: opts.hemilight_intensity,
         })
     }
     #[allow(clippy::wrong_self_convention)]
@@ -227,9 +231,10 @@ impl DemoWindow {
                 model: mat.to_arr(),
                 u_color: (mesh.color * mesh.color).to_arr(),
                 view: self.view.to_arr(),
-                u_light: self.light_pos,
+                u_light: self.light_dir,
                 perspective: self.input.get_projection_matrix(
                     self.near_far.0, self.near_far.1).to_arr(),
+                u_hl_intensity: self.hemilight_intensity,
                 u_fog: self.fog_amount,
                 u_camera_pos: self.camera.position.to_arr(),
                 u_camera_q: self.camera.orientation.to_arr(),
@@ -296,9 +301,10 @@ impl DemoWindow {
             model: mat.to_arr(),
             u_color: color.to_arr(),
             view: self.view.to_arr(),
-            u_light: self.light_pos,
+            u_light: self.light_dir,
             u_camera_pos: self.camera.position.to_arr(),
             u_camera_q: self.camera.orientation.to_arr(),
+            u_hl_intensity: self.hemilight_intensity,
             perspective: self.input.get_projection_matrix(self.near_far.0, self.near_far.1).to_arr(),
             u_fog: self.fog_amount,
         };
@@ -350,6 +356,7 @@ impl DemoWindow {
                 model: mat.to_arr(),
                 u_color: color.to_arr(),
                 view: self.view.to_arr(),
+                u_hl_intensity: self.hemilight_intensity,
                 u_camera_pos: self.camera.position.to_arr(),
                 u_camera_q: self.camera.orientation.to_arr(),
                 perspective: self.input.get_projection_matrix(

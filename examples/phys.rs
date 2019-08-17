@@ -138,8 +138,9 @@ fn main() -> Result<()> {
             title: "Physics engine test",
             clear_color: vec4(0.5, 0.6, 1.0, 1.0),
             near_far: (0.01, 100.0),
-            light_pos: vec3(0.0, 1.2, 1.0),
+            light_dir: vec3(0.0, 1.2, 1.0),
             fog_amount: 0.85,
+            hemilight_intensity: 0.3,
             // fov: 45.0,
             ..Default::default()
         },

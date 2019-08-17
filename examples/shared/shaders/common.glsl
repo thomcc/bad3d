@@ -47,9 +47,3 @@ highp float rand3(const in vec3 uv) {
 	highp float dt = dot(uv.xyz, vec3(a, b, d)), sn = mod(dt, PI);
 	return fract(sin(sn) * c);
 }
-
-highp float smooth_rand(const in vec2 st) {
-    return fract(sin(dot(st.xy,
-                         vec2(12.9898,78.233)))
-                 * 43758.5453123);
-}

@@ -59,7 +59,7 @@ fn main() -> Result<()> {
         DemoOptions {
             title: "Powered ragdoll physics test",
             camera: Pose::new_look_at(vec3(0.0, -8.0, 0.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)).inverse(),
-            light_pos: vec3(5.0, 1.2, 1.0),
+            light_dir: vec3(5.0, 1.2, 1.0),
             clear_color: vec4(0.5, 0.6, 1.0, 1.0),
             ..Default::default()
         },

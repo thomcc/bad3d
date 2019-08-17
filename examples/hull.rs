@@ -29,6 +29,7 @@ fn main() -> Result<()> {
             camera: Pose::new_look_at(vec3(0.0, 0.0, 2.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)).inverse(),
             clear_color: vec4(0.5, 0.6, 1.0, 1.0),
             near_far: (0.01, 50.0),
+            hemilight_intensity: 0.0,
             ..Default::default()
         },
         Rc::new(RefCell::new(imgui::Context::create())),

@@ -298,8 +298,9 @@ pub fn main() -> Result<()> {
         DemoOptions {
             title: "BSP (CSG) test",
             fov: 45.0,
-            light_pos: vec3(-1.0, 0.5, 0.5),
+            light_dir: vec3(-1.0, 0.5, 0.5).must_norm(),
             near_far: (0.01, 10.0),
+            hemilight_intensity: 0.0,
             ..Default::default()
         },
         gui.clone(),
