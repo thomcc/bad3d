@@ -2,7 +2,7 @@
 
 eventually this might be a good physics engine. at the moment, i'm still working out a bunch of it's bugs. caveat emptor.
 
-if you're brave, some nice demos are in the examples. i recommend `cargo run --release --example phys`. (TODO: screenshots)
+if you're brave, some nice demos are in the examples. i recommend `cargo run --release --example phys` (TODO: screenshots). note: currently debug assertions are on even for the release build. this is because the non-release build is unusable, but if i increase the optimization level in `[profile.dev]`, rust-analyzer gets noticably slower. so, consider disabling that before running the examples, since this code is extremely debug_assert heavy.
 
 this was a pretty early rust project of mine, and i abandoned it for a while, and am only now getting back to making it not embarassing. it's... still getting there.
 
